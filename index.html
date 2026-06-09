@@ -6,23 +6,46 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="apple-touch-icon" href="icon.png">
-    <title>智能仓库盘点系统</title>
-    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
-    <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <title>L6仓库管理系统</title>
+    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js">
+    </script>
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js">
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2">
+    </script>
     <style>
         :root {
-            --bg: #f5f7fb; --card-bg: #fff; --text: #1e293b; --text-secondary: #64748b;
-            --border: #e9eef3; --primary: #1b4a6b; --primary-light: #e6edf6; --danger: #b33a3a;
-            --success: #0e6245; --header-bg: linear-gradient(135deg, #0f2b4b, #1b4a6b);
-            --input-bg: #fff; --shadow: rgba(0,0,0,0.08); --font-size-base: 1rem;
-            --scan-line-color: #4cc9f0; --scan-window-size: 45%; --camera-preview-height: 50vh;
+            --bg: #f5f7fb;
+            --card-bg: #fff;
+            --text: #1e293b;
+            --text-secondary: #64748b;
+            --border: #e9eef3;
+            --primary: #1b4a6b;
+            --primary-light: #e6edf6;
+            --danger: #b33a3a;
+            --success: #0e6245;
+            --header-bg: linear-gradient(135deg, #0f2b4b, #1b4a6b);
+            --input-bg: #fff;
+            --shadow: rgba(0,0,0,0.08);
+            --font-size-base: 1rem;
+            --scan-line-color: #4cc9f0;
+            --scan-window-size: 45%;
+            --camera-preview-height: 50vh;
         }
         .night-mode {
-            --bg: #1a1f2e; --card-bg: #232a3b; --text: #e2e8f0; --text-secondary: #94a3b8;
-            --border: #334155; --primary: #3b82f6; --primary-light: #1e3a5f; --danger: #ef4444;
-            --success: #22c55e; --header-bg: linear-gradient(135deg, #0f172a, #1e293b);
-            --input-bg: #334155; --shadow: rgba(0,0,0,0.3); --scan-line-color: #60a5fa;
+            --bg: #1a1f2e;
+            --card-bg: #232a3b;
+            --text: #e2e8f0;
+            --text-secondary: #94a3b8;
+            --border: #334155;
+            --primary: #3b82f6;
+            --primary-light: #1e3a5f;
+            --danger: #ef4444;
+            --success: #22c55e;
+            --header-bg: linear-gradient(135deg, #0f172a, #1e293b);
+            --input-bg: #334155;
+            --shadow: rgba(0,0,0,0.3);
+            --scan-line-color: #60a5fa;
         }
         * { margin:0; padding:0; box-sizing:border-box; font-family: system-ui, -apple-system, sans-serif; }
         body { background: linear-gradient(135deg, #0f2b4b 0%, #1b4a6b 100%); min-height:100vh; display:flex; justify-content:center; align-items:center; padding:0; font-size:var(--font-size-base); -webkit-tap-highlight-color:transparent; user-select:none; }
@@ -149,7 +172,7 @@
         .modal-box h3 { margin-bottom:12px; font-size:1.3rem; }
         .modal-box .modal-message { margin-bottom:20px; font-size:0.95rem; line-height:1.6; color:var(--text-secondary); }
         .modal-box input { width:100%; padding:14px; border-radius:14px; border:1px solid var(--border); background:var(--input-bg); color:var(--text); margin-bottom:16px; font-size:1rem; }
-        .modal-actions { display:flex; justify-content:center; gap:12px; margin-top:8px; }
+        .modal-actions { display:flex; justify-content:center; gap:12px; margin-top:8px; flex-wrap:wrap; }
         .modal-btn { padding:12px 24px; border-radius:30px; font-weight:600; font-size:0.95rem; border:none; cursor:pointer; min-width:100px; }
         .modal-btn-cancel { background:var(--input-bg); color:var(--text); border:1.5px solid var(--border); }
         .modal-btn-confirm { background:var(--primary); color:white; }
@@ -165,7 +188,7 @@
 </head>
 <body>
     <div id="loginContainer" class="auth-container">
-        <div>📦</div><h1>仓库盘点系统</h1>
+        <h1>L6仓库管理系统</h1>
         <input type="text" id="loginUsernameInput" placeholder="用户名（英文）" autocomplete="username">
         <input type="password" id="loginPasswordInput" placeholder="密码" autocomplete="current-password">
         <button class="btn-full btn-primary" id="loginBtn" onclick="window.handleLogin()">登 录</button>
@@ -271,7 +294,7 @@
 
             <div id="locationView" class="view">
                 <div class="card">
-                    <div style="font-weight:600;margin-bottom:10px;">🔎 储位查询</div>
+                    <div style="font-weight:600; text-align:center; font-size:1.2rem; margin-bottom:10px;">储位查询</div>
                     <div class="input-field"><input type="text" id="locationSearchInput" placeholder="输入完整料号 或 后四位"></div>
                     <button class="btn btn-primary" id="locationSearchBtn" style="width:100%;">搜索储位</button>
                     <div id="locationResult" class="location-result-container">
@@ -390,7 +413,7 @@
                     <details class="card" style="margin-top:12px;"><summary>关于</summary>
                         <div style="padding:8px 0;">
                             <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);"><span>开发者</span><span>于洪章</span></div>
-                            <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);"><span>版本</span><span>V1.0.40 完整版</span></div>
+                            <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);"><span>版本</span><span>V1.0.42 完整版</span></div>
                             <div style="display:flex;justify-content:space-between;padding:8px 0;"><span>版本日期</span><span>2026-06-09</span></div>
                         </div>
                     </details>
@@ -424,6 +447,17 @@
     <div id="passwordModal" class="modal-overlay" style="display:none;"><div class="modal-box"><h3>🔒 修改密码</h3><p style="margin-bottom:16px;color:var(--text-secondary);">密码修改功能暂未开放，请联系管理员。</p><div class="modal-actions"><button class="modal-btn modal-btn-confirm" id="closePasswordModalBtn">知道了</button></div></div></div>
     <div id="renameModal" class="modal-overlay" style="display:none;"><div class="modal-box"><h3>✏️ 修改昵称</h3><input type="text" id="newNicknameInput" placeholder="输入新昵称"><div class="modal-actions"><button class="modal-btn modal-btn-cancel" id="cancelRenameBtn">取消</button><button class="modal-btn modal-btn-confirm" id="submitRenameBtn">确认修改</button></div><div id="renameModalError" style="color:var(--danger);font-size:0.8rem;margin-top:8px;"></div></div></div>
     <div id="resetPasswordModal" class="modal-overlay" style="display:none;"><div class="modal-box"><h3>🔑 重置密码</h3><p id="resetPasswordUser" style="margin-bottom:12px;"></p><input type="password" id="resetPasswordNewInput" placeholder="新密码"><div class="modal-actions"><button class="modal-btn modal-btn-cancel" id="resetPasswordCancelBtn">取消</button><button class="modal-btn modal-btn-confirm" id="resetPasswordConfirmBtn">确认重置</button></div></div></div>
+    <div id="exportChoiceModal" class="modal-overlay" style="display:none;">
+        <div class="modal-box">
+            <h3>📥 导出 Excel</h3>
+            <div class="modal-message">选择导出方式</div>
+            <div class="modal-actions" style="justify-content: space-around;">
+                <button class="modal-btn modal-btn-confirm" id="exportShareBtn">📤 分享</button>
+                <button class="modal-btn modal-btn-confirm" id="exportDownloadBtn">⬇️ 下载</button>
+                <button class="modal-btn modal-btn-cancel" id="exportCancelBtn">取消</button>
+            </div>
+        </div>
+    </div>
     <div class="toast" id="toastDom"></div>
 
     <script>
@@ -437,10 +471,10 @@
             }
 
             let currentUser = null, isAppInitialized = false, chatChannel = null, chatRefreshTimer = null, lastNotificationId = null, stream = null;
-            const getUserDataKey = uid => `wh_user_${uid}`, getSettingsKey = uid => `wh_set_${uid}`, SESSION_KEY = 'wh_session', CHAT_CACHE_KEY = 'chat_cache';
+            const getUserDataKey = uid => `wh_user_${uid}`, getSettingsKey = uid => `wh_set_${uid}`, SESSION_KEY = 'wh_session', CHAT_CACHE_KEY = uid => `chat_cache_${uid}`;
             let userData = { name: '', avatar: '👤' };
             let settings = { nightMode: false, fontSize: '1rem', cameraPreviewHeight: 50, scanWindowSize: 45, scanCooldown: 2.5, toastDuration: 2.2, soundEnabled: true, autoOpenCamera: false, autoSave: false, focusMode: 'continuous' };
-            let viewDate = new Date().toISOString().slice(0,10), queryMode = 'detail';
+            let viewDate = getTodayString(), queryMode = 'detail';
 
             window.showToast = m => { const t = document.getElementById('toastDom'); if(t) { t.textContent=m; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), (settings.toastDuration||2.2)*1000); }};
             function showGlobalNotification(msg) { if(!msg||!msg.username||!msg.message) return; if(lastNotificationId===msg.id) return; lastNotificationId=msg.id; const n = document.getElementById('globalNotification'); if(!n) return; n.textContent=`${msg.username}: ${msg.message}`; n.style.display='block'; clearTimeout(window._notifTimer); window._notifTimer=setTimeout(()=>{n.style.display='none';},3000); }
@@ -448,6 +482,40 @@
             window.showConfirm = (t,m)=>new Promise(r=>{const a=document.getElementById('confirmModal'),b=document.getElementById('confirmModalTitle'),c=document.getElementById('confirmModalMessage'),d=document.getElementById('confirmModalOkBtn'),e=document.getElementById('confirmModalCancelBtn'); if(!a||!b||!c||!d||!e){r(false);return;} b.textContent=t||'确认操作';c.textContent=m||'确定执行此操作吗？';a.style.display='flex'; function f(v){a.style.display='none';r(v);} d.addEventListener('click',()=>f(true),{once:true}); e.addEventListener('click',()=>f(false),{once:true});});
             window.showAlert = (t,m)=>new Promise(r=>{const a=document.getElementById('alertModal'),b=document.getElementById('alertModalTitle'),c=document.getElementById('alertModalMessage'),d=document.getElementById('alertModalOkBtn'); if(!a||!b||!c||!d){r();return;} b.textContent=t||'提示';c.textContent=m||'';a.style.display='flex'; function f(){a.style.display='none';r();} d.addEventListener('click',f,{once:true});});
             function showEditLocationPrompt(p,c){return new Promise(r=>{const m=document.getElementById('editLocationModal'),pe=document.getElementById('editLocationPart'),inp=document.getElementById('editLocationInput'),ok=document.getElementById('editLocationOkBtn'),cn=document.getElementById('editLocationCancelBtn'); if(!m||!pe||!inp||!ok||!cn){r(null);return;} pe.textContent=`料号：${p}`;inp.value=c||'';m.style.display='flex';inp.focus();function cl(v){m.style.display='none';r(v);} ok.addEventListener('click',()=>cl(inp.value.trim()),{once:true}); cn.addEventListener('click',()=>cl(null),{once:true});});}
+
+            function showExportChoice() {
+                return new Promise((resolve) => {
+                    const modal = document.getElementById('exportChoiceModal');
+                    const shareBtn = document.getElementById('exportShareBtn');
+                    const downloadBtn = document.getElementById('exportDownloadBtn');
+                    const cancelBtn = document.getElementById('exportCancelBtn');
+                    if (!modal) { resolve(null); return; }
+                    modal.style.display = 'flex';
+                    function clean() {
+                        modal.style.display = 'none';
+                        shareBtn.removeEventListener('click', onShare);
+                        downloadBtn.removeEventListener('click', onDownload);
+                        cancelBtn.removeEventListener('click', onCancel);
+                    }
+                    function onShare() { clean(); resolve('share'); }
+                    function onDownload() { clean(); resolve('download'); }
+                    function onCancel() { clean(); resolve(null); }
+                    shareBtn.addEventListener('click', onShare);
+                    downloadBtn.addEventListener('click', onDownload);
+                    cancelBtn.addEventListener('click', onCancel);
+                });
+            }
+
+            function downloadBlob(blob, fileName) {
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = fileName;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            }
 
             function loadLocalData(){if(!currentUser)return;const u=localStorage.getItem(getUserDataKey(currentUser.id));if(u)userData=JSON.parse(u);else userData={name:currentUser.real_name||currentUser.username,avatar:'👤'};const s=localStorage.getItem(getSettingsKey(currentUser.id));if(s)settings={...settings,...JSON.parse(s)};}
             function saveUserData(){if(currentUser)localStorage.setItem(getUserDataKey(currentUser.id),JSON.stringify(userData));}
@@ -518,7 +586,11 @@
                 }
 
                 const matches = await searchLocationsBySuffix(q);
-                if (!matches.length) { res.innerHTML = '<span class="location-result-empty">未找到匹配储位</span>'; return; }
+                if (!matches.length) {
+                    res.innerHTML = '<span class="location-result-empty">未找到匹配储位</span>';
+                    window.showAlert('提示', '未找到匹配储位');
+                    return;
+                }
 
                 let html = '';
                 matches.slice(0,20).forEach(({part, location}) => {
@@ -539,10 +611,16 @@
                 if (matches.length > 20) html += '<div class="location-result-empty">... 还有' + (matches.length-20) + '条</div>';
                 res.innerHTML = html;
             }
-            function getTodayString(){return new Date().toISOString().slice(0,10);}
+            function getTodayString(){
+                const d = new Date();
+                const yyyy = d.getFullYear();
+                const mm = String(d.getMonth() + 1).padStart(2, '0');
+                const dd = String(d.getDate()).padStart(2, '0');
+                return `${yyyy}-${mm}-${dd}`;
+            }
 
-            function getChatCache(){try{return JSON.parse(localStorage.getItem(CHAT_CACHE_KEY)||'[]');}catch(e){return[];}}
-            function saveChatCache(msgs){localStorage.setItem(CHAT_CACHE_KEY,JSON.stringify(msgs.slice(-500)));}
+            function getChatCache(){try{return JSON.parse(localStorage.getItem(CHAT_CACHE_KEY(currentUser?.id))||'[]');}catch(e){return[];}}
+            function saveChatCache(msgs){if(currentUser)localStorage.setItem(CHAT_CACHE_KEY(currentUser.id),JSON.stringify(msgs.slice(-500)));}
             function mergeCache(newMsgs){const cache=getChatCache();const ids=new Set(cache.map(m=>m.id));const merged=[...cache,...newMsgs.filter(m=>!ids.has(m.id))];merged.sort((a,b)=>new Date(a.created_at)-new Date(b.created_at));saveChatCache(merged);return merged;}
             function renderChatMessages(msgs){const c=document.getElementById('chatMessagesContainer');if(!c)return;c.innerHTML=msgs.map(m=>{const isSelf=currentUser&&m.user_id===currentUser.id;const time=new Date(m.created_at).toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'});return`<div class="chat-msg ${isSelf?'self':'other'}"><div class="sender">${escapeHtml(m.username)}</div><div>${escapeHtml(m.message)}</div><div class="time">${time}</div></div>`;}).join('');}
             function scrollChatToBottom(){const c=document.getElementById('chatMessagesContainer');if(c)c.scrollTop=c.scrollHeight;}
@@ -565,7 +643,7 @@
                 if(currentUser&&currentUser.is_admin){const nav=document.getElementById('bottomNav');if(!document.querySelector('.nav-item[data-view="adminView"]')){const item=document.createElement('div');item.className='nav-item';item.dataset.view='adminView';item.innerHTML='👑<span>管理</span>';nav.appendChild(item);}}
                 const dateInput=document.getElementById('searchDateInput');if(dateInput)dateInput.value=getTodayString();viewDate=getTodayString();await renderQueryRecords();
                 const navs=document.querySelectorAll('.nav-item');const views={scannerPageView:document.getElementById('scannerPageView'),queryView:document.getElementById('queryView'),locationView:document.getElementById('locationView'),chatView:document.getElementById('chatView'),profileView:document.getElementById('profileView'),adminView:document.getElementById('adminView')};
-                function switchView(id){Object.keys(views).forEach(k=>views[k]?.classList.toggle('active',k===id));navs.forEach(n=>n.classList.toggle('active',n.dataset.view===id));if(id==='queryView')renderQueryRecords();if(id==='adminView'&&currentUser?.is_admin)loadAdminUsers();if(id==='chatView'){loadChatMessages();startChatAutoRefresh();}else stopChatAutoRefresh();if(id==='scannerPageView'&&settings.autoOpenCamera&&window.startCameraFn)setTimeout(window.startCameraFn,200);else if(window.stopCameraFn)window.stopCameraFn();}
+                function switchView(id){Object.keys(views).forEach(k=>views[k]?.classList.toggle('active',k===id));navs.forEach(n=>n.classList.toggle('active',n.dataset.view===id));if(id==='queryView')renderQueryRecords();if(id==='adminView'&&currentUser?.is_admin)loadAdminUsers();if(id==='chatView'){loadChatMessages();startChatAutoRefresh();}else stopChatAutoRefresh();if(id==='scannerPageView'&&settings.autoOpenCamera&&window.startCameraFn)setTimeout(window.startCameraFn,500);else if(window.stopCameraFn)window.stopCameraFn();}
                 navs.forEach(n=>n.addEventListener('click',()=>switchView(n.dataset.view)));
 
                 document.getElementById('btnFocus').addEventListener('click',triggerFocus);
@@ -580,7 +658,63 @@
 
                 document.getElementById('listContainer').addEventListener('click',async(e)=>{const btn=e.target.closest('.delete-btn');if(!btn||!btn.dataset.id)return;if(!(await window.showConfirm('删除确认','确定删除这条盘点记录吗？')))return;await deleteRecordById(parseInt(btn.dataset.id));await renderQueryRecords();window.showToast('已删除');});
 
-                document.getElementById('exportExcelBtn').onclick=async()=>{const records=await getRecordsByDate(viewDate);if(!records.length){window.showToast('无数据可导出');return;}let sheetData=[];if(queryMode==='detail'){sheetData=[['时间','料号','数量','MPN']];records.forEach(r=>sheetData.push([r.time,r.part,r.qty,r.mpn||'']));}else if(queryMode==='summary_by_part'){sheetData=[['料号','合计数量']];const m=new Map();records.forEach(r=>m.set(r.part,(m.get(r.part)||0)+r.qty));m.forEach((v,k)=>sheetData.push([k,v]));}else{sheetData=[['料号','MPN','合计数量']];const m=new Map();records.forEach(r=>{const k=`${r.part}||${r.mpn||''}`;m.set(k,(m.get(k)||0)+r.qty);});m.forEach((v,k)=>{const[p,mp]=k.split('||');sheetData.push([p,mp||'',v]);});}const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(sheetData),'盘点');const wbout=XLSX.write(wb,{bookType:'xlsx',type:'array'});const blob=new Blob([wbout],{type:'application/octet-stream'});const file=new File([blob],`盘点_${viewDate}.xlsx`,{type:'application/octet-stream'});if(navigator.share&&navigator.canShare&&navigator.canShare({files:[file]})){try{await navigator.share({title:file.name,files:[file]});window.showToast('导出成功');}catch(e){}}else window.showToast('当前浏览器不支持分享导出，请在Safari中打开');};
+                document.getElementById('exportExcelBtn').onclick = async () => {
+                    const records = await getRecordsByDate(viewDate);
+                    if (!records.length) { window.showToast('无数据可导出'); return; }
+
+                    let sheetData = [];
+                    if (queryMode === 'detail') {
+                        sheetData = [['时间', '料号', '数量', 'MPN']];
+                        records.forEach(r => sheetData.push([r.time, r.part, r.qty, r.mpn || '']));
+                    } else if (queryMode === 'summary_by_part') {
+                        sheetData = [['料号', '合计数量']];
+                        const m = new Map();
+                        records.forEach(r => m.set(r.part, (m.get(r.part) || 0) + r.qty));
+                        m.forEach((v, k) => sheetData.push([k, v]));
+                    } else {
+                        sheetData = [['料号', 'MPN', '合计数量']];
+                        const m = new Map();
+                        records.forEach(r => {
+                            const k = `${r.part}||${r.mpn || ''}`;
+                            m.set(k, (m.get(k) || 0) + r.qty);
+                        });
+                        m.forEach((v, k) => {
+                            const [p, mp] = k.split('||');
+                            sheetData.push([p, mp || '', v]);
+                        });
+                    }
+
+                    const wb = XLSX.utils.book_new();
+                    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(sheetData), '盘点');
+                    const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+                    const blob = new Blob([wbout], { type: 'application/octet-stream' });
+                    const fileName = `盘点_${viewDate}.xlsx`;
+
+                    const choice = await showExportChoice();
+                    if (!choice) return;
+
+                    const file = new File([blob], fileName, { type: 'application/octet-stream' });
+
+                    if (choice === 'share') {
+                        if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+                            try {
+                                await navigator.share({ title: fileName, files: [file] });
+                                window.showToast('分享成功');
+                            } catch (e) {
+                                if (e.name !== 'AbortError') {
+                                    downloadBlob(blob, fileName);
+                                    window.showToast('分享失败，已自动下载');
+                                }
+                            }
+                        } else {
+                            downloadBlob(blob, fileName);
+                            window.showToast('当前设备不支持分享，已自动下载');
+                        }
+                    } else if (choice === 'download') {
+                        downloadBlob(blob, fileName);
+                        window.showToast('文件已下载');
+                    }
+                };
 
                 document.getElementById('locationSearchBtn').onclick=refreshLocationSearch;
                 document.getElementById('locationResult').addEventListener('click',async(e)=>{const btn=e.target.closest('button[data-action]');if(!btn)return;const action=btn.dataset.action,part=btn.dataset.part;if(action==='edit'){const curLoc=await getLocationByPart(part);const newLoc=await showEditLocationPrompt(part,curLoc||'');if(newLoc&&newLoc.trim()!==''){await upsertLocation(part,newLoc.trim());await refreshLocationSearch();window.showToast('已更新');}}else if(action==='delete'){if(!(await window.showConfirm('删除储位',`确定删除料号 ${part} 的储位信息吗？`)))return;await deleteLocationByPart(part);await refreshLocationSearch();window.showToast('已删除');}});
@@ -644,7 +778,7 @@
                 document.getElementById('submitRenameBtn').onclick=()=>{const newName=document.getElementById('newNicknameInput').value.trim();if(!newName){document.getElementById('renameModalError').textContent='昵称不能为空';return;}userData.name=newName;saveUserData();updateProfileUI();document.getElementById('renameModal').style.display='none';window.showToast('昵称已更新');};
                 const avatarDisplay=document.getElementById('avatarDisplay'),avatarFileInput=document.getElementById('avatarFileInput');
                 if(avatarDisplay&&avatarFileInput){avatarDisplay.addEventListener('click',()=>avatarFileInput.click());avatarFileInput.addEventListener('change',(e)=>{const file=e.target.files[0];if(!file)return;if(!file.type.startsWith('image/')){window.showToast('请选择图片文件');avatarFileInput.value='';return;}const reader=new FileReader();reader.onload=(ev)=>{userData.avatar=ev.target.result;saveUserData();updateProfileUI();window.showToast('头像已更新');};reader.onerror=()=>window.showToast('图片读取失败');reader.readAsDataURL(file);avatarFileInput.value='';});}
-                document.getElementById('clearCacheBtn').onclick=async()=>{if(await window.showConfirm('清除缓存','确定清除当前用户的所有本地设置吗？（云端数据不受影响）')){if(currentUser){localStorage.removeItem(getUserDataKey(currentUser.id));localStorage.removeItem(getSettingsKey(currentUser.id));localStorage.removeItem(CHAT_CACHE_KEY);}window.showToast('缓存已清除，即将刷新...');setTimeout(()=>location.reload(),400);}};
+                document.getElementById('clearCacheBtn').onclick=async()=>{if(await window.showConfirm('清除缓存','确定清除当前用户的所有本地设置吗？（云端数据不受影响）')){if(currentUser){localStorage.removeItem(getUserDataKey(currentUser.id));localStorage.removeItem(getSettingsKey(currentUser.id));localStorage.removeItem(CHAT_CACHE_KEY(currentUser.id));}window.showToast('缓存已清除，即将刷新...');setTimeout(()=>location.reload(),400);}};
                 document.getElementById('logoutBtn').onclick=async()=>{if(await window.showConfirm('退出登录','确定要退出登录吗？')){unsubscribeChat();stopChatAutoRefresh();if(stream){stream.getTracks().forEach(t=>t.stop());stream=null;}localStorage.removeItem(SESSION_KEY);if(window.stopCameraFn)window.stopCameraFn();document.getElementById('appMain').style.display='none';document.getElementById('loginContainer').style.display='flex';document.getElementById('registerContainer').style.display='none';isAppInitialized=false;currentUser=null;window.showToast('已退出登录');}};
 
                 document.getElementById('chatSendBtn').addEventListener('click',sendChatMessage);
@@ -664,7 +798,7 @@
                 let scanning=false,animId=null,lastScanData='',cooldownUntil=0;
                 function getCooldown(){return (settings.scanCooldown||2.5)*1000;}
                 function parseSmart(str){const parts=str.trim().split(/[ ,\t|]+/);if(parts.length>=2){let qty=parseInt(parts[1].replace(/[^0-9]/g,''))||1;return{part:parts[0],qty,mpn:parts[2]||''};}return{part:str,qty:1,mpn:''};}
-                function fillFields(raw){let{part,qty,mpn}=parseSmart(raw);if(part.length>1)part=part.substring(1);else if(part.length===1)part='';partInput.value=part;qtyInput.value=qty;mpnInput.value=mpn;}
+                function fillFields(raw){let{part,qty,mpn}=parseSmart(raw);partInput.value=part;qtyInput.value=qty;mpnInput.value=mpn;}
                 async function performSave(){const part=partInput.value.trim();let baseQty=parseInt(qtyInput.value,10)||1;const mul=parseInt(multiplierSelect.value,10)||1;const mpn=mpnInput.value.trim();if(!part){window.showToast('❌ 料号不能为空');return false;}const finalQty=baseQty*mul;const ok=await addRecord(part,finalQty,mpn);if(ok){partInput.value='';qtyInput.value='1';mpnInput.value='';}return ok;}
                 function handleScan(data){const now=Date.now();if(data===lastScanData&&now<cooldownUntil)return;lastScanData=data;cooldownUntil=now+getCooldown();resultContent.innerText=data;resultCard.style.display='block';fillFields(data);const line=document.getElementById('scanLine');if(line){line.classList.add('cooling');setTimeout(()=>line.classList.remove('cooling'),getCooldown());}if(settings.soundEnabled){initAudio();playBeep();}if(settings.autoSave){performSave().then(saved=>{if(saved)resultCard.style.display='none';});}else window.showToast('✅ 识别成功');}
                 async function scanFrame(){if(!scanning||!video.readyState)return;let w=video.videoWidth,h=video.videoHeight;if(!w||!h){animId=requestAnimationFrame(scanFrame);return;}const maxDim=640;if(w>maxDim||h>maxDim){const r=Math.min(maxDim/w,maxDim/h);w*=r;h*=r;}canvas.width=w;canvas.height=h;ctx.drawImage(video,0,0,w,h);const imgData=ctx.getImageData(0,0,w,h);const code=jsQR(imgData.data,w,h,{inversionAttempts:'dontInvert'});if(code&&code.data)handleScan(code.data);animId=requestAnimationFrame(scanFrame);}
