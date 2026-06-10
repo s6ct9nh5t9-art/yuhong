@@ -7,9 +7,12 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="apple-touch-icon" href="icon.png">
     <title>L6仓库管理系统</title>
-    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
-    <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js">
+    </script>
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js">
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2">
+    </script>
     <style>
         :root {
             --bg: #f5f7fb;
@@ -188,6 +191,11 @@
 
         .progress-container { width:100%; background: #ddd; border-radius: 8px; height: 12px; margin: 8px 0; display: none; }
         .progress-bar { width: 0%; height: 12px; background: var(--primary); border-radius: 8px; transition: width 0.2s; }
+        
+        /* 语音按钮样式 */
+        #voiceQuantityBtn { font-size:0.9rem; padding:4px 8px; margin-left:auto; }
+        #voiceQuantityBtn.listening { color: var(--danger); animation: pulse 1s infinite; }
+        @keyframes pulse { 0%{opacity:1;} 50%{opacity:0.5;} 100%{opacity:1;} }
     </style>
 </head>
 <body>
@@ -250,7 +258,14 @@
                         <div>📦 解析字段 (数量×倍数)</div>
                         <div style="display:flex;flex-wrap:wrap;gap:10px;">
                             <div class="field-item"><label>料号</label><input type="text" id="partNumber" placeholder="扫码自动填入" readonly></div>
-                            <div class="field-item"><label>数量</label><input type="number" id="quantity" placeholder="数量" value="1" min="1"></div>
+                            <!-- 修改后的数量字段：标签与语音按钮平齐 -->
+                            <div class="field-item">
+                                <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:4px;">
+                                    <label style="margin-bottom:0;">数量</label>
+                                    <button class="btn btn-sm btn-outline" id="voiceQuantityBtn" title="语音输入数量（5秒）">🎤</button>
+                                </div>
+                                <input type="number" id="quantity" placeholder="数量" value="1" min="1">
+                            </div>
                         </div>
                         <div class="multiplier-group">
                             <label>数量倍数</label>
@@ -417,7 +432,7 @@
                     <details class="card" style="margin-top:12px;"><summary>关于</summary>
                         <div style="padding:8px 0;">
                             <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);"><span>开发者</span><span>于洪章</span></div>
-                            <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);"><span>版本</span><span>V1.0.46 头像同步版</span></div>
+                            <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);"><span>版本</span><span>V1.0.45 完整版</span></div>
                             <div style="display:flex;justify-content:space-between;padding:8px 0;"><span>版本日期</span><span>2026-06-10</span></div>
                         </div>
                     </details>
@@ -521,14 +536,7 @@
                 URL.revokeObjectURL(url);
             }
 
-            function loadLocalData(){
-                if(!currentUser)return;
-                const u=localStorage.getItem(getUserDataKey(currentUser.id));
-                if(u)userData=JSON.parse(u);
-                else userData={name:currentUser.real_name||currentUser.username,avatar:'👤'};
-                const s=localStorage.getItem(getSettingsKey(currentUser.id));
-                if(s)settings={...settings,...JSON.parse(s)};
-            }
+            function loadLocalData(){if(!currentUser)return;const u=localStorage.getItem(getUserDataKey(currentUser.id));if(u)userData=JSON.parse(u);else userData={name:currentUser.real_name||currentUser.username,avatar:'👤'};const s=localStorage.getItem(getSettingsKey(currentUser.id));if(s)settings={...settings,...JSON.parse(s)};}
             function saveUserData(){if(currentUser)localStorage.setItem(getUserDataKey(currentUser.id),JSON.stringify(userData));}
             function saveSettings(){if(currentUser)localStorage.setItem(getSettingsKey(currentUser.id),JSON.stringify(settings));}
             function saveSession(){if(currentUser)localStorage.setItem(SESSION_KEY,JSON.stringify(currentUser));else localStorage.removeItem(SESSION_KEY);}
@@ -551,121 +559,25 @@
                 document.getElementById('scanWindowSizeRange').value=settings.scanWindowSize;
                 document.getElementById('scanWindowSizeValue').innerText=settings.scanWindowSize+'%';
             }
-            function updateProfileUI(){
-                const a=document.getElementById('avatarDisplay');
-                if(a){
-                    const av=userData.avatar||'👤';
-                    // 支持 http/https 开头的图片URL，也兼容旧的 data URL
-                    if(av.startsWith('http') || av.startsWith('data:image')){
-                        a.innerHTML=`<img src="${av}" alt="头像">`;
-                    } else {
-                        a.textContent=av;
-                    }
-                }
-                document.getElementById('displayName').textContent=userData.name;
-                document.getElementById('displayUsername').textContent=currentUser?currentUser.username:'';
-            }
+            function updateProfileUI(){const a=document.getElementById('avatarDisplay');if(a){const av=userData.avatar||'👤';if(av.startsWith('data:image'))a.innerHTML=`<img src="${av}" alt="头像">`;else a.textContent=av;}document.getElementById('displayName').textContent=userData.name;document.getElementById('displayUsername').textContent=currentUser?currentUser.username:'';}
             function escapeHtml(s){return String(s).replace(/[&<>]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;'})[m]);}
 
-            // ---------- 头像上传并同步数据库 ----------
-            async function uploadAndUpdateAvatar(file) {
-                if (!currentUser || !file) return false;
-                // 1. 上传到 Supabase Storage
-                const fileName = `${currentUser.id}_${Date.now()}.jpg`;
-                const { error: uploadError } = await supabaseClient.storage
-                    .from('avatars')
-                    .upload(fileName, file, {
-                        cacheControl: '3600',
-                        upsert: false
-                    });
-                if (uploadError) {
-                    window.showToast('头像上传失败: ' + uploadError.message);
-                    return false;
-                }
-                // 2. 获取公开URL
-                const { data: urlData } = supabaseClient.storage
-                    .from('avatars')
-                    .getPublicUrl(fileName);
-                const avatarUrl = urlData.publicUrl;
-                // 3. 更新数据库 avatar_url
-                const { data, error } = await supabaseClient.rpc('update_my_profile', {
-                    p_user_id: currentUser.id,
-                    p_avatar_url: avatarUrl
-                });
-                if (error || (data && data.success === false)) {
-                    window.showToast('头像保存失败: ' + (error?.message || data?.message));
-                    return false;
-                }
-                // 4. 更新本地 userData
-                userData.avatar = avatarUrl;
-                saveUserData();
-                updateProfileUI();
-                window.showToast('头像已更新');
-                return true;
-            }
+            async function addRecord(part,qty,mpn=''){if(!currentUser)return false;const today=getTodayString(),time=new Date().toTimeString().slice(0,5);const{error}=await supabaseClient.from('scan_records').insert({user_id:currentUser.id,date:today,time,part,qty,mpn});if(error){window.showToast('❌ 保存失败: '+error.message);return false;}window.showToast(`✅ 已保存 ${part} × ${qty}`);return true;}
+            async function getRecordsByDate(dateStr){if(!currentUser)return[];const{data,error}=await supabaseClient.from('scan_records').select('*').eq('date',dateStr).eq('user_id',currentUser.id).order('time',{ascending:true});if(error){window.showToast('查询失败: '+error.message);return[];}return data||[];}
+            async function deleteRecordById(id){if(!currentUser)return false;const{error}=await supabaseClient.from('scan_records').delete().eq('id',id).eq('user_id',currentUser.id);if(error){window.showToast('删除失败: '+error.message);return false;}return true;}
+            async function deleteAllRecordsByDate(dateStr){if(!currentUser)return false;const{error}=await supabaseClient.from('scan_records').delete().eq('date',dateStr).eq('user_id',currentUser.id);if(error){window.showToast('删除失败: '+error.message);return false;}return true;}
 
-            async function addRecord(part,qty,mpn=''){
-                if(!currentUser)return false;
-                const today=getTodayString(),time=new Date().toTimeString().slice(0,5);
-                const{error}=await supabaseClient.from('scan_records').insert({user_id:currentUser.id,date:today,time,part,qty,mpn});
-                if(error){window.showToast('❌ 保存失败: '+error.message);return false;}
-                window.showToast(`✅ 已保存 ${part} × ${qty}`);
-                return true;
-            }
-            async function getRecordsByDate(dateStr){
-                if(!currentUser)return[];
-                const{data,error}=await supabaseClient.from('scan_records').select('*').eq('date',dateStr).eq('user_id',currentUser.id).order('time',{ascending:true});
-                if(error){window.showToast('查询失败: '+error.message);return[];}
-                return data||[];
-            }
-            async function deleteRecordById(id){
-                if(!currentUser)return false;
-                const{error}=await supabaseClient.from('scan_records').delete().eq('id',id).eq('user_id',currentUser.id);
-                if(error){window.showToast('删除失败: '+error.message);return false;}
-                return true;
-            }
-            async function deleteAllRecordsByDate(dateStr){
-                if(!currentUser)return false;
-                const{error}=await supabaseClient.from('scan_records').delete().eq('date',dateStr).eq('user_id',currentUser.id);
-                if(error){window.showToast('删除失败: '+error.message);return false;}
-                return true;
-            }
-
-            async function getLocationByPart(part){
-                const{data,error}=await supabaseClient.from('locations').select('location').eq('part',part).maybeSingle();
-                if(error){window.showToast('查询储位失败: '+error.message);return null;}
-                return data?data.location:null;
-            }
-            async function searchLocationsBySuffix(suffix){
-                const{data,error}=await supabaseClient.from('locations').select('part,location').ilike('part',`%${suffix}`).limit(20);
-                if(error){window.showToast('搜索失败: '+error.message);return[];}
-                return data||[];
-            }
-            async function upsertLocation(part,location){
-                const{error}=await supabaseClient.from('locations').upsert({part,location,updated_at:new Date().toISOString()},{onConflict:'part'});
-                if(error){window.showToast('储位保存失败: '+error.message);return false;}
-                return true;
-            }
-            async function deleteLocationByPart(part){
-                const{error}=await supabaseClient.from('locations').delete().eq('part',part);
-                if(error){window.showToast('删除储位失败: '+error.message);return false;}
-                return true;
-            }
+            async function getLocationByPart(part){const{data,error}=await supabaseClient.from('locations').select('location').eq('part',part).maybeSingle();if(error){window.showToast('查询储位失败: '+error.message);return null;}return data?data.location:null;}
+            async function searchLocationsBySuffix(suffix){const{data,error}=await supabaseClient.from('locations').select('part,location').ilike('part',`%${suffix}`).limit(20);if(error){window.showToast('搜索失败: '+error.message);return[];}return data||[];}
+            async function upsertLocation(part,location){const{error}=await supabaseClient.from('locations').upsert({part,location,updated_at:new Date().toISOString()},{onConflict:'part'});if(error){window.showToast('储位保存失败: '+error.message);return false;}return true;}
+            async function deleteLocationByPart(part){const{error}=await supabaseClient.from('locations').delete().eq('part',part);if(error){window.showToast('删除储位失败: '+error.message);return false;}return true;}
 
             async function renderQueryRecords(){
                 const c=document.getElementById('listContainer');if(!c)return;c.innerHTML='<div class="empty-message">⏳ 加载中...</div>';
                 const records=await getRecordsByDate(viewDate);if(!records.length){c.innerHTML='<div class="empty-message">📭 暂无记录</div>';return;}
-                if(queryMode==='detail'){
-                    c.innerHTML=records.map(r=>`<div class="list-item"><div class="item-detail"><span class="item-part">🔖 ${escapeHtml(r.part)}</span><span class="item-meta">${r.mpn?`MPN:${escapeHtml(r.mpn)}`:''} 🕒 ${r.time}</span></div><span class="item-qty">✕ ${r.qty}</span><button class="delete-btn" data-id="${r.id}">🗑️</button></div>`).join('');
-                }
-                else if(queryMode==='summary_by_part'){
-                    const m=new Map();records.forEach(r=>m.set(r.part,(m.get(r.part)||0)+r.qty));
-                    c.innerHTML=Array.from(m.entries()).map(([p,t])=>`<div class="list-item"><div class="item-detail"><span class="item-part">🔖 ${escapeHtml(p)}</span><span class="item-meta">料号汇总</span></div><span class="item-qty">合计 ${t}</span></div>`).join('');
-                }
-                else{
-                    const m=new Map();records.forEach(r=>{const k=`${r.part}||${r.mpn||''}`;m.set(k,(m.get(k)||0)+r.qty);});
-                    c.innerHTML=Array.from(m.entries()).map(([k,t])=>{const[p,mp]=k.split('||');return`<div class="list-item"><div class="item-detail"><span class="item-part">🔖 ${escapeHtml(p)}</span><span class="item-meta">${mp?`MPN:${escapeHtml(mp)}`:'无MPN'}</span></div><span class="item-qty">合计 ${t}</span></div>`;}).join('');
-                }
+                if(queryMode==='detail'){c.innerHTML=records.map(r=>`<div class="list-item"><div class="item-detail"><span class="item-part">🔖 ${escapeHtml(r.part)}</span><span class="item-meta">${r.mpn?`MPN:${escapeHtml(r.mpn)}`:''} 🕒 ${r.time}</span></div><span class="item-qty">✕ ${r.qty}</span><button class="delete-btn" data-id="${r.id}">🗑️</button></div>`).join('');}
+                else if(queryMode==='summary_by_part'){const m=new Map();records.forEach(r=>m.set(r.part,(m.get(r.part)||0)+r.qty));c.innerHTML=Array.from(m.entries()).map(([p,t])=>`<div class="list-item"><div class="item-detail"><span class="item-part">🔖 ${escapeHtml(p)}</span><span class="item-meta">料号汇总</span></div><span class="item-qty">合计 ${t}</span></div>`).join('');}
+                else{const m=new Map();records.forEach(r=>{const k=`${r.part}||${r.mpn||''}`;m.set(k,(m.get(k)||0)+r.qty);});c.innerHTML=Array.from(m.entries()).map(([k,t])=>{const[p,mp]=k.split('||');return`<div class="list-item"><div class="item-detail"><span class="item-part">🔖 ${escapeHtml(p)}</span><span class="item-meta">${mp?`MPN:${escapeHtml(mp)}`:'无MPN'}</span></div><span class="item-qty">合计 ${t}</span></div>`;}).join('');}
                 ['detailViewBtn','summaryViewBtn','mpnSummaryViewBtn'].forEach(id=>{const b=document.getElementById(id);if(b)b.classList.toggle('active',(id==='detailViewBtn'&&queryMode==='detail')||(id==='summaryViewBtn'&&queryMode==='summary_by_part')||(id==='mpnSummaryViewBtn'&&queryMode==='summary_by_mpn'));});
             }
             async function refreshLocationSearch(){
@@ -746,11 +658,7 @@
             async function triggerFocus(){if(!stream)return;const track=stream.getVideoTracks()[0];if(!track)return;try{await track.applyConstraints({advanced:[{focusMode:'single-shot'}]});window.showToast('🔍 已触发对焦');}catch(e){window.showToast('⚠️ 当前设备不支持对焦控制');}}
 
             async function initApp(){
-                if(isAppInitialized)return;isAppInitialized=true;
-                loadLocalData();
-                applySettings();
-                updateProfileUI();
-                subscribeToChat();
+                if(isAppInitialized)return;isAppInitialized=true;loadLocalData();applySettings();updateProfileUI();subscribeToChat();
                 if(currentUser&&currentUser.is_admin){const nav=document.getElementById('bottomNav');if(!document.querySelector('.nav-item[data-view="adminView"]')){const item=document.createElement('div');item.className='nav-item';item.dataset.view='adminView';item.innerHTML='👑<span>管理</span>';nav.appendChild(item);}}
                 const dateInput=document.getElementById('searchDateInput');if(dateInput)dateInput.value=getTodayString();viewDate=getTodayString();await renderQueryRecords();
                 const navs=document.querySelectorAll('.nav-item');const views={scannerPageView:document.getElementById('scannerPageView'),queryView:document.getElementById('queryView'),locationView:document.getElementById('locationView'),chatView:document.getElementById('chatView'),profileView:document.getElementById('profileView'),adminView:document.getElementById('adminView')};
@@ -884,47 +792,11 @@
 
                 document.getElementById('changePasswordBtn').onclick=()=>{document.getElementById('passwordModal').style.display='flex';};
                 document.getElementById('closePasswordModalBtn').onclick=()=>document.getElementById('passwordModal').style.display='none';
-                // 修改昵称事件（同步服务器）
                 document.getElementById('editNameBtn').onclick=()=>{document.getElementById('renameModal').style.display='flex';document.getElementById('newNicknameInput').value=userData.name;document.getElementById('renameModalError').textContent='';};
                 document.getElementById('cancelRenameBtn').onclick=()=>document.getElementById('renameModal').style.display='none';
-                document.getElementById('submitRenameBtn').onclick=async ()=>{
-                    const newName=document.getElementById('newNicknameInput').value.trim();
-                    if(!newName){document.getElementById('renameModalError').textContent='昵称不能为空';return;}
-                    // 更新本地
-                    userData.name=newName;
-                    saveUserData();
-                    updateProfileUI();
-                    // 同步到数据库（更新 real_name）
-                    const { error } = await supabaseClient.rpc('update_my_profile', {
-                        p_user_id: currentUser.id,
-                        p_real_name: newName
-                    });
-                    if (error) {
-                        window.showToast('服务器同步失败，但本地已更新');
-                        console.error('更新昵称失败:', error);
-                    } else {
-                        window.showToast('昵称已更新');
-                    }
-                    document.getElementById('renameModal').style.display='none';
-                };
-
-                // 头像上传事件
+                document.getElementById('submitRenameBtn').onclick=()=>{const newName=document.getElementById('newNicknameInput').value.trim();if(!newName){document.getElementById('renameModalError').textContent='昵称不能为空';return;}userData.name=newName;saveUserData();updateProfileUI();document.getElementById('renameModal').style.display='none';window.showToast('昵称已更新');};
                 const avatarDisplay=document.getElementById('avatarDisplay'),avatarFileInput=document.getElementById('avatarFileInput');
-                if(avatarDisplay&&avatarFileInput){
-                    avatarDisplay.addEventListener('click',()=>avatarFileInput.click());
-                    avatarFileInput.addEventListener('change', async (e)=>{
-                        const file=e.target.files[0];
-                        if(!file)return;
-                        if(!file.type.startsWith('image/')){
-                            window.showToast('请选择图片文件');
-                            avatarFileInput.value='';
-                            return;
-                        }
-                        await uploadAndUpdateAvatar(file);
-                        avatarFileInput.value='';
-                    });
-                }
-
+                if(avatarDisplay&&avatarFileInput){avatarDisplay.addEventListener('click',()=>avatarFileInput.click());avatarFileInput.addEventListener('change',(e)=>{const file=e.target.files[0];if(!file)return;if(!file.type.startsWith('image/')){window.showToast('请选择图片文件');avatarFileInput.value='';return;}const reader=new FileReader();reader.onload=(ev)=>{userData.avatar=ev.target.result;saveUserData();updateProfileUI();window.showToast('头像已更新');};reader.onerror=()=>window.showToast('图片读取失败');reader.readAsDataURL(file);avatarFileInput.value='';});}
                 document.getElementById('clearCacheBtn').onclick=async()=>{if(await window.showConfirm('清除缓存','确定清除当前用户的所有本地设置吗？（云端数据不受影响）')){if(currentUser){localStorage.removeItem(getUserDataKey(currentUser.id));localStorage.removeItem(getSettingsKey(currentUser.id));localStorage.removeItem(CHAT_CACHE_KEY(currentUser.id));}window.showToast('缓存已清除，即将刷新...');setTimeout(()=>location.reload(),400);}};
                 document.getElementById('logoutBtn').onclick=async()=>{if(await window.showConfirm('退出登录','确定要退出登录吗？')){unsubscribeChat();stopChatAutoRefresh();if(stream){stream.getTracks().forEach(t=>t.stop());stream=null;}localStorage.removeItem(SESSION_KEY);if(window.stopCameraFn)window.stopCameraFn();document.getElementById('appMain').style.display='none';document.getElementById('loginContainer').style.display='flex';document.getElementById('registerContainer').style.display='none';isAppInitialized=false;currentUser=null;window.showToast('已退出登录');}};
 
@@ -961,6 +833,65 @@
                 btnCancel.onclick=()=>{partInput.value='';qtyInput.value='1';mpnInput.value='';resultCard.style.display='none';};
                 document.getElementById('btnCopy')?.addEventListener('click',()=>{const t=resultContent?.innerText;if(t)navigator.clipboard.writeText(t).then(()=>window.showToast('已复制')).catch(()=>window.showToast('复制失败'));});
                 document.getElementById('btnClearResult')?.addEventListener('click',()=>{resultCard.style.display='none';resultContent.innerText='';lastScanData='';});
+
+                // ---------- 语音输入数量（5秒超时） ----------
+                const voiceBtn = document.getElementById('voiceQuantityBtn');
+                if (voiceBtn && ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window)) {
+                    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+                    const recognition = new SpeechRecognition();
+                    recognition.lang = 'zh-CN';
+                    recognition.continuous = false;
+                    recognition.interimResults = false;
+                    let voiceTimeout;
+
+                    recognition.onstart = () => {
+                        voiceTimeout = setTimeout(() => {
+                            recognition.abort();
+                            window.showToast('⏰ 语音输入超时');
+                        }, 5000);
+                    };
+
+                    recognition.onresult = (event) => {
+                        clearTimeout(voiceTimeout);
+                        const transcript = event.results[0][0].transcript.trim();
+                        let num = parseInt(transcript, 10);
+                        if (isNaN(num)) {
+                            const map = { '零':0,'一':1,'二':2,'三':3,'四':4,'五':5,'六':6,'七':7,'八':8,'九':9,'十':10 };
+                            if (map[transcript] !== undefined) num = map[transcript];
+                            else if (transcript === '百') num = 100;
+                            else if (transcript === '千') num = 1000;
+                        }
+                        if (!isNaN(num) && num > 0) {
+                            document.getElementById('quantity').value = num;
+                            window.showToast('数量已设为 ' + num);
+                        } else {
+                            window.showToast('未识别到有效数字');
+                        }
+                        voiceBtn.classList.remove('listening');
+                    };
+
+                    recognition.onerror = (event) => {
+                        clearTimeout(voiceTimeout);
+                        if (event.error !== 'aborted') {
+                            window.showToast('语音识别失败: ' + event.error);
+                        }
+                        voiceBtn.classList.remove('listening');
+                    };
+
+                    recognition.onend = () => {
+                        clearTimeout(voiceTimeout);
+                        voiceBtn.classList.remove('listening');
+                    };
+
+                    voiceBtn.addEventListener('click', () => {
+                        if (voiceBtn.classList.contains('listening')) return;
+                        voiceBtn.classList.add('listening');
+                        recognition.start();
+                        window.showToast('请说出数量（5秒）...');
+                    });
+                } else if (voiceBtn) {
+                    voiceBtn.style.display = 'none';
+                }
             }
 
             // 全局按钮点击反馈增强
@@ -977,84 +908,15 @@
                 if (btn) btn.classList.remove('clicked');
             });
 
-            window.handleLogin=async function(){
-                const username=document.getElementById('loginUsernameInput').value.trim(),
-                      password=document.getElementById('loginPasswordInput').value;
-                const err=document.getElementById('loginError');
-                err.textContent='';
-                if(!username||!password){err.textContent='请输入用户名和密码';return;}
-                err.textContent='登录中...';
-                try{
-                    const{data,error}=await supabaseClient.rpc('login_user',{p_username:username,p_password:password});
-                    if(error){err.textContent='登录失败: '+error.message;return;}
-                    if(!data.success){err.textContent=data.message;return;}
-                    currentUser={id:data.id,username:data.username,real_name:data.real_name,is_admin:data.is_admin};
-                    // 同步服务器头像与昵称到本地
-                    userData.name = data.real_name || data.username;
-                    userData.avatar = data.avatar_url || '👤';
-                    saveUserData();
-                    updateProfileUI();
-                    saveSession();
-                    showMainApp();
-                }catch(e){err.textContent='登录异常: '+e.message;}
-            };
+            window.handleLogin=async function(){const username=document.getElementById('loginUsernameInput').value.trim(),password=document.getElementById('loginPasswordInput').value;const err=document.getElementById('loginError');err.textContent='';if(!username||!password){err.textContent='请输入用户名和密码';return;}err.textContent='登录中...';try{const{data,error}=await supabaseClient.rpc('login_user',{p_username:username,p_password:password});if(error){err.textContent='登录失败: '+error.message;return;}if(!data.success){err.textContent=data.message;return;}currentUser={id:data.id,username:data.username,real_name:data.real_name,is_admin:data.is_admin};saveSession();showMainApp();}catch(e){err.textContent='登录异常: '+e.message;}};
+            window.handleRegister=async function(){const username=document.getElementById('registerUsernameInput').value.trim(),realName=document.getElementById('registerRealNameInput').value.trim(),password=document.getElementById('registerPasswordInput').value,confirm=document.getElementById('registerPasswordConfirmInput').value;const err=document.getElementById('registerError');err.textContent='';if(!username||!realName||!password||!confirm){err.textContent='所有字段均为必填';return;}if(!/^[a-zA-Z0-9_]+$/.test(username)){err.textContent='用户名只能包含英文字母、数字和下划线';return;}if(password.length<4){err.textContent='密码至少4位';return;}if(password!==confirm){err.textContent='两次密码不一致';return;}err.textContent='注册中...';try{const{data,error}=await supabaseClient.rpc('register_user',{p_username:username,p_password:password,p_real_name:realName});if(error){err.textContent='注册失败: '+error.message;return;}if(!data.success){err.textContent=data.message;return;}currentUser={id:data.id,username:data.username,real_name:data.real_name,is_admin:false};saveSession();showMainApp();}catch(e){err.textContent='注册异常: '+e.message;}};
 
-            window.handleRegister=async function(){
-                const username=document.getElementById('registerUsernameInput').value.trim(),
-                      realName=document.getElementById('registerRealNameInput').value.trim(),
-                      password=document.getElementById('registerPasswordInput').value,
-                      confirm=document.getElementById('registerPasswordConfirmInput').value;
-                const err=document.getElementById('registerError');
-                err.textContent='';
-                if(!username||!realName||!password||!confirm){err.textContent='所有字段均为必填';return;}
-                if(!/^[a-zA-Z0-9_]+$/.test(username)){err.textContent='用户名只能包含英文字母、数字和下划线';return;}
-                if(password.length<4){err.textContent='密码至少4位';return;}
-                if(password!==confirm){err.textContent='两次密码不一致';return;}
-                err.textContent='注册中...';
-                try{
-                    const{data,error}=await supabaseClient.rpc('register_user',{p_username:username,p_password:password,p_real_name:realName});
-                    if(error){err.textContent='注册失败: '+error.message;return;}
-                    if(!data.success){err.textContent=data.message;return;}
-                    currentUser={id:data.id,username:data.username,real_name:data.real_name,is_admin:false};
-                    userData.name = data.real_name || data.username;
-                    userData.avatar = data.avatar_url || '👤';
-                    saveUserData();
-                    updateProfileUI();
-                    saveSession();
-                    showMainApp();
-                }catch(e){err.textContent='注册异常: '+e.message;}
-            };
+            function showMainApp(){document.getElementById('loginContainer').style.display='none';document.getElementById('registerContainer').style.display='none';document.getElementById('appMain').style.display='block';if(!isAppInitialized){initApp();initScanner();}}
 
-            function showMainApp(){
-                document.getElementById('loginContainer').style.display='none';
-                document.getElementById('registerContainer').style.display='none';
-                document.getElementById('appMain').style.display='block';
-                if(!isAppInitialized){
-                    initApp();
-                    initScanner();
-                }
-            }
+            document.getElementById('goToRegisterBtn').addEventListener('click',()=>{document.getElementById('loginContainer').style.display='none';document.getElementById('registerContainer').style.display='flex';document.getElementById('registerError').textContent='';});
+            document.getElementById('goToLoginBtn').addEventListener('click',()=>{document.getElementById('registerContainer').style.display='none';document.getElementById('loginContainer').style.display='flex';document.getElementById('loginError').textContent='';});
 
-            document.getElementById('goToRegisterBtn').addEventListener('click',()=>{
-                document.getElementById('loginContainer').style.display='none';
-                document.getElementById('registerContainer').style.display='flex';
-                document.getElementById('registerError').textContent='';
-            });
-            document.getElementById('goToLoginBtn').addEventListener('click',()=>{
-                document.getElementById('registerContainer').style.display='none';
-                document.getElementById('loginContainer').style.display='flex';
-                document.getElementById('loginError').textContent='';
-            });
-
-            (async()=>{
-                const saved=loadSession();
-                if(saved&&saved.id&&saved.username){
-                    currentUser=saved;
-                    showMainApp();
-                } else {
-                    document.getElementById('loginContainer').style.display='flex';
-                }
-            })();
+            (async()=>{const saved=loadSession();if(saved&&saved.id&&saved.username){currentUser=saved;showMainApp();}else document.getElementById('loginContainer').style.display='flex';})();
         })();
     </script>
 </body>
