@@ -192,8 +192,12 @@
         .progress-container { width:100%; background: #ddd; border-radius: 8px; height: 12px; margin: 8px 0; display: none; }
         .progress-bar { width: 0%; height: 12px; background: var(--primary); border-radius: 8px; transition: width 0.2s; }
         
-        /* 语音按钮样式 */
-        #voiceQuantityBtn { font-size:0.9rem; padding:4px 8px; margin-left:auto; }
+        /* 语音按钮变大 */
+        #voiceQuantityBtn {
+            font-size: 1.5rem;
+            padding: 8px 16px;
+            margin-left: auto;
+        }
         #voiceQuantityBtn.listening { color: var(--danger); animation: pulse 1s infinite; }
         @keyframes pulse { 0%{opacity:1;} 50%{opacity:0.5;} 100%{opacity:1;} }
     </style>
@@ -258,11 +262,11 @@
                         <div>📦 解析字段 (数量×倍数)</div>
                         <div style="display:flex;flex-wrap:wrap;gap:10px;">
                             <div class="field-item"><label>料号</label><input type="text" id="partNumber" placeholder="扫码自动填入" readonly></div>
-                            <!-- 修改后的数量字段：标签与语音按钮平齐 -->
+                            <!-- 数量字段：标签与语音按钮平齐，按钮变大 -->
                             <div class="field-item">
                                 <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:4px;">
                                     <label style="margin-bottom:0;">数量</label>
-                                    <button class="btn btn-sm btn-outline" id="voiceQuantityBtn" title="语音输入数量（5秒）">🎤</button>
+                                    <button class="btn btn-sm btn-outline" id="voiceQuantityBtn" title="语音输入数量（3秒）">🎤</button>
                                 </div>
                                 <input type="number" id="quantity" placeholder="数量" value="1" min="1">
                             </div>
@@ -432,7 +436,7 @@
                     <details class="card" style="margin-top:12px;"><summary>关于</summary>
                         <div style="padding:8px 0;">
                             <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);"><span>开发者</span><span>于洪章</span></div>
-                            <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);"><span>版本</span><span>V1.0.45 完整版</span></div>
+                            <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);"><span>版本</span><span>V1.0.46 苹果系统版</span></div>
                             <div style="display:flex;justify-content:space-between;padding:8px 0;"><span>版本日期</span><span>2026-06-10</span></div>
                         </div>
                     </details>
@@ -834,7 +838,7 @@
                 document.getElementById('btnCopy')?.addEventListener('click',()=>{const t=resultContent?.innerText;if(t)navigator.clipboard.writeText(t).then(()=>window.showToast('已复制')).catch(()=>window.showToast('复制失败'));});
                 document.getElementById('btnClearResult')?.addEventListener('click',()=>{resultCard.style.display='none';resultContent.innerText='';lastScanData='';});
 
-                // ---------- 语音输入数量（5秒超时） ----------
+                // ---------- 语音输入数量（3秒超时，iOS 16.7 兼容） ----------
                 const voiceBtn = document.getElementById('voiceQuantityBtn');
                 if (voiceBtn && ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window)) {
                     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -848,7 +852,7 @@
                         voiceTimeout = setTimeout(() => {
                             recognition.abort();
                             window.showToast('⏰ 语音输入超时');
-                        }, 5000);
+                        }, 3000);
                     };
 
                     recognition.onresult = (event) => {
@@ -887,7 +891,7 @@
                         if (voiceBtn.classList.contains('listening')) return;
                         voiceBtn.classList.add('listening');
                         recognition.start();
-                        window.showToast('请说出数量（5秒）...');
+                        window.showToast('请说出数量（3秒）...');
                     });
                 } else if (voiceBtn) {
                     voiceBtn.style.display = 'none';
