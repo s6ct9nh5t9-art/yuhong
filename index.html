@@ -266,7 +266,7 @@
                             <div class="field-item">
                                 <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:4px;">
                                     <label style="margin-bottom:0;">数量</label>
-                                    <button class="btn btn-sm btn-outline" id="voiceQuantityBtn" title="语音输入数量（3秒）">🎤</button>
+                                    <button class="btn btn-sm btn-outline" id="voiceQuantityBtn" title="语音输入数量">🎤</button>
                                 </div>
                                 <input type="number" id="quantity" placeholder="数量" value="1" min="1">
                             </div>
@@ -383,7 +383,8 @@
                             <option value="0.85rem">小</option><option value="1rem" selected>中</option><option value="1.15rem">大</option>
                         </select>
                     </div>
-                    <details class="card camera-sub" style="margin-top:12px;"><summary>相机设置</summary>
+                    <details class="card camera-sub" style="margin-top:12px;">
+                        <summary>相机设置</summary>
                         <div style="padding:0 0 8px 0;">
                             <div class="setting-item">
                                 <div><span class="setting-label">摄像头预览大小</span></div>
@@ -423,6 +424,17 @@
                                     <option value="manual">手动对焦</option>
                                 </select>
                             </div>
+                            <!-- 语音识别超时设置 -->
+                            <div class="setting-item">
+                                <div><span class="setting-label">语音识别超时</span></div>
+                                <select id="voiceTimeoutSelect">
+                                    <option value="2">2秒</option>
+                                    <option value="3" selected>3秒</option>
+                                    <option value="4">4秒</option>
+                                    <option value="5">5秒</option>
+                                    <option value="6">6秒</option>
+                                </select>
+                            </div>
                         </div>
                     </details>
                     <div class="setting-item">
@@ -436,7 +448,7 @@
                     <details class="card" style="margin-top:12px;"><summary>关于</summary>
                         <div style="padding:8px 0;">
                             <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);"><span>开发者</span><span>于洪章</span></div>
-                            <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);"><span>版本</span><span>V1.0.46 苹果系统版</span></div>
+                            <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);"><span>版本</span><span>V1.0.47 语音设置版</span></div>
                             <div style="display:flex;justify-content:space-between;padding:8px 0;"><span>版本日期</span><span>2026-06-10</span></div>
                         </div>
                     </details>
@@ -496,7 +508,19 @@
             let currentUser = null, isAppInitialized = false, chatChannel = null, chatRefreshTimer = null, lastNotificationId = null, stream = null;
             const getUserDataKey = uid => `wh_user_${uid}`, getSettingsKey = uid => `wh_set_${uid}`, SESSION_KEY = 'wh_session', CHAT_CACHE_KEY = uid => `chat_cache_${uid}`;
             let userData = { name: '', avatar: '👤' };
-            let settings = { nightMode: false, fontSize: '1rem', cameraPreviewHeight: 50, scanWindowSize: 45, scanCooldown: 2.5, toastDuration: 2.2, soundEnabled: true, autoOpenCamera: false, autoSave: false, focusMode: 'continuous' };
+            let settings = {
+                nightMode: false,
+                fontSize: '1rem',
+                cameraPreviewHeight: 50,
+                scanWindowSize: 45,
+                scanCooldown: 2.5,
+                toastDuration: 2.2,
+                soundEnabled: true,
+                autoOpenCamera: false,
+                autoSave: false,
+                focusMode: 'continuous',
+                voiceTimeout: 3          // 新增语音超时秒数，默认3
+            };
             let viewDate = getTodayString(), queryMode = 'detail';
 
             window.showToast = m => { const t = document.getElementById('toastDom'); if(t) { t.textContent=m; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), (settings.toastDuration||2.2)*1000); }};
@@ -554,6 +578,7 @@
                 document.getElementById('autoOpenCameraSelect').value=settings.autoOpenCamera?'auto':'manual';
                 document.getElementById('soundSwitchTrack')?.classList.toggle('on',settings.soundEnabled);
                 document.getElementById('focusModeSelect').value=settings.focusMode||'continuous';
+                document.getElementById('voiceTimeoutSelect').value=settings.voiceTimeout;
                 document.documentElement.style.setProperty('--font-size-base',settings.fontSize);
                 document.documentElement.style.setProperty('--camera-preview-height',(settings.cameraPreviewHeight||50)+'vh');
                 document.documentElement.style.setProperty('--scan-window-size',(settings.scanWindowSize||45)+'%');
@@ -793,6 +818,7 @@
                 document.getElementById('soundSwitchTrack').onclick=()=>{settings.soundEnabled=!settings.soundEnabled;saveSettings();document.getElementById('soundSwitchTrack').classList.toggle('on',settings.soundEnabled);};
                 document.getElementById('autoOpenCameraSelect').onchange=e=>{settings.autoOpenCamera=e.target.value==='auto';saveSettings();};
                 document.getElementById('focusModeSelect').onchange=e=>{settings.focusMode=e.target.value;saveSettings();};
+                document.getElementById('voiceTimeoutSelect').onchange=e=>{settings.voiceTimeout=parseInt(e.target.value);saveSettings();};
 
                 document.getElementById('changePasswordBtn').onclick=()=>{document.getElementById('passwordModal').style.display='flex';};
                 document.getElementById('closePasswordModalBtn').onclick=()=>document.getElementById('passwordModal').style.display='none';
@@ -838,7 +864,7 @@
                 document.getElementById('btnCopy')?.addEventListener('click',()=>{const t=resultContent?.innerText;if(t)navigator.clipboard.writeText(t).then(()=>window.showToast('已复制')).catch(()=>window.showToast('复制失败'));});
                 document.getElementById('btnClearResult')?.addEventListener('click',()=>{resultCard.style.display='none';resultContent.innerText='';lastScanData='';});
 
-                // ---------- 语音输入数量（3秒超时，iOS 16.7 兼容） ----------
+                // ---------- 语音输入数量（动态超时） ----------
                 const voiceBtn = document.getElementById('voiceQuantityBtn');
                 if (voiceBtn && ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window)) {
                     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -849,10 +875,11 @@
                     let voiceTimeout;
 
                     recognition.onstart = () => {
+                        const timeoutSec = (settings.voiceTimeout || 3) * 1000;
                         voiceTimeout = setTimeout(() => {
                             recognition.abort();
                             window.showToast('⏰ 语音输入超时');
-                        }, 3000);
+                        }, timeoutSec);
                     };
 
                     recognition.onresult = (event) => {
@@ -891,7 +918,7 @@
                         if (voiceBtn.classList.contains('listening')) return;
                         voiceBtn.classList.add('listening');
                         recognition.start();
-                        window.showToast('请说出数量（3秒）...');
+                        window.showToast(`请说出数量（${settings.voiceTimeout || 3}秒）...`);
                     });
                 } else if (voiceBtn) {
                     voiceBtn.style.display = 'none';
