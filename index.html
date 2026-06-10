@@ -448,7 +448,7 @@
                     <details class="card" style="margin-top:12px;"><summary>关于</summary>
                         <div style="padding:8px 0;">
                             <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);"><span>开发者</span><span>于洪章</span></div>
-                            <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);"><span>版本</span><span>V1.0.47 语音设置版</span></div>
+                            <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);"><span>版本</span><span>V1.0.48 去首字母版</span></div>
                             <div style="display:flex;justify-content:space-between;padding:8px 0;"><span>版本日期</span><span>2026-06-10</span></div>
                         </div>
                     </details>
@@ -519,7 +519,7 @@
                 autoOpenCamera: false,
                 autoSave: false,
                 focusMode: 'continuous',
-                voiceTimeout: 3          // 新增语音超时秒数，默认3
+                voiceTimeout: 3
             };
             let viewDate = getTodayString(), queryMode = 'detail';
 
@@ -847,7 +847,14 @@
                 let scanning=false,animId=null,lastScanData='',cooldownUntil=0;
                 function getCooldown(){return (settings.scanCooldown||2.5)*1000;}
                 function parseSmart(str){const parts=str.trim().split(/[ ,\t|]+/);if(parts.length>=2){let qty=parseInt(parts[1].replace(/[^0-9]/g,''))||1;return{part:parts[0],qty,mpn:parts[2]||''};}return{part:str,qty:1,mpn:''};}
-                function fillFields(raw){let{part,qty,mpn}=parseSmart(raw);partInput.value=part;qtyInput.value=qty;mpnInput.value=mpn;}
+                function fillFields(raw){
+                    let{part,qty,mpn}=parseSmart(raw);
+                    part = part && part.length > 1 ? part.substring(1) : part;
+                    mpn = mpn && mpn.length > 1 ? mpn.substring(1) : mpn;
+                    partInput.value=part;
+                    qtyInput.value=qty;
+                    mpnInput.value=mpn;
+                }
                 async function performSave(){const part=partInput.value.trim();let baseQty=parseInt(qtyInput.value,10)||1;const mul=parseInt(multiplierSelect.value,10)||1;const mpn=mpnInput.value.trim();if(!part){window.showToast('❌ 料号不能为空');return false;}const finalQty=baseQty*mul;const ok=await addRecord(part,finalQty,mpn);if(ok){partInput.value='';qtyInput.value='1';mpnInput.value='';}return ok;}
                 function handleScan(data){const now=Date.now();if(data===lastScanData&&now<cooldownUntil)return;lastScanData=data;cooldownUntil=now+getCooldown();resultContent.innerText=data;resultCard.style.display='block';fillFields(data);const line=document.getElementById('scanLine');if(line){line.classList.add('cooling');setTimeout(()=>line.classList.remove('cooling'),getCooldown());}if(settings.soundEnabled){initAudio();playBeep();}if(settings.autoSave){performSave().then(saved=>{if(saved)resultCard.style.display='none';});}else window.showToast('✅ 识别成功');}
                 async function scanFrame(){if(!scanning||!video.readyState)return;let w=video.videoWidth,h=video.videoHeight;if(!w||!h){animId=requestAnimationFrame(scanFrame);return;}const maxDim=640;if(w>maxDim||h>maxDim){const r=Math.min(maxDim/w,maxDim/h);w*=r;h*=r;}canvas.width=w;canvas.height=h;ctx.drawImage(video,0,0,w,h);const imgData=ctx.getImageData(0,0,w,h);const code=jsQR(imgData.data,w,h,{inversionAttempts:'dontInvert'});if(code&&code.data)handleScan(code.data);animId=requestAnimationFrame(scanFrame);}
