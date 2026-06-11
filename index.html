@@ -195,16 +195,20 @@
         .progress-container { width:100%; background: #ddd; border-radius: 8px; height: 12px; margin: 8px 0; display: none; }
         .progress-bar { width: 0%; height: 12px; background: var(--primary); border-radius: 8px; transition: width 0.2s; }
 
-        #voiceQuantityBtn {
-            font-size: 1.5rem;
-            padding: 8px 16px;
-            margin-left: auto;
-        }
+        #voiceQuantityBtn { font-size: 1.5rem; padding: 8px 16px; margin-left: auto; }
         #voiceQuantityBtn.listening { color: var(--danger); animation: pulse 1s infinite; }
         @keyframes pulse { 0%{opacity:1;} 50%{opacity:0.5;} 100%{opacity:1;} }
+
+        /* 俄罗斯方块游戏样式 */
+        .tetris-area { display:flex; flex-direction:column; align-items:center; gap:12px; }
+        .tetris-canvas { border:2px solid var(--primary); border-radius:14px; background:#111; max-width:100%; height:auto; }
+        .tetris-controls { display:flex; flex-wrap:wrap; gap:10px; justify-content:center; }
+        .tetris-btn { padding:12px 20px; font-size:1.2rem; border-radius:14px; background:var(--card-bg); color:var(--text); border:1px solid var(--border); cursor:pointer; min-width:60px; }
+        .tetris-score { font-size:1.1rem; font-weight:bold; }
     </style>
 </head>
 <body>
+    <!-- 登录页 -->
     <div id="loginContainer" class="auth-container">
         <h1>L6仓库管理系统</h1>
         <input type="text" id="loginUsernameInput" placeholder="用户名（英文）" autocomplete="username">
@@ -216,6 +220,7 @@
         </div>
     </div>
 
+    <!-- 注册页 -->
     <div id="registerContainer" class="auth-container" style="display:none;">
         <div>📝</div><h1>注册新账号</h1>
         <input type="text" id="registerUsernameInput" placeholder="用户名（英文）">
@@ -298,6 +303,7 @@
                 </div>
             </div>
 
+            <!-- 盘点页 -->
             <div id="queryView" class="view">
                 <div class="search-bar" style="display:flex;gap:8px;">
                     <input type="date" id="searchDateInput" style="flex:1;padding:10px;border-radius:30px;border:1px solid var(--border);background:var(--input-bg);color:var(--text);">
@@ -316,6 +322,7 @@
                 <div id="listContainer" class="list-container"><div class="empty-message">📭 请选择日期查询</div></div>
             </div>
 
+            <!-- 储位页 -->
             <div id="locationView" class="view">
                 <div class="card">
                     <div style="font-weight:600; text-align:center; font-size:1.2rem; margin-bottom:10px;">储位查询</div>
@@ -350,6 +357,7 @@
                 </details>
             </div>
 
+            <!-- 聊天页 -->
             <div id="chatView" class="view">
                 <div class="chat-messages" id="chatMessagesContainer">
                     <div class="empty-message">💬 暂无消息</div>
@@ -360,6 +368,7 @@
                 </div>
             </div>
 
+            <!-- 设置页（含游戏入口） -->
             <div id="profileView" class="view">
                 <div class="card">
                     <div class="profile-header">
@@ -428,15 +437,20 @@
                             <div class="setting-item">
                                 <div><span class="setting-label">语音识别超时</span></div>
                                 <select id="voiceTimeoutSelect">
-                                    <option value="2">2秒</option>
-                                    <option value="3" selected>3秒</option>
                                     <option value="4">4秒</option>
-                                    <option value="5">5秒</option>
+                                    <option value="5" selected>5秒</option>
                                     <option value="6">6秒</option>
+                                    <option value="7">7秒</option>
+                                    <option value="8">8秒</option>
                                 </select>
                             </div>
                         </div>
                     </details>
+                    <!-- 游戏入口 -->
+                    <div class="setting-item" id="gameEntry">
+                        <div><span class="setting-label">🎮 俄罗斯方块</span></div>
+                        <button class="btn btn-sm" id="openGameBtn">开始游戏</button>
+                    </div>
                     <div class="setting-item">
                         <div><span class="setting-label">修改密码</span></div>
                         <button class="btn btn-sm" id="changePasswordBtn">修改</button>
@@ -448,7 +462,7 @@
                     <details class="card" style="margin-top:12px;"><summary>关于</summary>
                         <div style="padding:8px 0;">
                             <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);"><span>开发者</span><span>于洪章</span></div>
-                            <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);"><span>版本</span><span>V1.0.50 苹果系统版</span></div>
+                            <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);"><span>版本</span><span>V1.0.53 苹果系统版</span></div>
                             <div style="display:flex;justify-content:space-between;padding:8px 0;"><span>版本日期</span><span>2026-06-11</span></div>
                         </div>
                     </details>
@@ -458,6 +472,30 @@
                 </div>
             </div>
 
+            <!-- 俄罗斯方块游戏页 -->
+            <div id="gameView" class="view">
+                <div class="tetris-area">
+                    <div class="tetris-score">得分：<span id="tetrisScore">0</span> | 行数：<span id="tetrisLines">0</span></div>
+                    <div style="display:flex; gap:16px; align-items:flex-start; flex-wrap:wrap; justify-content:center;">
+                        <canvas id="tetrisCanvas" class="tetris-canvas" width="200" height="400"></canvas>
+                        <div style="display:flex; flex-direction:column; gap:8px;">
+                            <canvas id="nextCanvas" class="tetris-canvas" width="80" height="80"></canvas>
+                            <span style="font-size:0.8rem;color:var(--text-secondary);">下一个</span>
+                        </div>
+                    </div>
+                    <div class="tetris-controls">
+                        <button class="tetris-btn" id="btnMoveLeft">◀</button>
+                        <button class="tetris-btn" id="btnMoveRight">▶</button>
+                        <button class="tetris-btn" id="btnMoveDown">▼</button>
+                        <button class="tetris-btn" id="btnRotate">↻</button>
+                        <button class="tetris-btn" id="btnHardDrop">⏬</button>
+                    </div>
+                    <button class="btn btn-primary" id="restartTetrisBtn">重新开始</button>
+                    <button class="btn btn-outline" id="backFromGameBtn">返回设置</button>
+                </div>
+            </div>
+
+            <!-- 管理员页 -->
             <div id="adminView" class="view">
                 <div class="card">
                     <h3 style="margin-bottom:12px;">👑 用户管理</h3>
@@ -502,7 +540,7 @@
 
         (function() {
             // 背景图缓存
-            const BG_IMAGE_URL = 'https://你的用户名.github.io/仓库名/图片.jpg'; // 请替换为你的图片链接
+            const BG_IMAGE_URL = 'https://你的用户名.github.io/仓库名/图片.jpg'; // 替换为你的图片链接
             const BG_CACHE_KEY = 'cachedBgImage';
 
             function applyBackground() {
@@ -519,17 +557,11 @@
                     const ctx = canvas.getContext('2d');
                     let w = img.width, h = img.height;
                     const maxW = 800;
-                    if (w > maxW) {
-                        h = (maxW / w) * h;
-                        w = maxW;
-                    }
-                    canvas.width = w;
-                    canvas.height = h;
+                    if (w > maxW) { h = (maxW / w) * h; w = maxW; }
+                    canvas.width = w; canvas.height = h;
                     ctx.drawImage(img, 0, 0, w, h);
                     const base64 = canvas.toDataURL('image/jpeg', 0.7);
-                    try {
-                        localStorage.setItem(BG_CACHE_KEY, base64);
-                    } catch(e) {}
+                    try { localStorage.setItem(BG_CACHE_KEY, base64); } catch(e) {}
                     document.body.style.background = `url(${base64}) no-repeat center center fixed`;
                     document.body.style.backgroundSize = 'cover';
                 };
@@ -548,9 +580,10 @@
             let settings = {
                 nightMode: false, fontSize: '1rem', cameraPreviewHeight: 50, scanWindowSize: 45,
                 scanCooldown: 2.5, toastDuration: 2.2, soundEnabled: true, autoOpenCamera: false,
-                autoSave: false, focusMode: 'continuous', voiceTimeout: 3
+                autoSave: false, focusMode: 'continuous', voiceTimeout: 5
             };
             let viewDate = getTodayString(), queryMode = 'detail';
+            let tetrisInterval = null;
 
             window.showToast = m => { const t = document.getElementById('toastDom'); if(t) { t.textContent=m; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), (settings.toastDuration||2.2)*1000); }};
             function showGlobalNotification(msg) { if(!msg||!msg.username||!msg.message) return; if(lastNotificationId===msg.id) return; lastNotificationId=msg.id; const n = document.getElementById('globalNotification'); if(!n) return; n.textContent=`${msg.username}: ${msg.message}`; n.style.display='block'; clearTimeout(window._notifTimer); window._notifTimer=setTimeout(()=>{n.style.display='none';},3000); }
@@ -619,7 +652,6 @@
             async function getRecordsByDate(dateStr){if(!currentUser)return[];const{data,error}=await supabaseClient.from('scan_records').select('*').eq('date',dateStr).eq('user_id',currentUser.id).order('time',{ascending:true});if(error){window.showToast('查询失败: '+error.message);return[];}return data||[];}
             async function deleteRecordById(id){if(!currentUser)return false;const{error}=await supabaseClient.from('scan_records').delete().eq('id',id).eq('user_id',currentUser.id);if(error){window.showToast('删除失败: '+error.message);return false;}return true;}
             async function deleteAllRecordsByDate(dateStr){if(!currentUser)return false;const{error}=await supabaseClient.from('scan_records').delete().eq('date',dateStr).eq('user_id',currentUser.id);if(error){window.showToast('删除失败: '+error.message);return false;}return true;}
-
             async function getLocationByPart(part){const{data,error}=await supabaseClient.from('locations').select('location').eq('part',part).maybeSingle();if(error){window.showToast('查询储位失败: '+error.message);return null;}return data?data.location:null;}
             async function searchLocationsBySuffix(suffix){const{data,error}=await supabaseClient.from('locations').select('part,location').ilike('part',`%${suffix}`).limit(20);if(error){window.showToast('搜索失败: '+error.message);return[];}return data||[];}
             async function upsertLocation(part,location){const{error}=await supabaseClient.from('locations').upsert({part,location,updated_at:new Date().toISOString()},{onConflict:'part'});if(error){window.showToast('储位保存失败: '+error.message);return false;}return true;}
@@ -644,11 +676,7 @@
                     return;
                 }
                 const matches = await searchLocationsBySuffix(q);
-                if (!matches.length) {
-                    res.innerHTML = '<span class="location-result-empty">未找到匹配储位</span>';
-                    window.showAlert('提示', '未找到匹配储位');
-                    return;
-                }
+                if (!matches.length) { res.innerHTML = '<span class="location-result-empty">未找到匹配储位</span>'; window.showAlert('提示', '未找到匹配储位'); return; }
                 let html = '';
                 matches.slice(0,20).forEach(({part, location}) => {
                     html += `<div class="location-result-item"><div class="location-result-row"><span class="part-label">料号</span><strong>${escapeHtml(part)}</strong><div class="loc-actions"><button data-action="edit" data-part="${escapeHtml(part)}">✏️</button><button data-action="delete" data-part="${escapeHtml(part)}">🗑️</button></div></div><div class="location-result-row"><span class="part-label">储位</span><span class="loc-value">${escapeHtml(location)}</span></div></div>`;
@@ -683,12 +711,224 @@
 
             async function triggerFocus(){if(!stream)return;const track=stream.getVideoTracks()[0];if(!track)return;try{await track.applyConstraints({advanced:[{focusMode:'single-shot'}]});window.showToast('🔍 已触发对焦');}catch(e){window.showToast('⚠️ 当前设备不支持对焦控制');}}
 
+            // === 俄罗斯方块游戏逻辑 ===
+            const COLS = 10, ROWS = 20, BLOCK_SIZE = 20;
+            const SHAPES = [
+                [[1,1,1,1]], // I
+                [[1,1],[1,1]], // O
+                [[0,1,0],[1,1,1]], // T
+                [[1,0,0],[1,1,1]], // J
+                [[0,0,1],[1,1,1]], // L
+                [[0,1,1],[1,1,0]], // S
+                [[1,1,0],[0,1,1]]  // Z
+            ];
+            const COLORS = ['#0ff','#ff0','#a0f','#00f','#f80','#0f0','#f00'];
+            let board = Array(ROWS).fill().map(()=>Array(COLS).fill(0));
+            let currentPiece = null, nextPiece = null;
+            let gameOver = false, score = 0, lines = 0;
+
+            function createPiece() {
+                const idx = Math.floor(Math.random() * SHAPES.length);
+                const shape = SHAPES[idx].map(row=>[...row]);
+                return { shape, color: COLORS[idx], x: Math.floor((COLS - shape[0].length)/2), y: 0 };
+            }
+
+            function rotate(shape) {
+                return shape[0].map((_, i) => shape.map(row => row[i]).reverse());
+            }
+
+            function collide(shape, x, y) {
+                for (let r = 0; r < shape.length; r++) {
+                    for (let c = 0; c < shape[0].length; c++) {
+                        if (shape[r][c] !== 0) {
+                            const newX = x + c, newY = y + r;
+                            if (newX < 0 || newX >= COLS || newY >= ROWS || (newY >= 0 && board[newY][newX] !== 0)) return true;
+                        }
+                    }
+                }
+                return false;
+            }
+
+            function place() {
+                const { shape, color, x, y } = currentPiece;
+                for (let r = 0; r < shape.length; r++) {
+                    for (let c = 0; c < shape[0].length; c++) {
+                        if (shape[r][c] !== 0) {
+                            const by = y + r, bx = x + c;
+                            if (by < 0) { gameOver = true; return; }
+                            board[by][bx] = color;
+                        }
+                    }
+                }
+                clearLines();
+                spawnNext();
+            }
+
+            function clearLines() {
+                let cleared = 0;
+                for (let r = ROWS - 1; r >= 0; r--) {
+                    if (board[r].every(cell => cell !== 0)) {
+                        board.splice(r, 1);
+                        board.unshift(Array(COLS).fill(0));
+                        cleared++;
+                        r++; // 重新检查同一行
+                    }
+                }
+                if (cleared) {
+                    lines += cleared;
+                    score += [0, 40, 100, 300, 1200][cleared];
+                    document.getElementById('tetrisScore').textContent = score;
+                    document.getElementById('tetrisLines').textContent = lines;
+                }
+            }
+
+            function spawnNext() {
+                currentPiece = nextPiece || createPiece();
+                nextPiece = createPiece();
+                if (collide(currentPiece.shape, currentPiece.x, currentPiece.y)) {
+                    gameOver = true;
+                }
+            }
+
+            function move(dx, dy) {
+                if (gameOver || !currentPiece) return;
+                if (!collide(currentPiece.shape, currentPiece.x + dx, currentPiece.y + dy)) {
+                    currentPiece.x += dx;
+                    currentPiece.y += dy;
+                } else if (dy === 1) {
+                    place();
+                }
+                draw();
+            }
+
+            function hardDrop() {
+                if (gameOver || !currentPiece) return;
+                while (!collide(currentPiece.shape, currentPiece.x, currentPiece.y + 1)) {
+                    currentPiece.y++;
+                }
+                place();
+                draw();
+            }
+
+            function rotatePiece() {
+                if (gameOver || !currentPiece) return;
+                const rotated = rotate(currentPiece.shape);
+                if (!collide(rotated, currentPiece.x, currentPiece.y)) {
+                    currentPiece.shape = rotated;
+                }
+                draw();
+            }
+
+            function draw() {
+                const canvas = document.getElementById('tetrisCanvas');
+                const ctx = canvas.getContext('2d');
+                canvas.width = COLS * BLOCK_SIZE;
+                canvas.height = ROWS * BLOCK_SIZE;
+                ctx.clearRect(0,0,canvas.width,canvas.height);
+                // 网格线
+                ctx.strokeStyle = '#333';
+                ctx.lineWidth = 0.5;
+                for (let i=0;i<=COLS;i++){ctx.beginPath();ctx.moveTo(i*BLOCK_SIZE,0);ctx.lineTo(i*BLOCK_SIZE,canvas.height);ctx.stroke();}
+                for (let i=0;i<=ROWS;i++){ctx.beginPath();ctx.moveTo(0,i*BLOCK_SIZE);ctx.lineTo(canvas.width,i*BLOCK_SIZE);ctx.stroke();}
+                // 已固定方块
+                for (let r=0;r<ROWS;r++){
+                    for (let c=0;c<COLS;c++){
+                        if (board[r][c]) {
+                            ctx.fillStyle = board[r][c];
+                            ctx.fillRect(c*BLOCK_SIZE+1, r*BLOCK_SIZE+1, BLOCK_SIZE-2, BLOCK_SIZE-2);
+                        }
+                    }
+                }
+                // 当前方块
+                if (currentPiece && !gameOver) {
+                    const { shape, color, x, y } = currentPiece;
+                    ctx.fillStyle = color;
+                    for (let r=0;r<shape.length;r++){
+                        for (let c=0;c<shape[0].length;c++){
+                            if (shape[r][c]) {
+                                ctx.fillRect((x+c)*BLOCK_SIZE+1, (y+r)*BLOCK_SIZE+1, BLOCK_SIZE-2, BLOCK_SIZE-2);
+                            }
+                        }
+                    }
+                }
+                // 下一个方块
+                const nextCanvas = document.getElementById('nextCanvas');
+                if (nextCanvas && nextPiece) {
+                    const nctx = nextCanvas.getContext('2d');
+                    nctx.clearRect(0,0,nextCanvas.width,nextCanvas.height);
+                    const shape = nextPiece.shape;
+                    const offsetX = (4 - shape[0].length) * BLOCK_SIZE / 2;
+                    const offsetY = (4 - shape.length) * BLOCK_SIZE / 2;
+                    nctx.fillStyle = nextPiece.color;
+                    for (let r=0;r<shape.length;r++){
+                        for (let c=0;c<shape[0].length;c++){
+                            if (shape[r][c]) {
+                                nctx.fillRect(offsetX + c*BLOCK_SIZE+1, offsetY + r*BLOCK_SIZE+1, BLOCK_SIZE-2, BLOCK_SIZE-2);
+                            }
+                        }
+                    }
+                }
+            }
+
+            function stopTetris() {
+                if (tetrisInterval) { clearInterval(tetrisInterval); tetrisInterval = null; }
+            }
+
+            function startTetris() {
+                stopTetris();
+                board = Array(ROWS).fill().map(()=>Array(COLS).fill(0));
+                score = 0; lines = 0; gameOver = false;
+                document.getElementById('tetrisScore').textContent = '0';
+                document.getElementById('tetrisLines').textContent = '0';
+                currentPiece = null; nextPiece = null;
+                spawnNext();
+                draw();
+                tetrisInterval = setInterval(() => move(0, 1), 800);
+            }
+
+            function bindTetrisControls() {
+                document.getElementById('btnMoveLeft').onclick = () => move(-1, 0);
+                document.getElementById('btnMoveRight').onclick = () => move(1, 0);
+                document.getElementById('btnMoveDown').onclick = () => move(0, 1);
+                document.getElementById('btnRotate').onclick = rotatePiece;
+                document.getElementById('btnHardDrop').onclick = hardDrop;
+                document.getElementById('restartTetrisBtn').onclick = startTetris;
+            }
+
             async function initApp(){
-                if(isAppInitialized)return;isAppInitialized=true;loadLocalData();applySettings();updateProfileUI();subscribeToChat();
+                if(isAppInitialized)return;isAppInitialized=true;
+                loadLocalData();applySettings();updateProfileUI();subscribeToChat();
                 if(currentUser&&currentUser.is_admin){const nav=document.getElementById('bottomNav');if(!document.querySelector('.nav-item[data-view="adminView"]')){const item=document.createElement('div');item.className='nav-item';item.dataset.view='adminView';item.innerHTML='👑<span>管理</span>';nav.appendChild(item);}}
                 const dateInput=document.getElementById('searchDateInput');if(dateInput)dateInput.value=getTodayString();viewDate=getTodayString();await renderQueryRecords();
-                const navs=document.querySelectorAll('.nav-item');const views={scannerPageView:document.getElementById('scannerPageView'),queryView:document.getElementById('queryView'),locationView:document.getElementById('locationView'),chatView:document.getElementById('chatView'),profileView:document.getElementById('profileView'),adminView:document.getElementById('adminView')};
-                function switchView(id){Object.keys(views).forEach(k=>views[k]?.classList.toggle('active',k===id));navs.forEach(n=>n.classList.toggle('active',n.dataset.view===id));if(id==='queryView')renderQueryRecords();if(id==='adminView'&&currentUser?.is_admin)loadAdminUsers();if(id==='chatView'){loadChatMessages();startChatAutoRefresh();}else stopChatAutoRefresh();if(id==='scannerPageView'&&settings.autoOpenCamera&&window.startCameraFn)setTimeout(window.startCameraFn,500);else if(window.stopCameraFn)window.stopCameraFn();}
+                const navs=document.querySelectorAll('.nav-item');
+                const views={
+                    scannerPageView:document.getElementById('scannerPageView'),
+                    queryView:document.getElementById('queryView'),
+                    locationView:document.getElementById('locationView'),
+                    chatView:document.getElementById('chatView'),
+                    profileView:document.getElementById('profileView'),
+                    adminView:document.getElementById('adminView'),
+                    gameView:document.getElementById('gameView')
+                };
+                function switchView(id){
+                    if (id === 'gameView') {
+                        stopTetris();
+                        Object.keys(views).forEach(k=>views[k]?.classList.remove('active'));
+                        views.gameView?.classList.add('active');
+                        navs.forEach(n=>n.classList.remove('active'));
+                        bindTetrisControls();
+                        startTetris();
+                    } else {
+                        stopTetris();
+                        Object.keys(views).forEach(k=>views[k]?.classList.toggle('active',k===id));
+                        navs.forEach(n=>n.classList.toggle('active',n.dataset.view===id));
+                        if(id==='queryView')renderQueryRecords();
+                        if(id==='adminView'&&currentUser?.is_admin)loadAdminUsers();
+                        if(id==='chatView'){loadChatMessages();startChatAutoRefresh();}else stopChatAutoRefresh();
+                        if(id==='scannerPageView'&&settings.autoOpenCamera&&window.startCameraFn)setTimeout(window.startCameraFn,500);
+                        else if(window.stopCameraFn)window.stopCameraFn();
+                    }
+                }
                 navs.forEach(n=>n.addEventListener('click',()=>switchView(n.dataset.view)));
 
                 document.getElementById('btnFocus').addEventListener('click',triggerFocus);
@@ -739,7 +979,45 @@
                 document.getElementById('locationSearchBtn').onclick=refreshLocationSearch;
                 document.getElementById('locationResult').addEventListener('click',async(e)=>{const btn=e.target.closest('button[data-action]');if(!btn)return;const action=btn.dataset.action,part=btn.dataset.part;if(action==='edit'){const curLoc=await getLocationByPart(part);const newLoc=await showEditLocationPrompt(part,curLoc||'');if(newLoc&&newLoc.trim()!==''){await upsertLocation(part,newLoc.trim());await refreshLocationSearch();window.showToast('已更新');}}else if(action==='delete'){if(!(await window.showConfirm('删除储位',`确定删除料号 ${part} 的储位信息吗？`)))return;await deleteLocationByPart(part);await refreshLocationSearch();window.showToast('已删除');}});
                 document.getElementById('manualAddLocationBtn').onclick=async()=>{const part=document.getElementById('manualPartInputDB').value.trim();const loc=document.getElementById('manualLocationInputDB').value.trim();if(!part||!loc){document.getElementById('manualAddStatus').innerText='❌ 料号和储位必填';return;}await upsertLocation(part,loc);document.getElementById('manualAddStatus').innerText=`✅ 已添加 ${part}→${loc}`;document.getElementById('manualPartInputDB').value='';document.getElementById('manualLocationInputDB').value='';setTimeout(()=>document.getElementById('manualAddStatus').innerText='',1500);};
-                document.getElementById('batchImportBtn').addEventListener('click', async () => { /* 保持不变 */ });
+                document.getElementById('batchImportBtn').addEventListener('click', async () => {
+                    const fileInput = document.getElementById('locationFileInput');
+                    const file = fileInput.files[0];
+                    const statusDiv = document.getElementById('batchImportStatus');
+                    const progressContainer = document.getElementById('progressContainer');
+                    const progressBar = document.getElementById('progressBar');
+                    if (!file) { statusDiv.innerText = '❌ 请选择一个 Excel 文件'; return; }
+                    progressContainer.style.display = 'block'; progressBar.style.width = '0%'; statusDiv.innerText = '⏳ 正在读取文件...';
+                    const reader = new FileReader();
+                    reader.onload = async (e) => {
+                        try {
+                            const data = new Uint8Array(e.target.result);
+                            const workbook = XLSX.read(data, { type: 'array' });
+                            const firstSheet = workbook.SheetNames[0];
+                            const worksheet = workbook.Sheets[firstSheet];
+                            const rows = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+                            if (!rows || rows.length === 0) { statusDiv.innerText = '❌ Excel 为空'; progressContainer.style.display = 'none'; return; }
+                            let startRow = 0;
+                            if (rows[0] && (typeof rows[0][0] === 'string') && (rows[0][0].includes('料号') || rows[0][0].includes('part'))) startRow = 1;
+                            const totalRows = rows.length - startRow;
+                            let processed = 0, successCount = 0;
+                            for (let i = startRow; i < rows.length; i++) {
+                                const row = rows[i];
+                                if (!row || row.length < 2) { processed++; continue; }
+                                const part = (row[0] || '').toString().trim();
+                                const location = (row[1] || '').toString().trim();
+                                if (part && location) { const result = await upsertLocation(part, location); if (result) successCount++; }
+                                processed++;
+                                progressBar.style.width = Math.round((processed / totalRows) * 100) + '%';
+                                statusDiv.innerText = `⏳ 处理中 ${processed}/${totalRows} (${successCount} 条成功)`;
+                            }
+                            statusDiv.innerText = `✅ 导入完成！共 ${successCount} 条`;
+                            progressContainer.style.display = 'none';
+                            fileInput.value = '';
+                            setTimeout(() => statusDiv.innerText = '', 3000);
+                        } catch (err) { statusDiv.innerText = '❌ 解析文件失败: ' + err.message; progressContainer.style.display = 'none'; }
+                    };
+                    reader.readAsArrayBuffer(file);
+                });
 
                 document.getElementById('nightSwitchTrack').onclick=()=>{settings.nightMode=!settings.nightMode;saveSettings();applySettings();};
                 document.getElementById('fontSizeSelect').onchange=e=>{settings.fontSize=e.target.value;saveSettings();applySettings();};
@@ -764,6 +1042,9 @@
 
                 document.getElementById('chatSendBtn').addEventListener('click',sendChatMessage);
                 document.getElementById('chatMessageInput').addEventListener('keydown',e=>{if(e.key==='Enter')sendChatMessage();});
+
+                document.getElementById('openGameBtn').addEventListener('click', () => switchView('gameView'));
+                document.getElementById('backFromGameBtn').addEventListener('click', () => switchView('profileView'));
 
                 if(typeof initScanner==='function')initScanner();
                 switchView('scannerPageView');
@@ -813,7 +1094,7 @@
                     recognition.interimResults = false;
                     let voiceTimeout;
                     recognition.onstart = () => {
-                        const timeoutSec = (settings.voiceTimeout || 3) * 1000;
+                        const timeoutSec = (settings.voiceTimeout || 5) * 1000;
                         voiceTimeout = setTimeout(() => { recognition.abort(); window.showToast('⏰ 语音输入超时'); }, timeoutSec);
                     };
                     recognition.onresult = (event) => {
@@ -836,7 +1117,7 @@
                         if (voiceBtn.classList.contains('listening')) return;
                         voiceBtn.classList.add('listening');
                         recognition.start();
-                        window.showToast(`请说出数量（${settings.voiceTimeout || 3}秒）...`);
+                        window.showToast(`请说出数量（${settings.voiceTimeout || 5}秒）...`);
                     });
                 } else if (voiceBtn) {
                     voiceBtn.style.display = 'none';
