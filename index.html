@@ -11,6 +11,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
     <style>
+        /* ========== 全局重置 & 基础 ========== */
         * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
         html,body { height:100%; width:100%; overflow:hidden; touch-action:manipulation; }
         body {
@@ -18,13 +19,16 @@
             background: #f0f4f8; color:#1e293b;
             display:flex; justify-content:center; align-items:flex-start; padding:0;
         }
+        /* ========== 主容器（可调整页面高度） ========== */
         #app {
             width:100%; max-width:480px; background:#fff;
             box-shadow:0 20px 60px rgba(0,0,0,0.12);
-            position:relative; min-height:100vh; min-height:100dvh;
+            position:relative;
+            min-height:100vh;           /* 【设置页面最小高度】可以改为90vh等 */
+            min-height:100dvh;          /* 动态视口高度，iOS适配 */
             display:flex; flex-direction:column;
-            padding-top: env(safe-area-inset-top);
-            padding-bottom: calc(68px + env(safe-area-inset-bottom));
+            padding-top: env(safe-area-inset-top);   /* 顶部刘海屏留白 */
+            padding-bottom: 20px;                     /* 【底部导航高度】可根据导航栏高度调整 */
         }
         @media (min-width:481px) {
             #app { border-radius:32px; margin:16px; min-height:calc(100dvh - 32px); }
@@ -40,11 +44,14 @@
             100% { opacity:1; transform:translateY(0); }
         }
 
-        /* 预警滚动栏 */
+        /* ========== 预警滚动栏（可调整高度） ========== */
         .alert-marquee {
             background:#fff; border:1px solid #e2e8f0; border-radius:14px;
             margin-bottom:16px; padding:16px 20px; overflow:hidden;
-            height:25vh; max-height:220px; min-height:140px; position:relative;
+            height:25vh;               /* 【预警栏高度】可根据需要调整，如25vh、30vh */
+            max-height:220px;
+            min-height:140px;
+            position:relative;
         }
         .alert-marquee .marquee-track { display:flex; flex-direction:column; animation:scroll-up 12s linear infinite; }
         .alert-marquee .marquee-item {
@@ -61,7 +68,7 @@
         }
         .alert-marquee:hover .marquee-track { animation-play-state:paused; }
 
-        /* 首页卡片 */
+        /* ========== 首页卡片 ========== */
         .home-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; padding-top:8px; }
         .home-card {
             background:#fff; border-radius:16px; padding:14px 6px 12px; text-align:center;
@@ -88,7 +95,7 @@
         .card-stock { --card-color:#3b82f6; }
         .card-material { --card-color:#ec4899; }
 
-        /* 今日数据 */
+        /* ========== 今日数据面板 ========== */
         .daily-stats {
             margin-top:16px; background:#f8fafc; border-radius:16px;
             padding:12px 12px 10px; border:1px solid #e9eef3;
@@ -106,8 +113,11 @@
         .stat-label { font-size:11px; color:#94a3b8; margin-top:2px; }
         .in { color:#22c55e; } .out { color:#ef4444; } .total { color:#3b82f6; } .count { color:#8b5cf6; }
 
-        /* 公共组件 */
-        .section-title { font-size:18px; font-weight:700; color:#0f172a; margin-bottom:16px; display:flex; align-items:center; gap:10px; }
+        /* ========== 公共组件 ========== */
+        .section-title {
+            font-size:18px; font-weight:700; color:#0f172a; margin-bottom:16px;
+            display:flex; align-items:center; justify-content:center; /* 标题居中 */
+        }
         .section-title i { font-size:20px; }
         .form-group { margin-bottom:16px; }
         .form-group label { display:block; font-size:13px; font-weight:600; color:#475569; margin-bottom:5px; }
@@ -138,7 +148,7 @@
         .btn-sm { padding:6px 14px; font-size:12px; border-radius:8px; }
         .btn-block { width:100%; justify-content:center; }
 
-        /* 表格 */
+        /* ========== 表格 ========== */
         .table-wrap { overflow-x:auto; border-radius:14px; border:1px solid #f1f5f9; background:#fff; margin-top:4px; }
         table { width:100%; border-collapse:collapse; font-size:13px; min-width:400px; }
         table th { background:#f8fafc; font-weight:600; color:#475569; padding:10px 12px; text-align:left; border-bottom:2px solid #e2e8f0; white-space:nowrap; }
@@ -149,7 +159,7 @@
         .text-muted { color:#94a3b8; font-size:13px; }
         .stock-low { color:#ef4444; font-weight:600; }
 
-        /* 扫码区域 */
+        /* ========== 扫码区域 ========== */
         .scan-area { background:#f1f5f9; border-radius:20px; padding:40px 20px; text-align:center; border:2px dashed #cbd5e1; margin-bottom:20px; }
         .scan-area.active { border-color:#3b82f6; background:#eff6ff; }
         .scan-icon { font-size:56px; color:#94a3b8; margin-bottom:12px; }
@@ -161,7 +171,7 @@
         .result-label { color:#64748b; }
         .result-value { font-weight:600; color:#0f172a; }
 
-        /* 盘点项 */
+        /* ========== 盘点项 ========== */
         .count-item { display:flex; align-items:center; justify-content:space-between; padding:10px 14px; background:#f8fafc; border-radius:12px; margin-bottom:8px; border:1px solid #f1f5f9; }
         .count-item.changed { border-left:3px solid #f59e0b; background:#fffbeb; }
         .info { flex:1; min-width:0; }
@@ -170,7 +180,7 @@
         .qty-control { display:flex; align-items:center; gap:8px; }
         .qty-control input { width:70px; padding:4px 6px; border:1.5px solid #e2e8f0; border-radius:8px; text-align:center; font-size:14px; font-weight:600; outline:none; background:#fff; }
 
-        /* 料号管理 */
+        /* ========== 料号管理 ========== */
         .material-form { background:#f8fafc; border-radius:16px; padding:16px; margin-bottom:16px; border:1px solid #f1f5f9; }
         .form-row { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
         .material-list .material-item {
@@ -179,7 +189,7 @@
             margin-bottom:6px; border:1px solid #f1f5f9;
         }
 
-        /* 我的页面 */
+        /* ========== 我的页面 ========== */
         .my-profile { background:#f8fafc; border-radius:20px; padding:20px; text-align:center; border:1px solid #f1f5f9; margin-bottom:20px; }
         .my-profile .avatar { font-size:64px; color:#3b82f6; margin-bottom:8px; }
         .my-profile .username { font-size:18px; font-weight:700; color:#0f172a; }
@@ -200,74 +210,59 @@
         .empty-state { text-align:center; padding:32px 16px; color:#94a3b8; }
         .empty-state i { font-size:40px; margin-bottom:12px; opacity:0.5; }
 
-        /* 底部导航 - 固定定位，手动计算高度 */
+        /* ========== 底部导航栏（最终版） ========== */
         .bottom-nav {
-            position: fixed;
-            bottom: 0;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 100%;
-            max-width: 480px;
-            height: calc(68px + env(safe-area-inset-bottom));
-            padding-bottom: env(safe-area-inset-bottom);
-            background: #fff;
-            border-top: 1px solid #e9eef3;
-            display: flex;
-            align-items: center;
-            justify-content: space-around;
-            box-shadow: 0 -2px 12px rgba(0,0,0,0.04);
-            z-index: 100;
+            position:fixed; bottom:0; left:50%; transform:translateX(-50%);
+            width:100%; max-width:480px;
+            height: 40px;                          /* 【导航栏高度】可以调整数值 */
+            background:#fff;
+            border-top:1px solid #f1f5f9;
+            display:flex;
+            align-items:flex-end;                  /* 文字向下对齐 */
+            justify-content:space-around;          /* 均匀分布 */
+            z-index:100;
         }
         .bottom-nav .nav-item {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            flex: 1;
-            padding: 4px 0;
-            cursor: pointer;
-            color: #94a3b8;
-            border: none;
-            background: transparent;
-            font-family: inherit;
+            padding: 0 12px;                       /* 【导航文字左右间距】 */
+            margin-bottom: 0;                      /* 【文字距离底部距离】可改负值下拉 */
+            cursor:pointer; color:#94a3b8;
+            font-size:18px; font-weight:500; border:none; background:transparent;
+            font-family:inherit; transition:color 0.2s;
         }
-        .bottom-nav .nav-item i { font-size: 24px; margin-bottom: 2px; }
-        .bottom-nav .nav-item span { font-size: 11px; font-weight: 500; }
-        .bottom-nav .nav-item.active { color: #3b82f6; }
-        .bottom-nav .nav-item.active i { transform: translateY(-2px); }
+        .bottom-nav .nav-item.active { color:#3b82f6; font-weight:700; border-top:2px solid #3b82f6; }
 
-        /* Toast 提示位置 */
+        /* ========== Toast 提示位置 ========== */
         .toast-container {
-            position: fixed;
-            bottom: calc(68px + env(safe-area-inset-bottom) + 10px);
-            left: 50%; transform: translateX(-50%);
-            z-index: 999; display: flex; flex-direction: column; align-items: center;
-            gap: 8px; pointer-events: none; max-width: 420px; width: 90%;
+            position:fixed;
+            bottom: calc(20px + env(safe-area-inset-bottom) + 10px); /* 【Toast距离底部距离】根据导航高度调整 */
+            left:50%; transform:translateX(-50%);
+            z-index:999; display:flex; flex-direction:column; align-items:center;
+            gap:8px; pointer-events:none; max-width:420px; width:90%;
         }
         .toast {
-            background: #0f172a; color: #fff; padding: 12px 24px; border-radius: 14px;
-            font-size: 14px; font-weight: 500; box-shadow: 0 8px 32px rgba(0,0,0,0.2);
-            animation: toastIn 0.35s ease, toastOut 0.35s ease 2.5s forwards;
-            width: 100%; text-align: center; pointer-events: auto;
-            display: flex; align-items: center; justify-content: center; gap: 10px;
+            background:#0f172a; color:#fff; padding:12px 24px; border-radius:14px;
+            font-size:14px; font-weight:500; box-shadow:0 8px 32px rgba(0,0,0,0.2);
+            animation:toastIn 0.35s ease, toastOut 0.35s ease 2.5s forwards;
+            width:100%; text-align:center; pointer-events:auto;
+            display:flex; align-items:center; justify-content:center; gap:10px;
         }
-        .toast-success { background: #16a34a; }
-        .toast-error { background: #dc2626; }
-        .toast-info { background: #2563eb; }
+        .toast-success { background:#16a34a; }
+        .toast-error { background:#dc2626; }
+        .toast-info { background:#2563eb; }
         @keyframes toastIn {
-            0% { opacity: 0; transform: translateY(20px); }
-            100% { opacity: 1; transform: translateY(0); }
+            0% { opacity:0; transform:translateY(20px); }
+            100% { opacity:1; transform:translateY(0); }
         }
         @keyframes toastOut {
-            0% { opacity: 1; transform: translateY(0); }
-            100% { opacity: 0; transform: translateY(-12px); }
+            0% { opacity:1; transform:translateY(0); }
+            100% { opacity:0; transform:translateY(-12px); }
         }
 
-        @media (max-width: 400px) {
-            .home-grid { gap: 8px; }
-            .home-card { padding: 12px 4px 10px; }
-            .home-card .icon-wrap { width: 40px; height: 40px; font-size: 18px; }
-            .home-card .card-label { font-size: 12px; }
+        @media (max-width:400px) {
+            .home-grid { gap:8px; }
+            .home-card { padding:12px 4px 10px; }
+            .home-card .icon-wrap { width:40px; height:40px; font-size:18px; }
+            .home-card .card-label { font-size:12px; }
         }
     </style>
 </head>
@@ -276,6 +271,7 @@
     <div class="page-container" id="pageContainer">
         <!-- 首页 -->
         <div id="page-home" class="page active">
+            <div class="section-title">首页</div>
             <div class="alert-marquee" id="alertMarquee">
                 <div class="marquee-track" id="marqueeTrack"></div>
             </div>
@@ -373,7 +369,7 @@
             <div class="material-list" id="materialList"></div>
         </div>
 
-        <!-- 储位查找页（含行内编辑） -->
+        <!-- 储位查找页（行内编辑） -->
         <div id="page-location" class="page">
             <div class="section-title"><i class="fas fa-map-pin" style="color:#0ea5e9;"></i> 储位查找</div>
             <div class="form-group"><label>输入料号 / 储位 / 名称</label><div style="display:flex; gap:8px;"><input type="text" class="form-control" id="locationSearchInput" placeholder="例如: M001 或 A1-01"><button class="btn btn-info" id="locationSearchBtn"><i class="fas fa-search"></i> 查找</button></div></div>
@@ -409,7 +405,7 @@
             </div>
             <div style="margin-top:20px; background:#f8fafc; border-radius:16px; padding:16px; border:1px solid #f1f5f9;">
                 <div style="font-size:14px; font-weight:600; color:#0f172a; margin-bottom:8px;"><i class="fas fa-info-circle" style="color:#3b82f6;"></i> 系统信息</div>
-                <div style="display:flex; justify-content:space-between; font-size:13px; color:#475569; padding:4px 0;"><span>版本</span><span>v4.0</span></div>
+                <div style="display:flex; justify-content:space-between; font-size:13px; color:#475569; padding:4px 0;"><span>版本</span><span>v6.0</span></div>
                 <div style="display:flex; justify-content:space-between; font-size:13px; color:#475569; padding:4px 0;"><span>运行时间</span><span id="sysUptime">--</span></div>
                 <div style="display:flex; justify-content:space-between; font-size:13px; color:#475569; padding:4px 0;"><span>数据更新</span><span id="lastUpdateTime">--</span></div>
             </div>
@@ -420,19 +416,20 @@
 
     <!-- 底部导航栏 -->
     <nav class="bottom-nav" id="bottomNav">
-        <button class="nav-item active" data-tab="home"><i class="fas fa-home"></i><span>首页</span></button>
-        <button class="nav-item" data-tab="location"><i class="fas fa-map-pin"></i><span>储位查询</span></button>
-        <button class="nav-item" data-tab="data"><i class="fas fa-upload"></i><span>数据</span></button>
-        <button class="nav-item" data-tab="mine"><i class="fas fa-user"></i><span>我的</span></button>
+        <button class="nav-item active" data-tab="home">首页</button>
+        <button class="nav-item" data-tab="location">储位查询</button>
+        <button class="nav-item" data-tab="data">数据</button>
+        <button class="nav-item" data-tab="mine">我的</button>
     </nav>
 </div>
 <div class="toast-container" id="toastContainer"></div>
 
 <script>
+    /* ========== 完整功能脚本（所有业务逻辑） ========== */
     (function() {
         const STORAGE_MAT = 'wms_materials', STORAGE_REC = 'wms_records', STORAGE_MSG = 'wms_messages';
-        const LOW = 5;
-        const defaults = [
+        const LOW = 5;                             // 【低库存预警阈值】可修改数字
+        const defaults = [                         // 默认演示数据
             { id:'M001', name:'螺丝', spec:'M4×10', unit:'个', stock:120, location:'A1-01' },
             { id:'M002', name:'螺母', spec:'M4', unit:'个', stock:200, location:'A1-02' },
             { id:'M003', name:'垫片', spec:'4mm', unit:'个', stock:150, location:'B2-03' },
@@ -887,6 +884,7 @@
             populateSelects(); renderStock(); renderMaterialList(); updateDaily(); updateMarquee(); updateMine(); renderCustomMsgs();
             $('#matId').placeholder = `例如: ${nextId()}`;
             clearLocationResult();
+            console.log('📦 仓库管理系统 v6.0 已启动');
         }
         init();
     })();
