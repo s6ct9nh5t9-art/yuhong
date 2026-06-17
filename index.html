@@ -2,1068 +2,955 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <!-- 苹果全屏适配 Meta -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <link rel="apple-touch-icon" href="icon.png">
-    <title>L6仓库管理系统</title>
-    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+    <meta name="apple-mobile-web-app-title" content="仓库管理">
+    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📦</text></svg>">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>仓库管理系统</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        :root {
-            --bg: #f5f7fb;
-            --card-bg: #fff;
-            --text: #1e293b;
-            --text-secondary: #64748b;
-            --border: #e9eef3;
-            --primary: #FF8C00;
-            --primary-light: #fff3e0;
-            --danger: #b33a3a;
-            --success: #0e6245;
-            --header-bg: linear-gradient(135deg, #0f2b4b, #1b4a6b);
-            --input-bg: #fff;
-            --shadow: rgba(0,0,0,0.08);
-            --font-size-base: 1rem;
-            --scan-line-color: #FF8C00;
-            --scan-window-size: 45%;
-            --camera-preview-height: 50vh;
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        html, body {
+            height: 100%;
+            width: 100%;
+            overflow: hidden;
+            touch-action: manipulation;
         }
-        .night-mode {
-            --bg: #1a1f2e;
-            --card-bg: #232a3b;
-            --text: #e2e8f0;
-            --text-secondary: #94a3b8;
-            --border: #334155;
-            --primary: #FFA500;
-            --primary-light: #4a2c0f;
-            --danger: #ef4444;
-            --success: #22c55e;
-            --header-bg: linear-gradient(135deg, #0f172a, #1e293b);
-            --input-bg: #334155;
-            --shadow: rgba(0,0,0,0.3);
-            --scan-line-color: #FFA500;
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', Roboto, sans-serif;
+            background: #f0f4f8; color: #1e293b;
+            display: flex; justify-content: center; align-items: center;
+            padding: 0;
         }
-        * { margin:0; padding:0; box-sizing:border-box; font-family: system-ui, -apple-system, sans-serif; }
-        body { background-color: #0f2b4b; min-height:100vh; display:flex; justify-content:center; align-items:center; padding:0; font-size:var(--font-size-base); -webkit-tap-highlight-color:transparent; user-select:none; }
-
-        .auth-container { width:100%; max-width:400px; background:var(--card-bg); color:var(--text); border-radius:24px; box-shadow:0 20px 40px var(--shadow); padding:32px 24px; text-align:center; display:flex; flex-direction:column; gap:14px; z-index:1; margin:16px; }
-        .auth-container h1 { font-size:1.8rem; color:var(--primary); }
-        .auth-container input { width:100%; padding:14px 16px; border-radius:12px; border:1px solid var(--border); background:var(--input-bg); color:var(--text); font-size:1rem; }
-        .auth-container input::placeholder { color:var(--text-secondary); }
-        .btn-full { width:100%; padding:14px; border:none; border-radius:30px; font-weight:600; font-size:1rem; cursor:pointer; }
-        .btn-primary { background:var(--primary); color:white; }
-        .btn-secondary { background:#555; color:white; }
-        .btn-outline { background:transparent; color:var(--text-secondary); border:1px solid var(--border); padding:10px; border-radius:30px; cursor:pointer; }
-        .btn-row { display:flex; gap:10px; }
-        .error-text { color:var(--danger); font-size:0.8rem; min-height:20px; }
-
-        #appMain { position:fixed; top:0; left:0; right:0; bottom:0; z-index:100; display:none; }
-        .app-container { width:100%; height:100%; background:var(--bg); color:var(--text); display:flex; flex-direction:column; padding-top: env(safe-area-inset-top); }
-        .view { flex:1; display:none; flex-direction:column; padding:16px 20px 20px; gap:16px; overflow-y:auto; background:var(--bg); color:var(--text); -webkit-overflow-scrolling:touch; }
-        .view.active { display:flex; }
-
-        .bottom-nav { display:flex; border-top:1px solid var(--border); background:var(--card-bg); flex-shrink:0; padding:8px 0 env(safe-area-inset-bottom); }
-        .nav-item { flex:1; text-align:center; padding:12px 4px; font-weight:600; font-size:0.85rem; color:var(--text-secondary); cursor:pointer; border-bottom:3px solid transparent; transition:0.2s; display:flex; flex-direction:column; align-items:center; gap:2px; }
-        .nav-item.active { color:var(--text); border-bottom-color:var(--text); }
-        .nav-item span { font-size:0.75rem; opacity:0.8; }
-
-        .card { background:var(--card-bg); border-radius:18px; padding:16px; border:1px solid var(--border); color:var(--text); }
-        .btn { border:none; background:var(--card-bg); padding:10px 18px; border-radius:30px; font-weight:600; font-size:0.9rem; display:inline-flex; align-items:center; gap:6px; box-shadow:0 4px 10px var(--shadow); cursor:pointer; color:var(--primary); border:1px solid var(--border); justify-content:center; transition:0.15s; }
-        .btn:active { transform:scale(0.97); box-shadow:inset 0 3px 8px rgba(0,0,0,0.3), 0 1px 2px rgba(0,0,0,0.1); }
-        .btn.clicked { transform:scale(0.97); box-shadow:inset 0 3px 8px rgba(0,0,0,0.3), 0 1px 2px rgba(0,0,0,0.1); }
-        .btn-primary { background:var(--primary); color:white; border:none; }
-        .btn-primary:active { background:var(--primary); box-shadow:inset 0 3px 8px rgba(0,0,0,0.4), 0 1px 2px rgba(0,0,0,0.1); }
-        .btn-primary.clicked { background:var(--primary); box-shadow:inset 0 3px 8px rgba(0,0,0,0.4), 0 1px 2px rgba(0,0,0,0.1); }
-        .btn-danger { background:var(--danger); color:white; border:none; }
-        .btn-danger:active { background:var(--danger); box-shadow:inset 0 3px 8px rgba(0,0,0,0.4), 0 1px 2px rgba(0,0,0,0.1); }
-        .btn-danger.clicked { background:var(--danger); box-shadow:inset 0 3px 8px rgba(0,0,0,0.4), 0 1px 2px rgba(0,0,0,0.1); }
-        .btn-sm { padding:6px 14px; font-size:0.8rem; }
-        .btn-outline { background:transparent; border:1.5px solid var(--border); color:var(--text); box-shadow:none; }
-        .btn-outline:active { background:rgba(0,0,0,0.05); box-shadow:inset 0 2px 6px rgba(0,0,0,0.2); }
-        .btn-outline.clicked { background:rgba(0,0,0,0.05); box-shadow:inset 0 2px 6px rgba(0,0,0,0.2); }
-
-        #detailViewBtn, #summaryViewBtn, #mpnSummaryViewBtn,
-        #todaySearchBtn,
-        #editNameBtn {
-            color: var(--text) !important;
+        #app {
+            width: 100%;
+            height: 100dvh;
+            max-width: 480px;
+            background: #fff;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.12);
+            display: flex; flex-direction: column;
+            position: relative;
+            overflow: hidden;
+            border-radius: 0;
+        }
+        @media (min-width: 481px) {
+            #app {
+                border-radius: 32px;
+                margin: 16px;
+                height: calc(100dvh - 32px);
+            }
+        }
+        .page-container {
+            flex: 1;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            padding: 20px 20px 28px;
+            padding-bottom: calc(28px + env(safe-area-inset-bottom));
+        }
+        .page { display: none; animation: fadeUp 0.3s ease; }
+        .page.active { display: block; }
+        @keyframes fadeUp {
+            0% { opacity: 0; transform: translateY(12px); }
+            100% { opacity: 1; transform: translateY(0); }
         }
 
-        .input-field { margin-bottom:12px; }
-        .input-field label { font-size:0.75rem; font-weight:600; color:var(--text-secondary); display:block; margin-bottom:4px; }
-        .input-field input, .input-field textarea { width:100%; padding:12px; border-radius:12px; border:1px solid var(--border); font-size:1rem; background:var(--input-bg); color:var(--text); }
-        select { background:var(--input-bg); color:var(--text); border:1px solid var(--border); padding:10px 14px; border-radius:12px; font-size:var(--font-size-base); }
-        .switch-track { width:44px; height:24px; background:#ccc; border-radius:12px; position:relative; cursor:pointer; }
-        .switch-track.on { background:var(--primary); }
-        .switch-thumb { width:20px; height:20px; background:white; border-radius:50%; position:absolute; top:2px; left:2px; transition:0.2s; }
-        .switch-track.on .switch-thumb { left:22px; }
+        /* 预警滚动栏 */
+        .alert-marquee {
+            background: #fff; border: 1px solid #e2e8f0; border-radius: 14px;
+            margin-bottom: 16px; padding: 16px 20px; overflow: hidden;
+            height: 25vh; max-height: 220px; min-height: 140px; position: relative;
+        }
+        .alert-marquee .marquee-track {
+            display: flex; flex-direction: column;
+            animation: scroll-up 12s linear infinite;
+        }
+        .alert-marquee .marquee-item {
+            font-size: 16px; color: #1e293b; white-space: nowrap;
+            padding: 8px 0; display: flex; align-items: center; gap: 8px; line-height: 1.6;
+        }
+        .alert-marquee .marquee-item i { font-size: 18px; }
+        .alert-marquee .marquee-item i.fa-exclamation-triangle { color: #e67e22; }
+        .alert-marquee .marquee-item i.fa-bullhorn { color: #3b82f6; }
+        .alert-marquee .marquee-item i.fa-check-circle { color: #22c55e; }
+        @keyframes scroll-up {
+            0% { transform: translateY(0); }
+            100% { transform: translateY(-50%); }
+        }
+        .alert-marquee:hover .marquee-track { animation-play-state: paused; }
 
-        .scanner-container { display:flex; flex-direction:column; gap:16px; }
-        .scanner-wrapper { position:relative; width:100%; aspect-ratio:1/1; max-height:var(--camera-preview-height, 50vh); background:#000; border-radius:16px; overflow:hidden; box-shadow:0 8px 32px rgba(0,0,0,0.4); }
-        .scanner-wrapper video { width:100%; height:100%; object-fit:cover; display:block; }
-        .scanner-placeholder { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; color:var(--text-secondary); z-index:5; gap:10px; background:rgba(0,0,0,0.7); border-radius:16px; }
-        .overlay { position:absolute; inset:0; pointer-events:none; z-index:10; display:none; }
-        .scan-window { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:var(--scan-window-size, 45%); aspect-ratio:1/1; border-radius:14px; box-shadow:0 0 0 9999px rgba(0,0,0,0.65); z-index:11; }
-        .corner { position:absolute; width:28px; height:28px; z-index:12; }
-        .corner::before, .corner::after { content:''; position:absolute; background:#fff; border-radius:2px; }
-        .corner-tl { top:-2px; left:-2px; } .corner-tl::before { top:0; left:0; width:28px; height:4px; } .corner-tl::after { top:0; left:0; width:4px; height:28px; }
-        .corner-tr { top:-2px; right:-2px; } .corner-tr::before { top:0; right:0; width:28px; height:4px; } .corner-tr::after { top:0; right:0; width:4px; height:28px; }
-        .corner-bl { bottom:-2px; left:-2px; } .corner-bl::before { bottom:0; left:0; width:28px; height:4px; } .corner-bl::after { bottom:0; left:0; width:4px; height:28px; }
-        .corner-br { bottom:-2px; right:-2px; } .corner-br::before { bottom:0; right:0; width:28px; height:4px; } .corner-br::after { bottom:0; right:0; width:4px; height:28px; }
-        .scan-line { position:absolute; left:6%; width:88%; height:2.5px; background:linear-gradient(90deg,transparent 0%,var(--scan-line-color) 20%,var(--scan-line-color) 80%,transparent 100%); border-radius:4px; z-index:13; pointer-events:none; box-shadow:0 0 16px 4px rgba(255,140,0,0.7); animation:scanMove 2.2s cubic-bezier(0.45,0,0.55,1) infinite; }
-        .scan-line.cooling { background:linear-gradient(90deg,transparent 0%,#ef476f 20%,#ef476f 80%,transparent 100%); box-shadow:0 0 16px 4px rgba(239,71,111,0.7); animation-duration:1.2s; }
-        @keyframes scanMove { 0%{top:8%;opacity:0.3} 15%{opacity:1} 50%{top:88%;opacity:1} 65%{opacity:0.3} 100%{top:8%;opacity:0.3} }
-        .hint-text { position:absolute; bottom:14%; left:50%; transform:translateX(-50%); color:rgba(255,255,255,0.8); font-size:13px; z-index:14; }
-        .controls-row { display:flex; gap:12px; flex-wrap:wrap; justify-content:center; align-items:center; }
-        .result-card, .fields-card { background:var(--card-bg); border-radius:16px; padding:14px 16px; border:1px solid var(--border); color:var(--text); }
-        .result-content { background:var(--input-bg); padding:8px 10px; border-radius:8px; font-family:monospace; margin-bottom:10px; max-height:80px; overflow-y:auto; color:var(--text); }
-        .field-item { flex:1 1 30%; min-width:100px; display:flex; flex-direction:column; gap:4px; }
-        .field-item input { background:var(--input-bg); border:1px solid var(--border); border-radius:8px; padding:8px 10px; color:var(--text); font-size:14px; outline:none; }
-        .save-btn-row { margin-top:8px; display:flex; gap:8px; }
-        .multiplier-group { display:flex; align-items:center; gap:6px; margin-bottom:10px; }
-        .multiplier-group label { font-size:0.75rem; font-weight:600; color:var(--text-secondary); }
-        .multiplier-group select { padding:8px 10px; border-radius:8px; background:var(--input-bg); border:1px solid var(--border); color:var(--text); font-size:14px; outline:none; width:100%; }
+        /* 首页卡片 */
+        .home-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; padding-top: 8px; }
+        .home-card {
+            background: #fff; border-radius: 20px; padding: 20px 8px 16px; text-align: center;
+            cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.04); border: 1px solid #f1f5f9;
+            position: relative; overflow: hidden;
+        }
+        .home-card::after {
+            content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+            background: var(--card-color); border-radius: 0 0 4px 4px;
+        }
+        .home-card:hover { transform: translateY(-4px); box-shadow: 0 12px 28px rgba(0,0,0,0.08); }
+        .home-card:active { transform: scale(0.96); }
+        .home-card .icon-wrap {
+            width: 56px; height: 56px; border-radius: 18px; display: flex;
+            align-items: center; justify-content: center; margin: 0 auto 10px;
+            font-size: 26px; color: #fff; background: var(--card-color); transition: transform 0.2s;
+        }
+        .home-card:hover .icon-wrap { transform: scale(1.05); }
+        .home-card .card-label { font-size: 14px; font-weight: 600; color: #1e293b; }
+        .home-card .card-badge { font-size: 11px; color: #94a3b8; margin-top: 2px; }
+        .card-scan { --card-color: #8b5cf6; }
+        .card-out { --card-color: #ef4444; }
+        .card-in { --card-color: #22c55e; }
+        .card-count { --card-color: #f59e0b; }
+        .card-stock { --card-color: #3b82f6; }
+        .card-material { --card-color: #ec4899; }
 
-        .list-container { flex:1; overflow-y:auto; background:var(--card-bg); border-radius:16px; padding:8px 6px; border:1px solid var(--border); }
-        .list-item { display:flex; justify-content:space-between; align-items:center; padding:12px 12px; border-bottom:1px solid var(--border); }
-        .item-detail { display:flex; flex-direction:column; gap:2px; flex:1; }
-        .item-part { font-weight:600; }
-        .item-meta { font-size:0.7rem; color:var(--text-secondary); }
-        .item-qty { background:var(--primary-light); padding:4px 12px; border-radius:20px; font-weight:600; margin:0 8px; color:var(--text); }
-        .delete-btn { background:none; border:none; color:var(--danger); cursor:pointer; font-size:1.2rem; padding:8px 12px; }
-        .empty-message { text-align:center; color:var(--text-secondary); padding:24px; }
+        /* 今日数据 */
+        .daily-stats {
+            margin-top: 24px; background: #f8fafc; border-radius: 20px;
+            padding: 18px 16px 14px; border: 1px solid #e9eef3;
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.02);
+        }
+        .stats-title { font-size: 13px; font-weight: 600; color: #475569; display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+        .stats-title i { color: #3b82f6; font-size: 16px; }
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .stat-item {
+            background: #fff; border-radius: 14px; padding: 12px 10px;
+            text-align: center; box-shadow: 0 2px 6px rgba(0,0,0,0.02);
+            border: 1px solid #f1f5f9;
+        }
+        .stat-value { font-size: 22px; font-weight: 700; line-height: 1.3; }
+        .stat-label { font-size: 12px; color: #94a3b8; margin-top: 2px; }
+        .in { color: #22c55e; }
+        .out { color: #ef4444; }
+        .total { color: #3b82f6; }
+        .count { color: #8b5cf6; }
 
-        .chat-messages { flex:1; overflow-y:auto; background:var(--card-bg); border-radius:16px; padding:12px; border:1px solid var(--border); display:flex; flex-direction:column; gap:10px; }
-        .chat-msg { max-width:85%; padding:10px 14px; border-radius:16px; word-break:break-word; }
-        .chat-msg.self { align-self:flex-end; background:var(--primary); color:white; }
-        .chat-msg.other { align-self:flex-start; background:var(--primary-light); color:var(--text); }
-        .chat-msg .sender { font-size:0.7rem; opacity:0.8; margin-bottom:4px; }
-        .chat-msg .time { font-size:0.6rem; opacity:0.6; text-align:right; margin-top:4px; }
-        .chat-input-row { display:flex; gap:8px; margin-top:8px; }
-        .chat-input-row input { flex:1; padding:12px; border-radius:30px; border:1px solid var(--border); background:var(--input-bg); color:var(--text); }
+        /* 公共组件 */
+        .section-title { font-size: 18px; font-weight: 700; color: #0f172a; margin-bottom: 16px; display: flex; align-items: center; gap: 10px; }
+        .section-title i { font-size: 20px; }
+        .form-group { margin-bottom: 16px; }
+        .form-group label { display: block; font-size: 13px; font-weight: 600; color: #475569; margin-bottom: 5px; }
+        .required { color: #ef4444; margin-left: 2px; }
+        .form-control {
+            width: 100%; padding: 10px 14px; border: 1.5px solid #e2e8f0;
+            border-radius: 12px; font-size: 14px; color: #1e293b; background: #f8fafc;
+            transition: border-color 0.2s; outline: none; font-family: inherit;
+        }
+        .form-control:focus { border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,0.15); background: #fff; }
+        select.form-control {
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2364748b' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat; background-position: right 14px center; padding-right: 36px;
+        }
+        .btn {
+            padding: 10px 24px; border: none; border-radius: 12px; font-size: 14px;
+            font-weight: 600; cursor: pointer; transition: background 0.2s, transform 0.15s;
+            display: inline-flex; align-items: center; justify-content: center; gap: 8px; font-family: inherit;
+        }
+        .btn:active { transform: scale(0.96); }
+        .btn-primary { background: #3b82f6; color: #fff; }
+        .btn-success { background: #22c55e; color: #fff; }
+        .btn-danger { background: #ef4444; color: #fff; }
+        .btn-warning { background: #f59e0b; color: #fff; }
+        .btn-info { background: #0ea5e9; color: #fff; }
+        .btn-outline { background: transparent; color: #475569; border: 1.5px solid #e2e8f0; }
+        .btn-sm { padding: 6px 14px; font-size: 12px; border-radius: 8px; }
+        .btn-block { width: 100%; justify-content: center; }
 
-        .global-notification {
-            position: fixed; top: 0; left: 50%; transform: translateX(-50%);
-            background: var(--primary); color: #fff; padding: 12px 20px;
-            border-radius: 0 0 16px 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-            z-index: 9999; font-size: 0.9rem; max-width: 90%; text-align: center;
-            display: none; pointer-events: none;
-            padding-top: calc(12px + env(safe-area-inset-top));
+        /* 表格 */
+        .table-wrap { overflow-x: auto; border-radius: 14px; border: 1px solid #f1f5f9; background: #fff; margin-top: 4px; }
+        table { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 400px; }
+        table th { background: #f8fafc; font-weight: 600; color: #475569; padding: 10px 12px; text-align: left; border-bottom: 2px solid #e2e8f0; white-space: nowrap; }
+        table td { padding: 10px 12px; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
+        table tr:last-child td { border-bottom: none; }
+        table tr:hover td { background: #f8fafc; }
+        .text-center { text-align: center; }
+        .text-muted { color: #94a3b8; font-size: 13px; }
+        .stock-low { color: #ef4444; font-weight: 600; }
+
+        /* 扫码 */
+        .scan-area {
+            background: #f1f5f9; border-radius: 20px; padding: 40px 20px;
+            text-align: center; border: 2px dashed #cbd5e1; margin-bottom: 20px;
+        }
+        .scan-area.active { border-color: #3b82f6; background: #eff6ff; }
+        .scan-icon { font-size: 56px; color: #94a3b8; margin-bottom: 12px; }
+        .scan-hint { font-size: 14px; color: #64748b; }
+        .scan-result {
+            background: #fff; border-radius: 16px; padding: 16px 20px;
+            border: 1px solid #e2e8f0; margin-top: 12px; display: none;
+        }
+        .scan-result.show { display: block; animation: fadeUp 0.3s ease; }
+        .result-item { display: flex; justify-content: space-between; padding: 4px 0; font-size: 14px; border-bottom: 1px solid #f1f5f9; }
+        .result-item:last-child { border-bottom: none; }
+        .result-label { color: #64748b; }
+        .result-value { font-weight: 600; color: #0f172a; }
+
+        /* 盘点 */
+        .count-item {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 10px 14px; background: #f8fafc; border-radius: 12px;
+            margin-bottom: 8px; border: 1px solid #f1f5f9;
+        }
+        .count-item.changed { border-left: 3px solid #f59e0b; background: #fffbeb; }
+        .info { flex: 1; min-width: 0; }
+        .info .name { font-weight: 600; font-size: 14px; }
+        .info .spec { font-size: 12px; color: #94a3b8; }
+        .qty-control { display: flex; align-items: center; gap: 8px; }
+        .qty-control input { width: 70px; padding: 4px 6px; border: 1.5px solid #e2e8f0; border-radius: 8px; text-align: center; font-size: 14px; font-weight: 600; outline: none; background: #fff; }
+
+        /* 料号管理 */
+        .material-form {
+            background: #f8fafc; border-radius: 16px; padding: 16px;
+            margin-bottom: 16px; border: 1px solid #f1f5f9;
+        }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .material-list .material-item {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 10px 14px; background: #fff; border-radius: 12px;
+            margin-bottom: 6px; border: 1px solid #f1f5f9;
         }
 
-        .location-result-container {
-            margin-top:12px; padding:8px; border-radius:14px; background:var(--primary-light);
-            border:1px solid var(--border); min-height:40px; display:flex; flex-direction:column; gap:8px;
-            max-height:300px; overflow-y:auto;
+        /* 我的页面 */
+        .my-profile {
+            background: #f8fafc; border-radius: 20px; padding: 20px;
+            text-align: center; border: 1px solid #f1f5f9; margin-bottom: 20px;
         }
-        .location-result-item {
-            background:var(--card-bg); border:1px solid var(--border); padding:12px 14px;
-            border-radius:16px; font-size:0.9rem; display:flex; flex-direction:column; gap:6px;
-            color:var(--text); width:100%;
+        .my-profile .avatar { font-size: 64px; color: #3b82f6; margin-bottom: 8px; }
+        .my-profile .username { font-size: 18px; font-weight: 700; color: #0f172a; }
+        .my-profile .user-role { font-size: 14px; color: #64748b; }
+        .my-info-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-top: 16px; }
+        .my-info-item {
+            background: #fff; border-radius: 14px; padding: 14px 6px;
+            text-align: center; border: 1px solid #f1f5f9;
         }
-        .location-result-row {
-            display:flex; justify-content:space-between; align-items:center;
+        .my-info-item .num { font-size: 22px; font-weight: 700; color: #1e293b; }
+        .my-info-item .label { font-size: 12px; color: #94a3b8; margin-top: 2px; }
+
+        /* 自定义消息 */
+        .custom-msg-item {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 8px 12px; background: #fff; border-radius: 10px;
+            margin-bottom: 6px; border: 1px solid #f1f5f9;
         }
-        .location-result-row .part-label { color:var(--text-secondary); font-size:0.75rem; margin-right:8px; }
-        .location-result-row strong { font-weight:700; color:var(--primary); font-size:0.9rem; }
-        .location-result-row .loc-value { font-size:0.9rem; font-weight:500; color:var(--text); flex:1; text-align:center; }
-        .loc-actions { display:flex; gap:6px; }
-        .loc-actions button { background:none; border:1px solid var(--border); color:var(--text-secondary); border-radius:8px; padding:6px 12px; font-size:0.8rem; cursor:pointer; }
+        .custom-msg-item .msg-text { flex: 1; color: #475569; }
+        .btn-remove { color: #ef4444; cursor: pointer; padding: 4px 8px; border-radius: 6px; }
 
-        .profile-header { display:flex; align-items:center; gap:16px; margin-bottom:8px; }
-        .avatar { width:60px; height:60px; border-radius:50%; background:var(--primary-light); display:flex; align-items:center; justify-content:center; font-size:2rem; cursor:pointer; border:3px solid var(--primary); overflow:hidden; flex-shrink:0; }
-        .avatar img { width:100%; height:100%; object-fit:cover; }
-        .profile-name { font-weight:700; font-size:1.2rem; }
-        .setting-item { display:flex; justify-content:space-between; align-items:center; padding:14px 0; border-bottom:1px solid var(--border); }
-        .setting-label { font-weight:600; }
+        /* 数据导入卡片 */
+        .upload-card {
+            background: #f8fafc; border-radius: 16px; padding: 16px;
+            margin-bottom: 16px; border: 1px solid #e9eef3;
+        }
+        .upload-header { font-weight: 600; font-size: 14px; color: #0f172a; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+        .file-input-wrap { display: flex; align-items: center; gap: 8px; }
 
-        .modal-overlay { position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.6); z-index:300; display:flex; align-items:center; justify-content:center; padding:16px; }
-        .modal-box { background:var(--card-bg); color:var(--text); border-radius:28px; padding:28px 24px; width:100%; max-width:360px; box-shadow:0 24px 48px var(--shadow); text-align:center; }
-        .modal-box h3 { margin-bottom:12px; font-size:1.3rem; }
-        .modal-box .modal-message { margin-bottom:20px; font-size:0.95rem; line-height:1.6; color:var(--text-secondary); }
-        .modal-box input { width:100%; padding:14px; border-radius:14px; border:1px solid var(--border); background:var(--input-bg); color:var(--text); margin-bottom:16px; font-size:1rem; }
-        .modal-actions { display:flex; justify-content:center; gap:12px; margin-top:8px; flex-wrap:wrap; }
-        .modal-btn { padding:12px 24px; border-radius:30px; font-weight:600; font-size:0.95rem; border:none; cursor:pointer; min-width:100px; }
-        .modal-btn-cancel { background:var(--input-bg); color:var(--text); border:1.5px solid var(--border); }
-        .modal-btn-confirm { background:var(--primary); color:white; }
-        .modal-btn-danger { background:var(--danger); color:white; }
-        .toast { position:fixed; top:24px; left:50%; transform:translateX(-50%) translateY(-120px); background:#333; color:#fff; padding:10px 20px; border-radius:25px; z-index:9999; transition:0.35s; pointer-events:none; }
-        .toast.show { transform:translateX(-50%) translateY(0); }
-        details.card { margin-top:12px; }
-        details.card summary { font-weight:600; cursor:pointer; padding:8px 0; }
+        .empty-state { text-align: center; padding: 32px 16px; color: #94a3b8; }
+        .empty-state i { font-size: 40px; margin-bottom: 12px; opacity: 0.5; }
 
-        .progress-container { width:100%; background: #ddd; border-radius: 8px; height: 12px; margin: 8px 0; display: none; }
-        .progress-bar { width: 0%; height: 12px; background: var(--primary); border-radius: 8px; transition: width 0.2s; }
+        /* 底部导航 */
+        .bottom-nav {
+            position: relative;
+            height: calc(68px + env(safe-area-inset-bottom));
+            background: #fff;
+            border-top: 1px solid #e9eef3;
+            display: flex;
+            align-items: center;
+            justify-content: space-around;
+            padding-bottom: env(safe-area-inset-bottom);
+            box-shadow: 0 -2px 12px rgba(0,0,0,0.04);
+            z-index: 20;
+            flex-shrink: 0;
+        }
+        .bottom-nav .nav-item {
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            flex: 1; padding: 4px 0; cursor: pointer; color: #94a3b8;
+            border: none; background: transparent; font-family: inherit;
+        }
+        .bottom-nav .nav-item i { font-size: 24px; margin-bottom: 2px; }
+        .bottom-nav .nav-item span { font-size: 11px; font-weight: 500; }
+        .bottom-nav .nav-item.active { color: #3b82f6; }
+        .bottom-nav .nav-item.active i { transform: translateY(-2px); }
 
-        #voiceQuantityBtn { font-size: 1.5rem; padding: 8px 16px; margin-left: auto; }
-        #voiceQuantityBtn.listening { color: var(--danger); animation: pulse 1s infinite; }
-        @keyframes pulse { 0%{opacity:1;} 50%{opacity:0.5;} 100%{opacity:1;} }
+        /* Toast */
+        .toast-container {
+            position: fixed;
+            bottom: calc(90px + env(safe-area-inset-bottom));
+            left: 50%; transform: translateX(-50%);
+            z-index: 999; display: flex; flex-direction: column; align-items: center;
+            gap: 8px; pointer-events: none; max-width: 420px; width: 90%;
+        }
+        .toast {
+            background: #0f172a; color: #fff; padding: 12px 24px; border-radius: 14px;
+            font-size: 14px; font-weight: 500; box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+            animation: toastIn 0.35s ease, toastOut 0.35s ease 2.5s forwards;
+            width: 100%; text-align: center; pointer-events: auto;
+            display: flex; align-items: center; justify-content: center; gap: 10px;
+        }
+        .toast-success { background: #16a34a; }
+        .toast-error { background: #dc2626; }
+        .toast-info { background: #2563eb; }
+        @keyframes toastIn {
+            0% { opacity: 0; transform: translateY(20px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes toastOut {
+            0% { opacity: 1; transform: translateY(0); }
+            100% { opacity: 0; transform: translateY(-12px); }
+        }
 
-        .tetris-container { display:flex; flex-direction:column; height:100%; position:relative; }
-        .tetris-top { flex:1; display:flex; flex-direction:column; gap:10px; padding:10px; align-items:center; justify-content:center; }
-        .tetris-score { font-size:0.9rem; font-weight:bold; color: #fff; display:flex; gap:20px; justify-content:center; }
-        .tetris-board-area { display:flex; gap:12px; justify-content:center; align-items:flex-start; width:100%; }
-        .tetris-main-canvas-wrapper canvas { border:2px solid var(--primary); border-radius:10px; background:#111; }
-        .tetris-preview-wrapper { display:flex; flex-direction:column; gap:6px; align-items:center; }
-        .tetris-preview-wrapper canvas { border:2px solid var(--primary); border-radius:10px; background:#111; width: 64px; height: 64px; }
-        .tetris-controls-cross { display:flex; flex-direction:column; align-items:center; gap:8px; margin-top:10px; }
-        .tetris-controls-cross .row { display:flex; gap:8px; }
-        .tetris-btn { padding:14px 18px; font-size:1.2rem; border-radius:14px; background:var(--card-bg); color:var(--text); border:1px solid var(--border); cursor:pointer; min-width:52px; text-align:center; }
-
-        .back-btn-topleft { position: absolute; top: 10px; left: 10px; width: 36px; height: 36px; border-radius: 50%; background: var(--primary); color: white; font-size: 1.3rem; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(0,0,0,0.5); cursor: pointer; z-index: 20; border: none; }
-        .size-controls { position: absolute; top: 10px; right: 10px; display: flex; gap: 6px; z-index: 20; }
-        .size-btn { width: 36px; height: 36px; border-radius: 50%; background: var(--primary); color: white; font-size: 1.5rem; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(0,0,0,0.5); cursor: pointer; border: none; line-height: 1; }
-        .restart-side-btn { margin-top: 6px; width: 70px; padding: 8px 4px; font-size: 0.7rem; font-weight: 600; border-radius: 10px; background: var(--primary); color: white; border: none; cursor: pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.3); }
-        #gameView { background: #000 !important; }
+        @media (max-width: 400px) {
+            .home-grid { gap: 12px; }
+            .home-card { padding: 16px 4px 12px; }
+            .home-card .icon-wrap { width: 46px; height: 46px; font-size: 20px; }
+            .my-info-grid { grid-template-columns: 1fr 1fr; }
+        }
     </style>
 </head>
 <body>
-    <!-- 登录页 -->
-    <div id="loginContainer" class="auth-container">
-        <h1>L6仓库管理系统</h1>
-        <input type="text" id="loginUsernameInput" placeholder="用户名（英文）" autocomplete="username">
-        <input type="password" id="loginPasswordInput" placeholder="密码" autocomplete="current-password">
-        <button class="btn-full btn-primary" id="loginBtn" onclick="window.handleLogin()">登 录</button>
-        <div id="loginError" class="error-text"></div>
-        <div style="font-size:0.75rem;color:var(--text-secondary);">
-            没有账号？<button class="btn-outline" id="goToRegisterBtn" style="padding:6px 14px;">前往注册</button>
+<div id="app">
+    <div class="page-container" id="pageContainer">
+        <!-- 首页 -->
+        <div id="page-home" class="page active">
+            <div class="alert-marquee" id="alertMarquee">
+                <div class="marquee-track" id="marqueeTrack"></div>
+            </div>
+            <div class="home-grid">
+                <div class="home-card card-scan" data-page="scan"><div class="icon-wrap"><i class="fas fa-qrcode"></i></div><div class="card-label">扫码</div><div class="card-badge">扫描料号</div></div>
+                <div class="home-card card-out" data-page="out"><div class="icon-wrap"><i class="fas fa-sign-out-alt"></i></div><div class="card-label">出库</div><div class="card-badge">减少库存</div></div>
+                <div class="home-card card-in" data-page="in"><div class="icon-wrap"><i class="fas fa-sign-in-alt"></i></div><div class="card-label">入库</div><div class="card-badge">增加库存</div></div>
+                <div class="home-card card-count" data-page="count"><div class="icon-wrap"><i class="fas fa-clipboard-list"></i></div><div class="card-label">盘点</div><div class="card-badge">调整库存</div></div>
+                <div class="home-card card-stock" data-page="stock"><div class="icon-wrap"><i class="fas fa-boxes"></i></div><div class="card-label">库存</div><div class="card-badge">查看库存</div></div>
+                <div class="home-card card-material" data-page="material"><div class="icon-wrap"><i class="fas fa-database"></i></div><div class="card-label">料号数据</div><div class="card-badge">管理料号</div></div>
+            </div>
+            <div class="daily-stats" id="dailyStats">
+                <div class="stats-title"><i class="fas fa-calendar-day"></i> 今日数据</div>
+                <div class="stats-grid">
+                    <div class="stat-item"><div class="stat-value in" id="todayIn">0</div><div class="stat-label">入库总量</div></div>
+                    <div class="stat-item"><div class="stat-value out" id="todayOut">0</div><div class="stat-label">出库总量</div></div>
+                    <div class="stat-item"><div class="stat-value total" id="todayTotalStock">0</div><div class="stat-label">当前总库存</div></div>
+                    <div class="stat-item"><div class="stat-value count" id="todayOps">0</div><div class="stat-label">今日操作笔数</div></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 扫码页 -->
+        <div id="page-scan" class="page">
+            <div class="section-title"><i class="fas fa-qrcode"></i> 扫码</div>
+            <div class="scan-area" id="scanArea">
+                <div class="scan-icon"><i class="fas fa-camera"></i></div>
+                <div class="scan-hint">点击下方按钮模拟扫码，或手动输入料号</div>
+            </div>
+            <div class="form-group"><label>手动输入料号</label><div style="display:flex; gap:8px;"><input type="text" class="form-control" id="scanInput" placeholder="例如: M001"><button class="btn btn-primary" id="scanBtn"><i class="fas fa-search"></i> 查询</button></div></div>
+            <button class="btn btn-primary btn-block" id="scanMockBtn" style="margin-bottom:16px;"><i class="fas fa-camera"></i> 模拟扫码</button>
+            <div class="scan-result" id="scanResult">
+                <div class="result-item"><span class="result-label">料号</span><span class="result-value" id="srId">-</span></div>
+                <div class="result-item"><span class="result-label">名称</span><span class="result-value" id="srName">-</span></div>
+                <div class="result-item"><span class="result-label">规格</span><span class="result-value" id="srSpec">-</span></div>
+                <div class="result-item"><span class="result-label">单位</span><span class="result-value" id="srUnit">-</span></div>
+                <div class="result-item"><span class="result-label">当前库存</span><span class="result-value" id="srStock">-</span></div>
+                <div class="result-item"><span class="result-label">储位</span><span class="result-value" id="srLocation">-</span></div>
+            </div>
+        </div>
+
+        <!-- 出库页 -->
+        <div id="page-out" class="page">
+            <div class="section-title"><i class="fas fa-sign-out-alt" style="color:#ef4444;"></i> 出库</div>
+            <form id="outForm">
+                <div class="form-group"><label>料号 <span class="required">*</span></label><select class="form-control" id="outMaterial" required></select></div>
+                <div class="form-group"><label>数量 <span class="required">*</span></label><input type="number" class="form-control" id="outQty" placeholder="请输入数量" min="1" required><small style="color:#94a3b8;" id="outStockHint"></small></div>
+                <div class="form-group"><label>目的地</label><input type="text" class="form-control" id="outDest" placeholder="例如: 生产车间A"></div>
+                <div class="form-group"><label>备注</label><input type="text" class="form-control" id="outNote" placeholder="可选备注"></div>
+                <button type="submit" class="btn btn-danger btn-block"><i class="fas fa-arrow-right"></i> 确认出库</button>
+            </form>
+        </div>
+
+        <!-- 入库页 -->
+        <div id="page-in" class="page">
+            <div class="section-title"><i class="fas fa-sign-in-alt" style="color:#22c55e;"></i> 入库</div>
+            <form id="inForm">
+                <div class="form-group"><label>料号 <span class="required">*</span></label><select class="form-control" id="inMaterial" required></select></div>
+                <div class="form-group"><label>数量 <span class="required">*</span></label><input type="number" class="form-control" id="inQty" placeholder="请输入数量" min="1" required></div>
+                <div class="form-group"><label>来源</label><input type="text" class="form-control" id="inSource" placeholder="例如: 供应商A"></div>
+                <div class="form-group"><label>备注</label><input type="text" class="form-control" id="inNote" placeholder="可选备注"></div>
+                <button type="submit" class="btn btn-success btn-block"><i class="fas fa-arrow-left"></i> 确认入库</button>
+            </form>
+        </div>
+
+        <!-- 盘点页 -->
+        <div id="page-count" class="page">
+            <div class="section-title"><i class="fas fa-clipboard-list" style="color:#f59e0b;"></i> 盘点</div>
+            <p style="font-size:13px; color:#64748b; margin-bottom:16px;"><i class="fas fa-info-circle"></i> 调整库存数量，修改后点击「保存盘点」生效。</p>
+            <div id="countList"></div>
+            <button class="btn btn-warning btn-block" id="saveCountBtn" style="margin-top:12px;"><i class="fas fa-save"></i> 保存盘点</button>
+        </div>
+
+        <!-- 库存页 -->
+        <div id="page-stock" class="page">
+            <div class="section-title"><i class="fas fa-boxes" style="color:#3b82f6;"></i> 库存</div>
+            <div class="form-group" style="margin-bottom:12px;"><input type="text" class="form-control" id="stockSearch" placeholder="🔍 搜索料号 / 名称..."></div>
+            <div class="table-wrap"><table><thead><tr><th>料号</th><th>名称</th><th>规格</th><th>库存</th><th>储位</th></tr></thead><tbody id="stockBody"></tbody></table></div>
+            <div style="margin-top:12px; text-align:right; font-size:12px; color:#94a3b8;">共 <span id="stockCount">0</span> 项</div>
+        </div>
+
+        <!-- 料号数据页 -->
+        <div id="page-material" class="page">
+            <div class="section-title"><i class="fas fa-database" style="color:#ec4899;"></i> 料号数据</div>
+            <div class="material-form">
+                <div style="font-weight:600; font-size:14px; margin-bottom:10px;"><i class="fas fa-plus-circle" style="color:#3b82f6;"></i> 添加料号</div>
+                <div class="form-row">
+                    <div class="form-group"><label>料号 <span class="required">*</span></label><input type="text" class="form-control" id="matId" placeholder="例如: M008"></div>
+                    <div class="form-group"><label>名称 <span class="required">*</span></label><input type="text" class="form-control" id="matName" placeholder="例如: 垫圈"></div>
+                    <div class="form-group"><label>规格</label><input type="text" class="form-control" id="matSpec" placeholder="例如: 8mm"></div>
+                    <div class="form-group"><label>单位</label><input type="text" class="form-control" id="matUnit" placeholder="例如: 个"></div>
+                    <div class="form-group"><label>储位</label><input type="text" class="form-control" id="matLocation" placeholder="例如: A1-03"></div>
+                    <div class="form-group"><label>初始库存</label><input type="number" class="form-control" id="matStock" placeholder="0" value="0" min="0"></div>
+                </div>
+                <button class="btn btn-primary btn-block" id="addMaterialBtn"><i class="fas fa-plus"></i> 添加料号</button>
+            </div>
+            <div style="font-weight:600; font-size:14px; margin:16px 0 10px;"><i class="fas fa-list"></i> 现有料号</div>
+            <div class="material-list" id="materialList"></div>
+        </div>
+
+        <!-- 储位查找页（含行内编辑） -->
+        <div id="page-location" class="page">
+            <div class="section-title"><i class="fas fa-map-pin" style="color:#0ea5e9;"></i> 储位查找</div>
+            <div class="form-group"><label>输入料号 / 储位 / 名称</label><div style="display:flex; gap:8px;"><input type="text" class="form-control" id="locationSearchInput" placeholder="例如: M001 或 A1-01"><button class="btn btn-info" id="locationSearchBtn"><i class="fas fa-search"></i> 查找</button></div></div>
+            <button class="btn btn-outline btn-block" id="locationClearBtn" style="margin-bottom:16px;"><i class="fas fa-undo"></i> 清空结果</button>
+            <div id="locationResult">
+                <div class="table-wrap"><table><thead><tr><th>料号</th><th>名称</th><th>储位</th><th>库存</th><th>操作</th></tr></thead><tbody id="locationResultBody"><tr><td colspan="5" class="text-center text-muted" style="padding:24px;">请输入关键词查找</td></tr></tbody></table></div>
+                <div style="margin-top:8px; text-align:right; font-size:12px; color:#94a3b8;">找到 <span id="locationResultCount">0</span> 项</div>
+            </div>
+        </div>
+
+        <!-- 数据导入页 -->
+        <div id="page-data" class="page">
+            <div class="section-title"><i class="fas fa-cloud-upload-alt" style="color:#3b82f6;"></i> 数据导入</div>
+            <p style="font-size:13px; color:#64748b; margin-bottom:16px;"><i class="fas fa-info-circle"></i> 支持 xls/xlsx 文件，按模板格式上传。</p>
+            <div class="upload-card">
+                <div class="upload-header"><i class="fas fa-map-pin" style="color:#0ea5e9;"></i> 储位批量上传</div>
+                <div class="file-input-wrap"><input type="file" id="locationFile" accept=".xls,.xlsx" class="form-control" style="font-size:13px;"><button class="btn btn-info btn-sm" id="uploadLocationBtn"><i class="fas fa-upload"></i> 导入</button></div>
+                <small class="text-muted">表格需包含列：料号、储位</small>
+            </div>
+            <div class="upload-card">
+                <div class="upload-header"><i class="fas fa-boxes" style="color:#3b82f6;"></i> 系统库存批量上传</div>
+                <div class="file-input-wrap"><input type="file" id="stockFile" accept=".xls,.xlsx" class="form-control" style="font-size:13px;"><button class="btn btn-primary btn-sm" id="uploadStockBtn"><i class="fas fa-upload"></i> 导入</button></div>
+                <small class="text-muted">表格需包含列：料号、库存</small>
+            </div>
+            <div class="upload-card">
+                <div class="upload-header"><i class="fas fa-database" style="color:#ec4899;"></i> 料号信息批量上传</div>
+                <div class="file-input-wrap"><input type="file" id="materialFile" accept=".xls,.xlsx" class="form-control" style="font-size:13px;"><button class="btn btn-warning btn-sm" id="uploadMaterialBtn"><i class="fas fa-upload"></i> 导入</button></div>
+                <small class="text-muted">表格需包含列：料号、名称、规格、单位、储位、库存</small>
+            </div>
+        </div>
+
+        <!-- 我的页面 -->
+        <div id="page-mine" class="page">
+            <div class="section-title"><i class="fas fa-user" style="color:#8b5cf6;"></i> 我的</div>
+            <div class="my-profile">
+                <div class="avatar"><i class="fas fa-user-circle"></i></div>
+                <div class="username">仓库管理员</div>
+                <div class="user-role">WMS 系统 · 已登录</div>
+            </div>
+            <div class="my-info-grid">
+                <div class="my-info-item"><div class="num" id="myTotalMaterials">0</div><div class="label">料号总数</div></div>
+                <div class="my-info-item"><div class="num" id="myTotalStock">0</div><div class="label">总库存量</div></div>
+                <div class="my-info-item"><div class="num" id="myTotalRecords">0</div><div class="label">操作记录</div></div>
+            </div>
+            <div style="margin-top:20px; background:#f8fafc; border-radius:16px; padding:16px; border:1px solid #f1f5f9;">
+                <div style="font-size:14px; font-weight:600; color:#0f172a; margin-bottom:8px;"><i class="fas fa-bullhorn" style="color:#f59e0b;"></i> 自定义滚动预警</div>
+                <div style="display:flex; gap:8px; margin-bottom:12px;"><input type="text" class="form-control" id="customMsgInput" placeholder="输入要显示的文字..."><button class="btn btn-primary btn-sm" id="addCustomMsgBtn"><i class="fas fa-plus"></i> 添加</button></div>
+                <div id="customMsgList"></div>
+            </div>
+            <div style="margin-top:20px; background:#f8fafc; border-radius:16px; padding:16px; border:1px solid #f1f5f9;">
+                <div style="font-size:14px; font-weight:600; color:#0f172a; margin-bottom:8px;"><i class="fas fa-info-circle" style="color:#3b82f6;"></i> 系统信息</div>
+                <div style="display:flex; justify-content:space-between; font-size:13px; color:#475569; padding:4px 0;"><span>版本</span><span>v3.1</span></div>
+                <div style="display:flex; justify-content:space-between; font-size:13px; color:#475569; padding:4px 0;"><span>运行时间</span><span id="sysUptime">--</span></div>
+                <div style="display:flex; justify-content:space-between; font-size:13px; color:#475569; padding:4px 0;"><span>数据更新</span><span id="lastUpdateTime">--</span></div>
+            </div>
+            <button class="btn btn-outline btn-block" style="margin-top:16px;" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> 退出登录 (模拟)</button>
+            <button class="btn btn-outline btn-block" style="margin-top:8px;" id="resetDataBtn"><i class="fas fa-trash-restore"></i> 重置演示数据</button>
         </div>
     </div>
 
-    <!-- 注册页 -->
-    <div id="registerContainer" class="auth-container" style="display:none;">
-        <div>📝</div><h1>注册新账号</h1>
-        <input type="text" id="registerUsernameInput" placeholder="用户名（英文）">
-        <input type="text" id="registerRealNameInput" placeholder="真实姓名">
-        <input type="password" id="registerPasswordInput" placeholder="密码（至少4位）">
-        <input type="password" id="registerPasswordConfirmInput" placeholder="确认密码">
-        <div class="btn-row">
-            <button class="btn-full btn-outline" id="goToLoginBtn">返回</button>
-            <button class="btn-full btn-secondary" id="registerSubmitBtn" onclick="window.handleRegister()">注 册</button>
-        </div>
-        <div id="registerError" class="error-text"></div>
-    </div>
+    <nav class="bottom-nav" id="bottomNav">
+        <button class="nav-item active" data-tab="home"><i class="fas fa-home"></i><span>首页</span></button>
+        <button class="nav-item" data-tab="location"><i class="fas fa-map-pin"></i><span>储位查询</span></button>
+        <button class="nav-item" data-tab="data"><i class="fas fa-upload"></i><span>数据</span></button>
+        <button class="nav-item" data-tab="mine"><i class="fas fa-user"></i><span>我的</span></button>
+    </nav>
+</div>
+<div class="toast-container" id="toastContainer"></div>
 
-    <div id="globalNotification" class="global-notification"></div>
+<script>
+(function() {
+    const STORAGE_MAT = 'wms_materials', STORAGE_REC = 'wms_records', STORAGE_MSG = 'wms_messages';
+    const LOW = 5;
+    const defaults = [
+        { id:'M001', name:'螺丝', spec:'M4×10', unit:'个', stock:120, location:'A1-01' },
+        { id:'M002', name:'螺母', spec:'M4', unit:'个', stock:200, location:'A1-02' },
+        { id:'M003', name:'垫片', spec:'4mm', unit:'个', stock:150, location:'B2-03' },
+        { id:'M004', name:'轴承', spec:'6202', unit:'个', stock:45, location:'C3-01' },
+        { id:'M005', name:'齿轮', spec:'20齿', unit:'个', stock:30, location:'C3-02' },
+        { id:'M006', name:'皮带', spec:'A型', unit:'条', stock:18, location:'D4-01' },
+        { id:'M007', name:'电机', spec:'12V', unit:'台', stock:8, location:'E5-01' }
+    ];
 
-    <div id="appMain">
-        <div class="app-container">
-            <!-- 扫码页 -->
-            <div id="scannerPageView" class="view active">
-                <div class="scanner-container">
-                    <div class="scanner-wrapper" id="scannerWrapper">
-                        <video id="video" autoplay playsinline muted></video>
-                        <canvas id="canvas"></canvas>
-                        <div class="scanner-placeholder" id="placeholder"><span>📷</span><p>点击下方按钮启动摄像头</p></div>
-                        <div class="overlay" id="overlay" style="display:none;">
-                            <div class="scan-window" id="scanWindow">
-                                <div class="corner corner-tl"></div><div class="corner corner-tr"></div>
-                                <div class="corner corner-bl"></div><div class="corner corner-br"></div>
-                            </div>
-                            <div class="scan-line" id="scanLine"></div>
-                            <div class="hint-text">将二维码放入框内</div>
-                        </div>
-                    </div>
-                    <div class="controls-row">
-                        <button class="btn btn-primary" id="btnStart">🎥 开始扫描</button>
-                        <button class="btn btn-outline btn-sm" id="btnUpload">🖼️ 选图</button>
-                        <button class="btn btn-outline" id="btnTorch" disabled>🔦 补光</button>
-                        <button class="btn btn-outline btn-sm" id="btnFocus" disabled>🔍 对焦</button>
-                        <div style="display:flex;align-items:center;gap:4px;">
-                            <span style="font-size:0.75rem;">自动保存</span>
-                            <div class="switch-track" id="autoSaveSwitchTrack"><div class="switch-thumb"></div></div>
-                        </div>
-                        <input type="file" id="imgFile" accept="image/*" style="display:none">
-                    </div>
-                    <div class="fields-card">
-                        <div>📦 解析字段 (数量×倍数)</div>
-                        <div style="display:flex;flex-wrap:wrap;gap:10px;">
-                            <div class="field-item"><label>料号</label><input type="text" id="partNumber" placeholder="扫码自动填入" readonly></div>
-                            <div class="field-item">
-                                <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:4px;">
-                                    <label style="margin-bottom:0;">数量</label>
-                                    <button class="btn btn-sm btn-outline" id="voiceQuantityBtn" title="语音输入数量">🎤</button>
-                                </div>
-                                <input type="number" id="quantity" placeholder="数量" value="1" min="1">
-                            </div>
-                        </div>
-                        <div class="multiplier-group">
-                            <label>数量倍数</label>
-                            <select id="multiplierSelect">
-                                <option value="1">1</option><option value="2">2</option><option value="3">3</option>
-                                <option value="4">4</option><option value="5">5</option><option value="6">6</option>
-                                <option value="7">7</option><option value="8">8</option><option value="9">9</option>
-                                <option value="10">10</option>
-                            </select>
-                        </div>
-                        <div class="field-item"><label>MPN/备注</label><input type="text" id="mpn" placeholder="自动填入或手动"></div>
-                        <div class="save-btn-row">
-                            <button class="btn btn-outline" id="btnCancelSave" style="flex:1;">取消</button>
-                            <button class="btn btn-primary" id="btnConfirmSave" style="flex:1;">确认保存</button>
-                        </div>
-                    </div>
-                    <div class="result-card" id="resultCard" style="display:none;">
-                        <div>✅ 最新扫码内容</div>
-                        <div class="result-content" id="resultContent"></div>
-                        <div class="result-actions">
-                            <button class="btn btn-outline btn-sm" id="btnCopy">📋 复制</button>
-                            <button class="btn btn-outline btn-sm" id="btnClearResult">✕ 清除</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
+    let materials=[], records=[], userMessages=[], countChanges={}, locationEditOriginals={};
+    const startTime = new Date();
+    const $ = s => document.querySelector(s);
+    const pages = {
+        home: $('#page-home'), scan: $('#page-scan'), out: $('#page-out'), in: $('#page-in'),
+        count: $('#page-count'), stock: $('#page-stock'), material: $('#page-material'),
+        location: $('#page-location'), data: $('#page-data'), mine: $('#page-mine')
+    };
 
-            <!-- 盘点页 -->
-            <div id="queryView" class="view">
-                <div class="search-bar" style="display:flex;gap:8px;">
-                    <input type="date" id="searchDateInput" style="flex:1;padding:10px;border-radius:30px;border:1px solid var(--border);background:var(--input-bg);color:var(--text);">
-                    <button class="btn btn-primary" id="searchBtn">🔍 查询</button>
-                    <button class="btn" id="todaySearchBtn">今天</button>
-                </div>
-                <div style="display:flex;justify-content:flex-end;margin-top:-8px;">
-                    <button class="btn btn-danger btn-sm" id="deleteDayBtn">🗑️ 删除当天全部</button>
-                </div>
-                <div class="view-toggle" style="display:flex;gap:8px;margin-bottom:4px;flex-wrap:wrap;">
-                    <button class="btn btn-sm active" id="detailViewBtn">明细</button>
-                    <button class="btn btn-sm" id="summaryViewBtn">料号汇总</button>
-                    <button class="btn btn-sm" id="mpnSummaryViewBtn">MPN 汇总</button>
-                    <button class="btn btn-sm" id="exportExcelBtn" style="background:var(--success);color:white;margin-left:auto;">📥 导出</button>
-                </div>
-                <div id="listContainer" class="list-container"><div class="empty-message">📭 请选择日期查询</div></div>
-            </div>
+    function load() {
+        try {
+            materials = JSON.parse(localStorage.getItem(STORAGE_MAT)) || JSON.parse(JSON.stringify(defaults));
+            records = JSON.parse(localStorage.getItem(STORAGE_REC)) || [];
+            userMessages = JSON.parse(localStorage.getItem(STORAGE_MSG)) || [];
+        } catch(e) {
+            materials = JSON.parse(JSON.stringify(defaults)); records = []; userMessages = [];
+        }
+        materials.forEach(m => { if(m.location===undefined) m.location = ''; });
+    }
+    function save() {
+        localStorage.setItem(STORAGE_MAT, JSON.stringify(materials));
+        localStorage.setItem(STORAGE_REC, JSON.stringify(records));
+        localStorage.setItem(STORAGE_MSG, JSON.stringify(userMessages));
+        updateLastUpdateTime();
+    }
+    function find(id) { return materials.find(m => m.id === id); }
+    function nextId() {
+        const nums = materials.map(m => parseInt(m.id.replace(/\D/g,'')) || 0);
+        return 'M' + String(Math.max(0,...nums)+1).padStart(3,'0');
+    }
+    function isToday(d) { return d && new Date(d).toDateString()===new Date().toDateString(); }
+    function toast(msg, type='info') {
+        const icons = { success:'fa-check-circle', error:'fa-exclamation-circle', info:'fa-info-circle' };
+        const el = document.createElement('div');
+        el.className = `toast toast-${type}`;
+        el.innerHTML = `<i class="fas ${icons[type]}"></i> ${msg}`;
+        $('#toastContainer').appendChild(el);
+        setTimeout(() => el.remove(), 3000);
+    }
 
-            <!-- 储位页 -->
-            <div id="locationView" class="view">
-                <div class="card">
-                    <div style="font-weight:600; text-align:center; font-size:1.2rem; margin-bottom:10px;">储位查询</div>
-                    <div class="input-field"><input type="text" id="locationSearchInput" placeholder="输入完整料号 或 后四位"></div>
-                    <button class="btn btn-primary" id="locationSearchBtn" style="width:100%;">搜索储位</button>
-                    <div id="locationResult" class="location-result-container">
-                        <span class="location-result-empty">请输入料号进行搜索</span>
-                    </div>
-                </div>
-                <details class="card"><summary>➕ 手动添加储位</summary>
-                    <div style="margin-top:8px;">
-                        <div class="row" style="display:flex;gap:8px;">
-                            <div class="input-field"><label>料号</label><input type="text" id="manualPartInputDB" placeholder="例: A001"></div>
-                            <div class="input-field"><label>储位</label><input type="text" id="manualLocationInputDB" placeholder="例: A-01-03"></div>
-                        </div>
-                        <button class="btn btn-primary" id="manualAddLocationBtn">💾 保存储位</button>
-                        <div id="manualAddStatus" style="font-size:0.8rem;margin-top:6px;"></div>
-                    </div>
-                </details>
-                <details class="card"><summary>📥 批量导入储位 (Excel)</summary>
-                    <div style="margin-top:8px;">
-                        <div class="input-field">
-                            <label>选择 Excel 文件 (.xlsx)</label>
-                            <input type="file" id="locationFileInput" accept=".xlsx,.xls" style="padding:10px;">
-                        </div>
-                        <button class="btn btn-primary" id="batchImportBtn">✅ 确认导入</button>
-                        <div class="progress-container" id="progressContainer">
-                            <div class="progress-bar" id="progressBar"></div>
-                        </div>
-                        <div id="batchImportStatus" style="font-size:0.8rem;margin-top:6px;"></div>
-                    </div>
-                </details>
-            </div>
+    function updateMarquee() {
+        const track = $('#marqueeTrack');
+        const lows = materials.filter(m => m.stock <= LOW).map(m => 
+            `<div class="marquee-item"><i class="fas fa-exclamation-triangle"></i> ${m.id} ${m.name} 库存仅剩 ${m.stock} ${m.unit||'个'}</div>`);
+        const customs = userMessages.map(m => 
+            `<div class="marquee-item"><i class="fas fa-bullhorn"></i> ${m.text}</div>`);
+        const all = [...lows, ...customs];
+        track.innerHTML = all.length ? all.join('') + all.join('')
+            : `<div class="marquee-item"><i class="fas fa-check-circle"></i> 所有物料库存充足</div><div class="marquee-item"><i class="fas fa-check-circle"></i> 所有物料库存充足</div>`;
+    }
 
-            <!-- 聊天页 -->
-            <div id="chatView" class="view">
-                <div class="chat-messages" id="chatMessagesContainer">
-                    <div class="empty-message">💬 暂无消息</div>
-                </div>
-                <div class="chat-input-row">
-                    <input type="text" id="chatMessageInput" placeholder="输入消息..." autocomplete="off">
-                    <button class="btn btn-primary" id="chatSendBtn">发送</button>
-                </div>
-            </div>
+    function renderCustomMsgs() {
+        const c = $('#customMsgList');
+        if(!c) return;
+        c.innerHTML = userMessages.length ? userMessages.map((m,i) => 
+            `<div class="custom-msg-item"><span class="msg-text">${m.text}</span><button class="btn-remove" data-index="${i}"><i class="fas fa-times"></i></button></div>`).join('')
+            : '<div class="text-muted" style="font-size:13px; padding:8px;">暂无自定义消息</div>';
+        c.querySelectorAll('.btn-remove').forEach(b => b.onclick = function() {
+            userMessages.splice(this.dataset.index, 1);
+            save(); updateMarquee(); renderCustomMsgs();
+            toast('自定义消息已删除','info');
+        });
+    }
 
-            <!-- 设置页（含游戏入口） -->
-            <div id="profileView" class="view">
-                <div class="card">
-                    <div class="profile-header">
-                        <div class="avatar" id="avatarDisplay">👤</div>
-                        <div>
-                            <div class="profile-name" id="displayName">用户名</div>
-                            <div id="displayUsername" style="font-size:0.8rem;color:var(--text-secondary);"></div>
-                        </div>
-                        <button class="btn btn-sm" id="editNameBtn">✏️ 改名</button>
-                    </div>
-                </div>
-                <input type="file" id="avatarFileInput" accept="image/*" style="display:none;">
-                <div class="card">
-                    <div style="font-weight:600;margin-bottom:12px;">⚙️ 设置</div>
-                    <div class="setting-item">
-                        <div><span class="setting-label">夜间模式</span></div>
-                        <div class="switch-track" id="nightSwitchTrack"><div class="switch-thumb"></div></div>
-                    </div>
-                    <div class="setting-item">
-                        <div><span class="setting-label">字体大小</span></div>
-                        <select id="fontSizeSelect">
-                            <option value="0.85rem">小</option><option value="1rem" selected>中</option><option value="1.15rem">大</option>
-                        </select>
-                    </div>
-                    <details class="card camera-sub" style="margin-top:12px;">
-                        <summary>相机设置</summary>
-                        <div style="padding:0 0 8px 0;">
-                            <div class="setting-item"><div><span class="setting-label">摄像头预览大小</span></div><div><input type="range" id="cameraPreviewHeightRange" min="30" max="80" value="50" step="1" style="width:100px;"><span id="cameraPreviewHeightValue">50%</span></div></div>
-                            <div class="setting-item"><div><span class="setting-label">扫码窗口大小</span></div><div><input type="range" id="scanWindowSizeRange" min="20" max="80" value="45" step="1" style="width:100px;"><span id="scanWindowSizeValue">45%</span></div></div>
-                            <div class="setting-item"><div><span class="setting-label">扫码冷却时间</span></div><select id="scanCooldownSelect"><option value="1">1秒</option><option value="2">2秒</option><option value="2.5" selected>2.5秒</option><option value="3">3秒</option></select></div>
-                            <div class="setting-item"><div><span class="setting-label">成功提示停留</span></div><select id="toastDurationSelect"><option value="1.5">1.5秒</option><option value="2">2秒</option><option value="2.2" selected>2.2秒</option><option value="3">3秒</option><option value="4">4秒</option><option value="5">5秒</option></select></div>
-                            <div class="setting-item"><div><span class="setting-label">提示音</span></div><div class="switch-track" id="soundSwitchTrack"><div class="switch-thumb"></div></div></div>
-                            <div class="setting-item"><div><span class="setting-label">自动打开摄像头</span></div><select id="autoOpenCameraSelect"><option value="manual">手动打开</option><option value="auto">自动打开</option></select></div>
-                            <div class="setting-item"><div><span class="setting-label">对焦模式</span></div><select id="focusModeSelect"><option value="continuous">自动（连续）</option><option value="single-shot">单次对焦</option><option value="manual">手动对焦</option></select></div>
-                            <div class="setting-item"><div><span class="setting-label">语音识别超时</span></div><select id="voiceTimeoutSelect"><option value="4">4秒</option><option value="5" selected>5秒</option><option value="6">6秒</option><option value="7">7秒</option><option value="8">8秒</option></select></div>
-                        </div>
-                    </details>
-                    <div class="setting-item" id="gameEntry">
-                        <div><span class="setting-label">🎮 俄罗斯方块</span></div>
-                        <button class="btn btn-sm" id="openGameBtn">开始游戏</button>
-                    </div>
-                    <div class="setting-item"><div><span class="setting-label">修改密码</span></div><button class="btn btn-sm" id="changePasswordBtn">修改</button></div>
-                    <div class="setting-item"><div><span class="setting-label">清除所有缓存</span></div><button class="btn btn-danger btn-sm" id="clearCacheBtn">清除</button></div>
-                    <details class="card" style="margin-top:12px;"><summary>关于</summary>
-                        <div style="padding:8px 0;">
-                            <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);"><span>开发者</span><span>于洪章</span></div>
-                            <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);"><span>版本</span><span>V1.0.60 苹果系统版</span></div>
-                            <div style="display:flex;justify-content:space-between;padding:8px 0;"><span>版本日期</span><span>2026-06-11</span></div>
-                        </div>
-                    </details>
-                    <div class="setting-item" style="border-bottom:none;">
-                        <button class="btn btn-danger" id="logoutBtn" style="width:100%;">退出登录</button>
-                    </div>
-                </div>
-            </div>
+    let current = 'home';
+    function showPage(name) {
+        Object.values(pages).forEach(p => p.classList.remove('active'));
+        pages[name].classList.add('active');
+        current = name;
+        document.querySelectorAll('.bottom-nav .nav-item').forEach(n => n.classList.toggle('active', n.dataset.tab === name));
+        if(name==='home') { updateDaily(); updateMarquee(); }
+        if(name==='stock') renderStock();
+        if(name==='count') renderCount();
+        if(name==='material') renderMaterialList();
+        if(name==='out'||name==='in') populateSelects();
+        if(name==='scan') clearScan();
+        if(name==='location') clearLocationResult();
+        if(name==='mine') { updateMine(); renderCustomMsgs(); }
+        window.scrollTo({top:0, behavior:'smooth'});
+    }
 
-            <!-- 俄罗斯方块游戏页（按键间距加大） -->
-            <div id="gameView" class="view">
-                <div class="tetris-container">
-                    <button class="back-btn-topleft" id="backFromGameBtnTop" title="返回设置">←</button>
-                    <div class="size-controls">
-                        <button class="size-btn" id="sizeDownBtn">−</button>
-                        <button class="size-btn" id="sizeUpBtn">+</button>
-                    </div>
-                    <div class="tetris-top">
-                        <div class="tetris-score">
-                            <span>得分：<span id="tetrisScore">0</span></span>
-                            <span>行数：<span id="tetrisLines">0</span></span>
-                        </div>
-                        <div class="tetris-board-area">
-                            <div class="tetris-main-canvas-wrapper">
-                                <canvas id="tetrisCanvas"></canvas>
-                            </div>
-                            <div class="tetris-preview-wrapper">
-                                <canvas id="nextCanvas"></canvas>
-                                <span style="font-size:0.7rem;color:#aaa;">下一个</span>
-                                <button class="restart-side-btn" id="restartTetrisBtn">重新开始</button>
-                            </div>
-                        </div>
-                        <div class="tetris-controls-cross">
-                            <div class="row">
-                                <button class="tetris-btn" id="btnRotate">↻</button>
-                                <button class="tetris-btn" id="btnMoveUp">▲</button>
-                                <button class="tetris-btn" id="btnHardDrop">⏬</button>
-                            </div>
-                            <div class="row">
-                                <button class="tetris-btn" id="btnMoveLeft">◀</button>
-                                <button class="tetris-btn" id="btnMoveDown">▼</button>
-                                <button class="tetris-btn" id="btnMoveRight">▶</button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+    $('#bottomNav').onclick = e => {
+        const btn = e.target.closest('.nav-item');
+        if(btn && pages[btn.dataset.tab]) showPage(btn.dataset.tab);
+    };
+    $('#page-home').onclick = e => {
+        const card = e.target.closest('.home-card[data-page]');
+        if(card && pages[card.dataset.page]) showPage(card.dataset.page);
+    };
 
-            <!-- 管理员页 -->
-            <div id="adminView" class="view">
-                <div class="card">
-                    <h3 style="margin-bottom:12px;">👑 用户管理</h3>
-                    <div id="adminUserList" class="list-container"></div>
-                </div>
-            </div>
+    function refreshAll() {
+        save(); populateSelects(); renderStock(); updateDaily(); updateMarquee();
+        if(current==='count') renderCount();
+        if(current==='mine') { updateMine(); renderCustomMsgs(); }
+    }
 
-            <div class="bottom-nav" id="bottomNav">
-                <div class="nav-item active" data-view="scannerPageView">🔍<span>扫码</span></div>
-                <div class="nav-item" data-view="queryView">📅<span>盘点</span></div>
-                <div class="nav-item" data-view="locationView">📍<span>储位</span></div>
-                <div class="nav-item" data-view="chatView">💬<span>聊天</span></div>
-                <div class="nav-item" data-view="profileView">👤<span>我的</span></div>
-            </div>
-        </div>
-    </div>
+    function updateDaily() {
+        const today = records.filter(r => isToday(r.date));
+        let tin=0, tout=0;
+        today.forEach(r => { if(r.type==='in') tin+=r.quantity; else tout+=r.quantity; });
+        $('#todayIn').textContent = tin;
+        $('#todayOut').textContent = tout;
+        $('#todayTotalStock').textContent = materials.reduce((s,m) => s+m.stock, 0);
+        $('#todayOps').textContent = today.length;
+    }
 
-    <!-- 弹窗组件 -->
-    <div id="confirmModal" class="modal-overlay" style="display:none;"><div class="modal-box"><h3 id="confirmModalTitle"></h3><div class="modal-message" id="confirmModalMessage"></div><div class="modal-actions"><button class="modal-btn modal-btn-cancel" id="confirmModalCancelBtn">取消</button><button class="modal-btn modal-btn-danger" id="confirmModalOkBtn">确认</button></div></div></div>
-    <div id="alertModal" class="modal-overlay" style="display:none;"><div class="modal-box"><h3 id="alertModalTitle"></h3><div class="modal-message" id="alertModalMessage"></div><div class="modal-actions"><button class="modal-btn modal-btn-confirm" id="alertModalOkBtn">确定</button></div></div></div>
-    <div id="editLocationModal" class="modal-overlay" style="display:none;"><div class="modal-box"><h3>✏️ 编辑储位</h3><div class="modal-message" id="editLocationPart"></div><input type="text" id="editLocationInput" placeholder="输入新储位"><div class="modal-actions"><button class="modal-btn modal-btn-cancel" id="editLocationCancelBtn">取消</button><button class="modal-btn modal-btn-confirm" id="editLocationOkBtn">确认修改</button></div></div></div>
-    <div id="passwordModal" class="modal-overlay" style="display:none;"><div class="modal-box"><h3>🔒 修改密码</h3><p style="margin-bottom:16px;color:var(--text-secondary);">密码修改功能暂未开放，请联系管理员。</p><div class="modal-actions"><button class="modal-btn modal-btn-confirm" id="closePasswordModalBtn">知道了</button></div></div></div>
-    <div id="renameModal" class="modal-overlay" style="display:none;"><div class="modal-box"><h3>✏️ 修改昵称</h3><input type="text" id="newNicknameInput" placeholder="输入新昵称"><div class="modal-actions"><button class="modal-btn modal-btn-cancel" id="cancelRenameBtn">取消</button><button class="modal-btn modal-btn-confirm" id="submitRenameBtn">确认修改</button></div><div id="renameModalError" style="color:var(--danger);font-size:0.8rem;margin-top:8px;"></div></div></div>
-    <div id="resetPasswordModal" class="modal-overlay" style="display:none;"><div class="modal-box"><h3>🔑 重置密码</h3><p id="resetPasswordUser" style="margin-bottom:12px;"></p><input type="password" id="resetPasswordNewInput" placeholder="新密码"><div class="modal-actions"><button class="modal-btn modal-btn-cancel" id="resetPasswordCancelBtn">取消</button><button class="modal-btn modal-btn-confirm" id="resetPasswordConfirmBtn">确认重置</button></div></div></div>
-    <div id="exportChoiceModal" class="modal-overlay" style="display:none;"><div class="modal-box"><h3>📥 导出 Excel</h3><div class="modal-message">选择导出方式</div><div class="modal-actions" style="justify-content: space-around;"><button class="modal-btn modal-btn-confirm" id="exportShareBtn">📤 分享</button><button class="modal-btn modal-btn-confirm" id="exportDownloadBtn">⬇️ 下载</button><button class="modal-btn modal-btn-cancel" id="exportCancelBtn">取消</button></div></div></div>
-    <div class="toast" id="toastDom"></div>
+    function populateSelects() {
+        ['outMaterial','inMaterial'].forEach(id => {
+            const sel = $(`#${id}`); if(!sel) return;
+            sel.innerHTML = '<option value="">请选择料号</option>';
+            materials.forEach(m => { const o = document.createElement('option'); o.value=m.id; o.textContent=`${m.id} - ${m.name} (库存: ${m.stock})`; sel.appendChild(o); });
+        });
+    }
 
-    <script>
-        const SUPABASE_URL = 'https://nrnncqeopxwbhbfecgpa.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5ybm5jcWVvcHh3YmhiZmVjZ3BhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA4NDAyMzQsImV4cCI6MjA5NjQxNjIzNH0.II_DML0biZ_6OMRi9GZY7TEI3y8IKbyOvUwgX7GhB8s';
-        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    // 出库
+    $('#outMaterial').onchange = function() {
+        const m = find(this.value);
+        $('#outStockHint').textContent = m ? `当前库存: ${m.stock}` : '';
+        $('#outQty').max = m ? m.stock : '';
+    };
+    $('#outForm').onsubmit = function(e) {
+        e.preventDefault();
+        const id = $('#outMaterial').value, qty = parseInt($('#outQty').value);
+        if(!id) return toast('请选择料号','error');
+        if(!qty || qty<1) return toast('请输入有效数量','error');
+        const m = find(id);
+        if(!m) return toast('料号不存在','error');
+        if(m.stock < qty) return toast(`库存不足！当前库存: ${m.stock}`,'error');
+        m.stock -= qty;
+        records.push({ type:'out', materialId:id, quantity:qty, date:new Date().toISOString(), dest:$('#outDest').value.trim()||'未指定', note:$('#outNote').value.trim()||'' });
+        toast(`出库成功：${id} x ${qty}`,'success');
+        this.reset(); $('#outStockHint').textContent = '';
+        refreshAll();
+    };
 
-        (function() {
-            // ========== 背景图缓存 ==========
-            const BG_IMAGE_URL = 'https://你的用户名.github.io/仓库名/图片.jpg'; // 替换
-            const BG_CACHE_KEY = 'cachedBgImage';
-            function applyBackground() {
-                const cached = localStorage.getItem(BG_CACHE_KEY);
-                if (cached) {
-                    document.body.style.background = `url(${cached}) no-repeat center center fixed`;
-                    document.body.style.backgroundSize = 'cover';
-                    return;
-                }
-                const img = new Image();
-                img.crossOrigin = 'anonymous';
-                img.onload = function() {
-                    const canvas = document.createElement('canvas');
-                    const ctx = canvas.getContext('2d');
-                    let w = img.width, h = img.height;
-                    const maxW = 800;
-                    if (w > maxW) { h = (maxW / w) * h; w = maxW; }
-                    canvas.width = w; canvas.height = h;
-                    ctx.drawImage(img, 0, 0, w, h);
-                    const base64 = canvas.toDataURL('image/jpeg', 0.7);
-                    try { localStorage.setItem(BG_CACHE_KEY, base64); } catch(e) {}
-                    document.body.style.background = `url(${base64}) no-repeat center center fixed`;
-                    document.body.style.backgroundSize = 'cover';
-                };
-                img.onerror = () => {};
-                img.src = BG_IMAGE_URL;
+    // 入库
+    $('#inForm').onsubmit = function(e) {
+        e.preventDefault();
+        const id = $('#inMaterial').value, qty = parseInt($('#inQty').value);
+        if(!id) return toast('请选择料号','error');
+        if(!qty || qty<1) return toast('请输入有效数量','error');
+        const m = find(id);
+        if(!m) return toast('料号不存在','error');
+        m.stock += qty;
+        records.push({ type:'in', materialId:id, quantity:qty, date:new Date().toISOString(), source:$('#inSource').value.trim()||'未指定', note:$('#inNote').value.trim()||'' });
+        toast(`入库成功：${id} x ${qty}`,'success');
+        this.reset();
+        refreshAll();
+    };
+
+    // 盘点
+    function renderCount() {
+        const c = $('#countList');
+        if(!materials.length) { c.innerHTML = '<div class="empty-state"><i class="fas fa-box-open"></i><p>暂无料号数据</p></div>'; return; }
+        materials.forEach(m => { if(!(m.id in countChanges)) countChanges[m.id] = m.stock; });
+        c.innerHTML = materials.map(m => {
+            const v = countChanges[m.id], changed = v !== m.stock;
+            return `<div class="count-item ${changed?'changed':''}"><div class="info"><div class="name">${m.id} - ${m.name}</div><div class="spec">${m.spec||''} · 单位: ${m.unit||'-'} · 原库存: ${m.stock}</div></div><div class="qty-control"><span class="qty-label">盘点</span><input type="number" class="count-input" data-id="${m.id}" value="${v}" min="0"></div></div>`;
+        }).join('');
+        c.querySelectorAll('.count-input').forEach(inp => inp.oninput = function() {
+            const id = this.dataset.id;
+            countChanges[id] = parseInt(this.value)||0;
+            this.closest('.count-item').classList.toggle('changed', countChanges[id] !== find(id).stock);
+        });
+    }
+    $('#saveCountBtn').onclick = () => {
+        let changed = 0;
+        materials.forEach(m => { if(countChanges[m.id]!==undefined && countChanges[m.id]!==m.stock) { m.stock = countChanges[m.id]; changed++; } });
+        if(!changed) return toast('没有变化需要保存','info');
+        toast(`盘点保存成功，更新了 ${changed} 项库存`,'success');
+        refreshAll();
+        materials.forEach(m => countChanges[m.id] = m.stock);
+        renderCount();
+    };
+
+    // 库存
+    function renderStock(filter='') {
+        const kw = filter.trim().toLowerCase();
+        let list = kw ? materials.filter(m => m.id.toLowerCase().includes(kw) || m.name.toLowerCase().includes(kw) || (m.spec&&m.spec.toLowerCase().includes(kw))) : materials;
+        $('#stockBody').innerHTML = list.length ? list.map(m => `<tr><td><strong>${m.id}</strong></td><td>${m.name}</td><td>${m.spec||'-'}</td><td class="${m.stock<=LOW?'stock-low':''}">${m.stock}</td><td>${m.location||'-'}</td></tr>`).join('') : '<tr><td colspan="5" class="text-center text-muted" style="padding:24px;">暂无数据</td></tr>';
+        $('#stockCount').textContent = list.length;
+    }
+    let searchTimer;
+    $('#stockSearch').oninput = function() { clearTimeout(searchTimer); searchTimer = setTimeout(() => renderStock(this.value), 250); };
+
+    // 料号管理
+    function renderMaterialList() {
+        const c = $('#materialList');
+        c.innerHTML = materials.length ? materials.map(m => `<div class="material-item"><div class="info"><div class="name">${m.id} - ${m.name}</div><div class="detail">规格: ${m.spec||'-'} · 单位: ${m.unit||'-'} · 库存: ${m.stock} · 储位: ${m.location||'-'}</div></div><div class="actions"><button class="btn btn-danger btn-sm del-material" data-id="${m.id}"><i class="fas fa-trash"></i></button></div></div>`).join('') : '<div class="empty-state"><i class="fas fa-database"></i><p>暂无料号，请添加</p></div>';
+        c.querySelectorAll('.del-material').forEach(b => b.onclick = function() {
+            if(!confirm(`确定删除料号 ${this.dataset.id}?`)) return;
+            materials.splice(materials.findIndex(m => m.id===this.dataset.id), 1);
+            delete countChanges[this.dataset.id];
+            toast(`已删除料号 ${this.dataset.id}`,'info');
+            refreshAll(); renderMaterialList();
+        });
+    }
+    $('#addMaterialBtn').onclick = () => {
+        const id = $('#matId').value.trim().toUpperCase(), name = $('#matName').value.trim();
+        if(!id) return toast('请输入料号','error');
+        if(!name) return toast('请输入名称','error');
+        if(find(id)) return toast('料号已存在','error');
+        materials.push({ id, name, spec:$('#matSpec').value.trim(), unit:$('#matUnit').value.trim()||'个', location:$('#matLocation').value.trim(), stock:parseInt($('#matStock').value)||0 });
+        toast(`添加成功：${id} ${name}`,'success');
+        ['matId','matName','matSpec','matUnit','matLocation','matStock'].forEach(f => $('#'+f).value='');
+        $('#matStock').value = '0';
+        refreshAll(); renderMaterialList();
+        $('#matId').placeholder = `例如: ${nextId()}`;
+    };
+    $('#matId').onfocus = function() { if(!this.value) this.placeholder = `例如: ${nextId()}`; };
+
+    // 扫码
+    const scanInput = $('#scanInput'), scanResult = $('#scanResult'), scanArea = $('#scanArea');
+    function clearScan() { scanResult.classList.remove('show'); scanArea.classList.remove('active'); scanInput.value = ''; }
+    function displayScan(m) {
+        $('#srId').textContent=m.id; $('#srName').textContent=m.name; $('#srSpec').textContent=m.spec||'-';
+        $('#srUnit').textContent=m.unit||'-'; $('#srStock').textContent=m.stock; $('#srLocation').textContent=m.location||'未设置';
+        scanResult.classList.add('show'); scanArea.classList.add('active');
+    }
+    function handleScan(q) {
+        q = q.trim().toUpperCase();
+        if(!q) return toast('请输入料号','error');
+        const f = find(q) || materials.find(m => m.id.toUpperCase().includes(q) || m.name.includes(q));
+        f ? (displayScan(f), toast(`扫码成功：${f.id} ${f.name}`,'success')) : (toast('未找到料号','error'), scanResult.classList.remove('show'), scanArea.classList.remove('active'));
+    }
+    $('#scanBtn').onclick = () => handleScan(scanInput.value);
+    scanInput.onkeydown = e => { if(e.key==='Enter') handleScan(scanInput.value); };
+    $('#scanMockBtn').onclick = () => {
+        if(!materials.length) return toast('暂无料号','error');
+        const r = materials[Math.floor(Math.random()*materials.length)];
+        scanInput.value = r.id; displayScan(r); toast(`模拟扫码：${r.id}`,'info');
+    };
+
+    // 储位查找（含行内编辑）
+    const locInput = $('#locationSearchInput'), locBody = $('#locationResultBody'), locCount = $('#locationResultCount');
+    function clearLocationResult() {
+        locBody.innerHTML = '<tr><td colspan="5" class="text-center text-muted" style="padding:24px;">请输入关键词查找</td></tr>';
+        locCount.textContent = '0'; locInput.value = ''; locationEditOriginals = {};
+    }
+    function performLocationSearch() {
+        const kw = locInput.value.trim().toLowerCase();
+        if(!kw) return toast('请输入关键词','info');
+        const res = materials.filter(m => m.id.toLowerCase().includes(kw) || m.name.toLowerCase().includes(kw) || (m.location&&m.location.toLowerCase().includes(kw)));
+        if(!res.length) {
+            locBody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">未找到匹配项</td></tr>';
+            locCount.textContent = '0'; toast('未找到','info'); return;
+        }
+        locBody.innerHTML = res.map(m => `<tr id="loc-row-${m.id}">
+            <td class="cell-id"><span class="display-id">${m.id}</span><input class="form-control edit-id" value="${m.id}" style="display:none;width:80px;font-size:12px;padding:4px;"></td>
+            <td>${m.name}</td>
+            <td class="cell-loc"><span class="display-loc">${m.location||'-'}</span><input class="form-control edit-loc" value="${m.location||''}" style="display:none;width:80px;font-size:12px;padding:4px;"></td>
+            <td>${m.stock}</td>
+            <td>
+                <button class="btn btn-sm btn-outline btn-edit-loc" data-id="${m.id}"><i class="fas fa-pen"></i></button>
+                <button class="btn btn-sm btn-success btn-save-loc" data-id="${m.id}" style="display:none;"><i class="fas fa-check"></i></button>
+                <button class="btn btn-sm btn-outline btn-cancel-loc" data-id="${m.id}" style="display:none;"><i class="fas fa-times"></i></button>
+            </td>
+        </tr>`).join('');
+        locCount.textContent = res.length;
+    }
+    $('#locationSearchBtn').onclick = performLocationSearch;
+    locInput.onkeydown = e => { if(e.key==='Enter') performLocationSearch(); };
+    $('#locationClearBtn').onclick = clearLocationResult;
+
+    function enterEdit(id) {
+        const row = document.getElementById(`loc-row-${id}`); if(!row) return;
+        const m = find(id); if(!m) return;
+        locationEditOriginals[id] = { id: m.id, location: m.location };
+        row.querySelector('.display-id').style.display='none';
+        row.querySelector('.edit-id').style.display='inline-block';
+        row.querySelector('.display-loc').style.display='none';
+        row.querySelector('.edit-loc').style.display='inline-block';
+        row.querySelector('.btn-edit-loc').style.display='none';
+        row.querySelector('.btn-save-loc').style.display='inline-flex';
+        row.querySelector('.btn-cancel-loc').style.display='inline-flex';
+        row.querySelector('.edit-id').focus();
+    }
+    function cancelEdit(id) {
+        const row = document.getElementById(`loc-row-${id}`); if(!row) return;
+        const orig = locationEditOriginals[id];
+        if(orig) { row.querySelector('.edit-id').value = orig.id; row.querySelector('.edit-loc').value = orig.location||''; }
+        exitEditUI(row, id);
+    }
+    function exitEditUI(row, id) {
+        row.querySelector('.display-id').style.display='inline';
+        row.querySelector('.edit-id').style.display='none';
+        row.querySelector('.display-loc').style.display='inline';
+        row.querySelector('.edit-loc').style.display='none';
+        row.querySelector('.btn-edit-loc').style.display='inline-flex';
+        row.querySelector('.btn-save-loc').style.display='none';
+        row.querySelector('.btn-cancel-loc').style.display='none';
+        delete locationEditOriginals[id];
+    }
+    function saveEdit(id) {
+        const row = document.getElementById(`loc-row-${id}`); if(!row) return;
+        const newId = row.querySelector('.edit-id').value.trim().toUpperCase();
+        const newLoc = row.querySelector('.edit-loc').value.trim();
+        if(!newId) return toast('料号不能为空','error');
+        if(newId !== id && find(newId)) return toast(`料号 ${newId} 已存在`,'error');
+        const m = find(id); if(!m) return toast('料号不存在','error');
+        const oldId = m.id;
+        m.id = newId; m.location = newLoc;
+        if(countChanges[oldId]!==undefined) { countChanges[newId] = countChanges[oldId]; if(newId!==oldId) delete countChanges[oldId]; }
+        records.forEach(r => { if(r.materialId === oldId) r.materialId = newId; });
+        row.querySelector('.display-id').textContent = newId;
+        row.querySelector('.display-loc').textContent = newLoc||'-';
+        row.id = `loc-row-${newId}`;
+        row.querySelector('.btn-edit-loc').dataset.id = newId;
+        row.querySelector('.btn-save-loc').dataset.id = newId;
+        row.querySelector('.btn-cancel-loc').dataset.id = newId;
+        exitEditUI(row, newId);
+        refreshAll();
+        toast(`已更新：${newId}，储位：${newLoc||'未设置'}`,'success');
+    }
+    $('#locationResult').onclick = e => {
+        const btn = e.target.closest('button'); if(!btn) return;
+        const id = btn.dataset.id; if(!id) return;
+        if(btn.classList.contains('btn-edit-loc')) enterEdit(id);
+        else if(btn.classList.contains('btn-save-loc')) saveEdit(id);
+        else if(btn.classList.contains('btn-cancel-loc')) cancelEdit(id);
+    };
+    $('#locationResult').onkeydown = e => {
+        if(e.key==='Enter' && e.target.closest('.edit-id, .edit-loc')) {
+            e.preventDefault();
+            const row = e.target.closest('tr');
+            row.querySelector('.btn-save-loc').click();
+        }
+    };
+
+    // 批量上传
+    function readExcel(file, cb) {
+        const reader = new FileReader();
+        reader.onload = e => {
+            try {
+                const wb = XLSX.read(new Uint8Array(e.target.result), {type:'array'});
+                const sheet = wb.Sheets[wb.SheetNames[0]];
+                cb(null, XLSX.utils.sheet_to_json(sheet, {header:1, defval:''}));
+            } catch(err) { cb(err); }
+        };
+        reader.readAsArrayBuffer(file);
+    }
+    function handleUpload(fileId, processor) {
+        const inp = $(`#${fileId}`);
+        if(!inp.files.length) return toast('请选择文件','error');
+        readExcel(inp.files[0], (err, rows) => {
+            if(err) return toast('解析失败','error');
+            processor(rows);
+            inp.value = '';
+        });
+    }
+    function processLocation(rows) {
+        if(!rows||rows.length<2) return toast('无有效数据','error');
+        const h = rows[0].map(h=>String(h).trim());
+        const iId = h.findIndex(x=>x.includes('料号')), iLoc = h.findIndex(x=>x.includes('储位'));
+        if(iId===-1||iLoc===-1) return toast('缺少必要列','error');
+        let u=0;
+        for(let i=1;i<rows.length;i++) {
+            const id = String(rows[i][iId]).trim().toUpperCase();
+            if(!id) continue;
+            const m = find(id);
+            if(!m) { toast(`料号 ${id} 不存在，已跳过`,'info'); continue; }
+            m.location = String(rows[i][iLoc]).trim(); u++;
+        }
+        if(u) { refreshAll(); toast(`储位更新完成，${u} 条`,'success'); }
+        else toast('无数据被更新','info');
+    }
+    function processStock(rows) {
+        if(!rows||rows.length<2) return toast('无有效数据','error');
+        const h = rows[0].map(h=>String(h).trim());
+        const iId = h.findIndex(x=>x.includes('料号')), iStock = h.findIndex(x=>x.includes('库存'));
+        if(iId===-1||iStock===-1) return toast('缺少必要列','error');
+        let u=0;
+        for(let i=1;i<rows.length;i++) {
+            const id = String(rows[i][iId]).trim().toUpperCase();
+            if(!id) continue;
+            const m = find(id);
+            if(!m) { toast(`料号 ${id} 不存在`,'info'); continue; }
+            m.stock = parseInt(rows[i][iStock])||0; u++;
+        }
+        if(u) { refreshAll(); toast(`库存更新完成，${u} 条`,'success'); }
+        else toast('无数据被更新','info');
+    }
+    function processMaterial(rows) {
+        if(!rows||rows.length<2) return toast('无有效数据','error');
+        const h = rows[0].map(h=>String(h).trim());
+        const idx = {
+            id: h.findIndex(x=>x.includes('料号')), name: h.findIndex(x=>x.includes('名称')),
+            spec: h.findIndex(x=>x.includes('规格')), unit: h.findIndex(x=>x.includes('单位')),
+            loc: h.findIndex(x=>x.includes('储位')), stock: h.findIndex(x=>x.includes('库存'))
+        };
+        if(idx.id===-1) return toast('缺少料号列','error');
+        let added=0, updated=0;
+        for(let i=1;i<rows.length;i++) {
+            const id = String(rows[i][idx.id]).trim().toUpperCase();
+            if(!id) continue;
+            const name = idx.name!==-1 ? String(rows[i][idx.name]).trim() : '';
+            const spec = idx.spec!==-1 ? String(rows[i][idx.spec]).trim() : '';
+            const unit = idx.unit!==-1 ? String(rows[i][idx.unit]).trim()||'个' : '个';
+            const loc = idx.loc!==-1 ? String(rows[i][idx.loc]).trim() : '';
+            const stock = idx.stock!==-1 ? parseInt(rows[i][idx.stock])||0 : 0;
+            const exist = find(id);
+            if(exist) {
+                if(name) exist.name=name; if(spec) exist.spec=spec;
+                exist.unit = unit; exist.location = loc; exist.stock = stock; updated++;
+            } else {
+                materials.push({ id, name, spec, unit, location: loc, stock }); added++;
             }
-            applyBackground();
+        }
+        if(added||updated) { refreshAll(); toast(`导入完成：新增 ${added}，更新 ${updated}`,'success'); }
+        else toast('无数据被导入','info');
+    }
+    $('#uploadLocationBtn').onclick = () => handleUpload('locationFile', processLocation);
+    $('#uploadStockBtn').onclick = () => handleUpload('stockFile', processStock);
+    $('#uploadMaterialBtn').onclick = () => handleUpload('materialFile', processMaterial);
 
-            if (/iPad|iPhone|iPod/.test(navigator.userAgent) && location.protocol !== 'https:') {
-                alert('📱 苹果设备使用摄像头需要 HTTPS 协议。\n请将本页面部署到 HTTPS 服务器（如 GitHub Pages、Vercel 等）。');
-            }
+    // 我的
+    function updateLastUpdateTime() { const el = $('#lastUpdateTime'); if(el) el.textContent = new Date().toLocaleTimeString('zh-CN',{hour12:false}); }
+    function updateMine() {
+        $('#myTotalMaterials').textContent = materials.length;
+        $('#myTotalStock').textContent = materials.reduce((s,m)=>s+m.stock,0);
+        $('#myTotalRecords').textContent = records.length;
+        const d = Math.floor((new Date()-startTime)/1000);
+        $('#sysUptime').textContent = `${Math.floor(d/3600)}h ${Math.floor((d%3600)/60)}m`;
+        updateLastUpdateTime();
+    }
+    $('#addCustomMsgBtn').onclick = () => {
+        const txt = $('#customMsgInput').value.trim();
+        if(!txt) return toast('请输入内容','error');
+        userMessages.push({ text: txt }); save(); updateMarquee(); renderCustomMsgs();
+        $('#customMsgInput').value = ''; toast('已添加','success');
+    };
+    $('#logoutBtn').onclick = () => toast('已退出登录 (模拟)','info');
+    $('#resetDataBtn').onclick = () => {
+        if(!confirm('确定重置所有数据？不可恢复！')) return;
+        localStorage.removeItem(STORAGE_MAT); localStorage.removeItem(STORAGE_REC); localStorage.removeItem(STORAGE_MSG);
+        location.reload();
+    };
+    document.onkeydown = e => { if(e.key==='Escape' && current!=='home') showPage('home'); };
 
-            let currentUser = null, isAppInitialized = false, chatChannel = null, chatRefreshTimer = null, lastNotificationId = null, stream = null;
-            const getUserDataKey = uid => `wh_user_${uid}`, getSettingsKey = uid => `wh_set_${uid}`, SESSION_KEY = 'wh_session', CHAT_CACHE_KEY = uid => `chat_cache_${uid}`;
-            let userData = { name: '', avatar: '👤' };
-            let settings = {
-                nightMode: false, fontSize: '1rem', cameraPreviewHeight: 50, scanWindowSize: 45,
-                scanCooldown: 2.5, toastDuration: 2.2, soundEnabled: true, autoOpenCamera: false,
-                autoSave: false, focusMode: 'continuous', voiceTimeout: 5
-            };
-            let viewDate = getTodayString(), queryMode = 'detail';
-
-            window.showToast = m => { const t = document.getElementById('toastDom'); if(t) { t.textContent=m; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), (settings.toastDuration||2.2)*1000); }};
-            function showGlobalNotification(msg) { if(!msg||!msg.username||!msg.message) return; if(lastNotificationId===msg.id) return; lastNotificationId=msg.id; const n = document.getElementById('globalNotification'); if(!n) return; n.textContent=`${msg.username}: ${msg.message}`; n.style.display='block'; clearTimeout(window._notifTimer); window._notifTimer=setTimeout(()=>{n.style.display='none';},3000); }
-            let audioCtx=null; function initAudio(){if(!audioCtx) audioCtx=new(window.AudioContext||window.webkitAudioContext)(); if(audioCtx.state==='suspended') audioCtx.resume();} function playBeep(){if(!audioCtx)return;try{const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.type='sine';o.frequency.value=880;g.gain.value=0.2;g.gain.exponentialRampToValueAtTime(0.0001,audioCtx.currentTime+0.2);o.connect(g);g.connect(audioCtx.destination);o.start();o.stop(audioCtx.currentTime+0.2);}catch(e){}} document.body.addEventListener('touchstart',()=>{if(audioCtx)audioCtx.resume();},{once:true});
-            window.showConfirm = (t,m)=>new Promise(r=>{const a=document.getElementById('confirmModal'),b=document.getElementById('confirmModalTitle'),c=document.getElementById('confirmModalMessage'),d=document.getElementById('confirmModalOkBtn'),e=document.getElementById('confirmModalCancelBtn'); if(!a||!b||!c||!d||!e){r(false);return;} b.textContent=t||'确认操作';c.textContent=m||'确定执行此操作吗？';a.style.display='flex'; function f(v){a.style.display='none';r(v);} d.addEventListener('click',()=>f(true),{once:true}); e.addEventListener('click',()=>f(false),{once:true});});
-            window.showAlert = (t,m)=>new Promise(r=>{const a=document.getElementById('alertModal'),b=document.getElementById('alertModalTitle'),c=document.getElementById('alertModalMessage'),d=document.getElementById('alertModalOkBtn'); if(!a||!b||!c||!d){r();return;} b.textContent=t||'提示';c.textContent=m||'';a.style.display='flex'; function f(){a.style.display='none';r();} d.addEventListener('click',f,{once:true});});
-            function showEditLocationPrompt(p,c){return new Promise(r=>{const m=document.getElementById('editLocationModal'),pe=document.getElementById('editLocationPart'),inp=document.getElementById('editLocationInput'),ok=document.getElementById('editLocationOkBtn'),cn=document.getElementById('editLocationCancelBtn'); if(!m||!pe||!inp||!ok||!cn){r(null);return;} pe.textContent=`料号：${p}`;inp.value=c||'';m.style.display='flex';inp.focus();function cl(v){m.style.display='none';r(v);} ok.addEventListener('click',()=>cl(inp.value.trim()),{once:true}); cn.addEventListener('click',()=>cl(null),{once:true});});}
-            function showExportChoice() {
-                return new Promise((resolve) => {
-                    const modal = document.getElementById('exportChoiceModal');
-                    const shareBtn = document.getElementById('exportShareBtn');
-                    const downloadBtn = document.getElementById('exportDownloadBtn');
-                    const cancelBtn = document.getElementById('exportCancelBtn');
-                    if (!modal) { resolve(null); return; }
-                    modal.style.display = 'flex';
-                    function clean() { modal.style.display = 'none'; shareBtn.removeEventListener('click', onShare); downloadBtn.removeEventListener('click', onDownload); cancelBtn.removeEventListener('click', onCancel); }
-                    function onShare() { clean(); resolve('share'); }
-                    function onDownload() { clean(); resolve('download'); }
-                    function onCancel() { clean(); resolve(null); }
-                    shareBtn.addEventListener('click', onShare);
-                    downloadBtn.addEventListener('click', onDownload);
-                    cancelBtn.addEventListener('click', onCancel);
-                });
-            }
-            function downloadBlob(blob, fileName) {
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = fileName;
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                URL.revokeObjectURL(url);
-            }
-
-            function loadLocalData(){if(!currentUser)return;const u=localStorage.getItem(getUserDataKey(currentUser.id));if(u)userData=JSON.parse(u);else userData={name:currentUser.real_name||currentUser.username,avatar:'👤'};const s=localStorage.getItem(getSettingsKey(currentUser.id));if(s)settings={...settings,...JSON.parse(s)};}
-            function saveUserData(){if(currentUser)localStorage.setItem(getUserDataKey(currentUser.id),JSON.stringify(userData));}
-            function saveSettings(){if(currentUser)localStorage.setItem(getSettingsKey(currentUser.id),JSON.stringify(settings));}
-            function saveSession(){if(currentUser)localStorage.setItem(SESSION_KEY,JSON.stringify(currentUser));else localStorage.removeItem(SESSION_KEY);}
-            function loadSession(){try{const s=localStorage.getItem(SESSION_KEY);if(s)return JSON.parse(s);}catch(e){}return null;}
-            function applySettings(){
-                document.documentElement.classList.toggle('night-mode',settings.nightMode);
-                document.getElementById('nightSwitchTrack')?.classList.toggle('on',settings.nightMode);
-                document.getElementById('fontSizeSelect').value=settings.fontSize;
-                document.getElementById('scanCooldownSelect').value=settings.scanCooldown;
-                document.getElementById('toastDurationSelect').value=settings.toastDuration;
-                document.getElementById('autoOpenCameraSelect').value=settings.autoOpenCamera?'auto':'manual';
-                document.getElementById('soundSwitchTrack')?.classList.toggle('on',settings.soundEnabled);
-                document.getElementById('focusModeSelect').value=settings.focusMode||'continuous';
-                document.getElementById('voiceTimeoutSelect').value=settings.voiceTimeout;
-                document.documentElement.style.setProperty('--font-size-base',settings.fontSize);
-                document.documentElement.style.setProperty('--camera-preview-height',(settings.cameraPreviewHeight||50)+'vh');
-                document.documentElement.style.setProperty('--scan-window-size',(settings.scanWindowSize||45)+'%');
-                document.getElementById('autoSaveSwitchTrack')?.classList.toggle('on',settings.autoSave);
-                document.getElementById('cameraPreviewHeightRange').value=settings.cameraPreviewHeight;
-                document.getElementById('cameraPreviewHeightValue').innerText=settings.cameraPreviewHeight+'%';
-                document.getElementById('scanWindowSizeRange').value=settings.scanWindowSize;
-                document.getElementById('scanWindowSizeValue').innerText=settings.scanWindowSize+'%';
-            }
-            function updateProfileUI(){const a=document.getElementById('avatarDisplay');if(a){const av=userData.avatar||'👤';if(av.startsWith('data:image'))a.innerHTML=`<img src="${av}" alt="头像">`;else a.textContent=av;}document.getElementById('displayName').textContent=userData.name;document.getElementById('displayUsername').textContent=currentUser?currentUser.username:'';}
-            function escapeHtml(s){return String(s).replace(/[&<>]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;'})[m]);}
-
-            async function addRecord(part,qty,mpn=''){if(!currentUser)return false;const today=getTodayString(),time=new Date().toTimeString().slice(0,5);const{error}=await supabaseClient.from('scan_records').insert({user_id:currentUser.id,date:today,time,part,qty,mpn});if(error){window.showToast('❌ 保存失败: '+error.message);return false;}window.showToast(`✅ 已保存 ${part} × ${qty}`);return true;}
-            async function getRecordsByDate(dateStr){if(!currentUser)return[];const{data,error}=await supabaseClient.from('scan_records').select('*').eq('date',dateStr).eq('user_id',currentUser.id).order('time',{ascending:true});if(error){window.showToast('查询失败: '+error.message);return[];}return data||[];}
-            async function deleteRecordById(id){if(!currentUser)return false;const{error}=await supabaseClient.from('scan_records').delete().eq('id',id).eq('user_id',currentUser.id);if(error){window.showToast('删除失败: '+error.message);return false;}return true;}
-            async function deleteAllRecordsByDate(dateStr){if(!currentUser)return false;const{error}=await supabaseClient.from('scan_records').delete().eq('date',dateStr).eq('user_id',currentUser.id);if(error){window.showToast('删除失败: '+error.message);return false;}return true;}
-            async function getLocationByPart(part){const{data,error}=await supabaseClient.from('locations').select('location').eq('part',part).maybeSingle();if(error){window.showToast('查询储位失败: '+error.message);return null;}return data?data.location:null;}
-            async function searchLocationsBySuffix(suffix){const{data,error}=await supabaseClient.from('locations').select('part,location').ilike('part',`%${suffix}`).limit(20);if(error){window.showToast('搜索失败: '+error.message);return[];}return data||[];}
-            async function upsertLocation(part,location){const{error}=await supabaseClient.from('locations').upsert({part,location,updated_at:new Date().toISOString()},{onConflict:'part'});if(error){window.showToast('储位保存失败: '+error.message);return false;}return true;}
-            async function deleteLocationByPart(part){const{error}=await supabaseClient.from('locations').delete().eq('part',part);if(error){window.showToast('删除储位失败: '+error.message);return false;}return true;}
-
-            async function renderQueryRecords(){
-                const c=document.getElementById('listContainer');if(!c)return;c.innerHTML='<div class="empty-message">⏳ 加载中...</div>';
-                const records=await getRecordsByDate(viewDate);if(!records.length){c.innerHTML='<div class="empty-message">📭 暂无记录</div>';return;}
-                if(queryMode==='detail'){c.innerHTML=records.map(r=>`<div class="list-item"><div class="item-detail"><span class="item-part">🔖 ${escapeHtml(r.part)}</span><span class="item-meta">${r.mpn?`MPN:${escapeHtml(r.mpn)}`:''} 🕒 ${r.time}</span></div><span class="item-qty">✕ ${r.qty}</span><button class="delete-btn" data-id="${r.id}">🗑️</button></div>`).join('');}
-                else if(queryMode==='summary_by_part'){const m=new Map();records.forEach(r=>m.set(r.part,(m.get(r.part)||0)+r.qty));c.innerHTML=Array.from(m.entries()).map(([p,t])=>`<div class="list-item"><div class="item-detail"><span class="item-part">🔖 ${escapeHtml(p)}</span><span class="item-meta">料号汇总</span></div><span class="item-qty">合计 ${t}</span></div>`).join('');}
-                else{const m=new Map();records.forEach(r=>{const k=`${r.part}||${r.mpn||''}`;m.set(k,(m.get(k)||0)+r.qty);});c.innerHTML=Array.from(m.entries()).map(([k,t])=>{const[p,mp]=k.split('||');return`<div class="list-item"><div class="item-detail"><span class="item-part">🔖 ${escapeHtml(p)}</span><span class="item-meta">${mp?`MPN:${escapeHtml(mp)}`:'无MPN'}</span></div><span class="item-qty">合计 ${t}</span></div>`;}).join('');}
-                ['detailViewBtn','summaryViewBtn','mpnSummaryViewBtn'].forEach(id=>{const b=document.getElementById(id);if(b)b.classList.toggle('active',(id==='detailViewBtn'&&queryMode==='detail')||(id==='summaryViewBtn'&&queryMode==='summary_by_part')||(id==='mpnSummaryViewBtn'&&queryMode==='summary_by_mpn'));});
-            }
-            async function refreshLocationSearch(){
-                const inp = document.getElementById('locationSearchInput'), res = document.getElementById('locationResult');
-                if (!inp || !res) return;
-                const q = inp.value.trim();
-                if (!q) { res.innerHTML = '<span class="location-result-empty">请输入料号进行搜索</span>'; return; }
-                const loc = await getLocationByPart(q);
-                if (loc) {
-                    res.innerHTML = `<div class="location-result-item"><div class="location-result-row"><span class="part-label">料号</span><strong>${escapeHtml(q)}</strong><div class="loc-actions"><button data-action="edit" data-part="${escapeHtml(q)}">✏️</button><button data-action="delete" data-part="${escapeHtml(q)}">🗑️</button></div></div><div class="location-result-row"><span class="part-label">储位</span><span class="loc-value">${escapeHtml(loc)}</span></div></div>`;
-                    return;
-                }
-                const matches = await searchLocationsBySuffix(q);
-                if (!matches.length) { res.innerHTML = '<span class="location-result-empty">未找到匹配储位</span>'; window.showAlert('提示', '未找到匹配储位'); return; }
-                let html = '';
-                matches.slice(0,20).forEach(({part, location}) => {
-                    html += `<div class="location-result-item"><div class="location-result-row"><span class="part-label">料号</span><strong>${escapeHtml(part)}</strong><div class="loc-actions"><button data-action="edit" data-part="${escapeHtml(part)}">✏️</button><button data-action="delete" data-part="${escapeHtml(part)}">🗑️</button></div></div><div class="location-result-row"><span class="part-label">储位</span><span class="loc-value">${escapeHtml(location)}</span></div></div>`;
-                });
-                if (matches.length > 20) html += '<div class="location-result-empty">... 还有' + (matches.length-20) + '条</div>';
-                res.innerHTML = html;
-            }
-            function getTodayString(){
-                const d = new Date();
-                const yyyy = d.getFullYear();
-                const mm = String(d.getMonth() + 1).padStart(2, '0');
-                const dd = String(d.getDate()).padStart(2, '0');
-                return `${yyyy}-${mm}-${dd}`;
-            }
-
-            function getChatCache(){try{return JSON.parse(localStorage.getItem(CHAT_CACHE_KEY(currentUser?.id))||'[]');}catch(e){return[];}}
-            function saveChatCache(msgs){if(currentUser)localStorage.setItem(CHAT_CACHE_KEY(currentUser.id),JSON.stringify(msgs.slice(-500)));}
-            function mergeCache(newMsgs){const cache=getChatCache();const ids=new Set(cache.map(m=>m.id));const merged=[...cache,...newMsgs.filter(m=>!ids.has(m.id))];merged.sort((a,b)=>new Date(a.created_at)-new Date(b.created_at));saveChatCache(merged);return merged;}
-            function renderChatMessages(msgs){const c=document.getElementById('chatMessagesContainer');if(!c)return;c.innerHTML=msgs.map(m=>{const isSelf=currentUser&&m.user_id===currentUser.id;const time=new Date(m.created_at).toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'});return`<div class="chat-msg ${isSelf?'self':'other'}"><div class="sender">${escapeHtml(m.username)}</div><div>${escapeHtml(m.message)}</div><div class="time">${time}</div></div>`;}).join('');}
-            function scrollChatToBottom(){const c=document.getElementById('chatMessagesContainer');if(c)c.scrollTop=c.scrollHeight;}
-            async function loadChatMessages(){const container=document.getElementById('chatMessagesContainer');if(!container)return;const cache=getChatCache();if(cache.length){renderChatMessages(cache);scrollChatToBottom();}else container.innerHTML='<div class="empty-message">💬 暂无消息</div>';let query=supabaseClient.from('chat_messages').select('*').order('created_at',{ascending:true}).limit(100);if(cache.length)query=query.gt('created_at',cache[cache.length-1].created_at);const{data,error}=await query;if(error){if(!cache.length)container.innerHTML='<div class="empty-message">❌ 加载失败</div>';return;}if(data&&data.length){const updated=mergeCache(data);renderChatMessages(updated);scrollChatToBottom();}else if(!cache.length)container.innerHTML='<div class="empty-message">💬 暂无消息</div>';}
-            async function sendChatMessage(){const input=document.getElementById('chatMessageInput'),message=input.value.trim();if(!message||!currentUser)return;input.value='';const displayName=currentUser.real_name||currentUser.username;const{error}=await supabaseClient.from('chat_messages').insert({user_id:currentUser.id,username:displayName,message});if(error)window.showToast('发送失败: '+error.message);}
-            function subscribeToChat(){if(chatChannel)supabaseClient.removeChannel(chatChannel);chatChannel=supabaseClient.channel('chat-room').on('postgres_changes',{event:'INSERT',schema:'public',table:'chat_messages'},payload=>{showGlobalNotification(payload.new);const cache=getChatCache();if(!cache.some(m=>m.id===payload.new.id)){mergeCache([payload.new]);if(document.getElementById('chatView').classList.contains('active')){renderChatMessages(getChatCache());scrollChatToBottom();}}}).subscribe();}
-            function unsubscribeChat(){if(chatChannel){supabaseClient.removeChannel(chatChannel);chatChannel=null;}}
-            function startChatAutoRefresh(){stopChatAutoRefresh();chatRefreshTimer=setInterval(()=>{if(document.getElementById('chatView').classList.contains('active'))loadChatMessages();},3000);}
-            function stopChatAutoRefresh(){if(chatRefreshTimer){clearInterval(chatRefreshTimer);chatRefreshTimer=null;}}
-
-            async function loadAdminUsers(){const container=document.getElementById('adminUserList');if(!container)return;container.innerHTML='<div class="empty-message">⏳ 加载中...</div>';const{data,error}=await supabaseClient.rpc('list_users',{p_admin_id:currentUser.id});if(error){container.innerHTML='<div class="empty-message">❌ 加载失败：'+error.message+'</div>';return;}if(typeof data==='object'&&data!==null&&data.success===false){container.innerHTML='<div class="empty-message">❌ '+data.message+'</div>';return;}const users=Array.isArray(data)?data:[];if(!users.length){container.innerHTML='<div class="empty-message">📭 暂无注册用户</div>';return;}container.innerHTML=users.map(u=>`<div class="list-item"><div class="item-detail"><div class="item-part">${escapeHtml(u.username)}</div><div class="item-meta">${escapeHtml(u.real_name||'')} · ${u.is_admin?'管理员':'普通用户'} · ${new Date(u.created_at).toLocaleDateString()}</div></div><div style="display:flex;gap:8px;"><button class="btn btn-sm" onclick="window._resetPassword('${u.id}','${escapeHtml(u.username)}')" style="min-width:60px;">🔑</button><button class="btn btn-sm btn-danger" onclick="window._deleteUser('${u.id}','${escapeHtml(u.username)}')" style="min-width:60px;">🗑️</button></div></div>`).join('');}
-            window._resetPassword=async function(targetId,username){document.getElementById('resetPasswordUser').innerText=`用户：${username}`;document.getElementById('resetPasswordNewInput').value='';document.getElementById('resetPasswordModal').style.display='flex';document.getElementById('resetPasswordConfirmBtn').onclick=async()=>{const pwd=document.getElementById('resetPasswordNewInput').value;if(!pwd||pwd.length<4){window.showToast('新密码至少4位');return;}const{data,error}=await supabaseClient.rpc('reset_user_password',{p_admin_id:currentUser.id,p_target_id:targetId,p_new_password:pwd});if(error||(data&&data.success===false)){window.showToast('重置失败: '+(error?.message||data?.message));return;}document.getElementById('resetPasswordModal').style.display='none';window.showToast('密码已重置');};};
-            document.getElementById('resetPasswordCancelBtn').addEventListener('click',()=>document.getElementById('resetPasswordModal').style.display='none');
-            window._deleteUser=async function(targetId,username){if(!(await window.showConfirm('删除用户',`确定删除用户 ${username} 及其所有数据吗？`)))return;const{data,error}=await supabaseClient.rpc('delete_user',{p_admin_id:currentUser.id,p_target_id:targetId});if(error||(data&&data.success===false)){window.showToast('删除失败: '+(error?.message||data?.message));return;}window.showToast('用户已删除');loadAdminUsers();};
-
-            async function triggerFocus(){if(!stream)return;const track=stream.getVideoTracks()[0];if(!track)return;try{await track.applyConstraints({advanced:[{focusMode:'single-shot'}]});window.showToast('🔍 已触发对焦');}catch(e){window.showToast('⚠️ 当前设备不支持对焦控制');}}
-
-            // ========== 俄罗斯方块 (按键间距加大版) ==========
-            const COLS = 10, ROWS = 20;
-            let BLOCK_SIZE = 18;
-            let sizeScale = 1.0;
-            const SHAPES = [
-                [[1,1,1,1]],
-                [[1,1],[1,1]],
-                [[0,1,0],[1,1,1]],
-                [[1,0,0],[1,1,1]],
-                [[0,0,1],[1,1,1]],
-                [[0,1,1],[1,1,0]],
-                [[1,1,0],[0,1,1]]
-            ];
-            const COLORS = ['#0ff','#ff0','#a0f','#00f','#f80','#0f0','#f00'];
-            let board, currentPiece, nextPiece, gameOver, score, lines;
-            let animationFrameId = null;
-            let lastDropTime = 0;
-            const DROP_INTERVAL = 800;
-            const keys = { left: false, right: false, down: false, rotate: false, hardDrop: false };
-
-            function createPiece() {
-                const idx = Math.floor(Math.random() * SHAPES.length);
-                return { shape: SHAPES[idx].map(r=>[...r]), color: COLORS[idx], x: Math.floor((COLS - SHAPES[idx][0].length)/2), y: 0 };
-            }
-            function rotate(shape) { return shape[0].map((_,i)=>shape.map(row=>row[i]).reverse()); }
-            function collide(shape, x, y) {
-                for (let r=0;r<shape.length;r++) for (let c=0;c<shape[0].length;c++) if (shape[r][c]) {
-                    const nx=x+c, ny=y+r;
-                    if (nx<0||nx>=COLS||ny>=ROWS||(ny>=0&&board[ny][nx])) return true;
-                }
-                return false;
-            }
-            function place() {
-                const {shape,color,x,y}=currentPiece;
-                for (let r=0;r<shape.length;r++) for (let c=0;c<shape[0].length;c++) if (shape[r][c]) {
-                    const by=y+r, bx=x+c;
-                    if (by<0) { gameOver=true; return; }
-                    board[by][bx]=color;
-                }
-                clearLines(); spawnNext();
-            }
-            function clearLines() {
-                let cleared=0;
-                for (let r=ROWS-1;r>=0;r--) if (board[r].every(c=>c)) { board.splice(r,1); board.unshift(Array(COLS).fill(0)); cleared++; r++; }
-                if (cleared) {
-                    lines+=cleared; score+=[0,40,100,300,1200][cleared];
-                    document.getElementById('tetrisScore').textContent=score;
-                    document.getElementById('tetrisLines').textContent=lines;
-                }
-            }
-            function spawnNext() { currentPiece=nextPiece||createPiece(); nextPiece=createPiece(); if (collide(currentPiece.shape,currentPiece.x,currentPiece.y)) gameOver=true; }
-            function move(dx,dy) {
-                if (gameOver||!currentPiece) return false;
-                if (!collide(currentPiece.shape,currentPiece.x+dx,currentPiece.y+dy)) { currentPiece.x+=dx; currentPiece.y+=dy; return true; }
-                else if (dy===1) place();
-                return false;
-            }
-            function hardDrop() { if (gameOver||!currentPiece) return; while (!collide(currentPiece.shape,currentPiece.x,currentPiece.y+1)) currentPiece.y++; place(); }
-            function rotatePiece() { if (gameOver||!currentPiece) return; const rot=rotate(currentPiece.shape); if (!collide(rot,currentPiece.x,currentPiece.y)) currentPiece.shape=rot; }
-
-            function resizeGame() {
-                const gameView = document.getElementById('gameView');
-                if (!gameView) return;
-                const w = gameView.clientWidth - 20, previewW = 70, maxW = w - previewW - 10;
-                let baseSize = Math.floor(maxW / COLS);
-                baseSize = Math.min(baseSize, 22);
-                baseSize = Math.max(baseSize, 12);
-                let size = Math.round(baseSize * sizeScale);
-                size = Math.min(Math.max(size, 10), 30);
-                BLOCK_SIZE = size;
-                const nc = document.getElementById('nextCanvas');
-                if (nc) nc.width = nc.height = size * 3;
-                draw();
-            }
-
-            function draw() {
-                const canvas = document.getElementById('tetrisCanvas');
-                if (!canvas) return;
-                canvas.width = COLS * BLOCK_SIZE;
-                canvas.height = ROWS * BLOCK_SIZE;
-                const ctx = canvas.getContext('2d');
-                ctx.clearRect(0,0,canvas.width,canvas.height);
-                ctx.strokeStyle = '#333'; ctx.lineWidth = 0.5;
-                for (let i=0;i<=COLS;i++){ctx.beginPath();ctx.moveTo(i*BLOCK_SIZE,0);ctx.lineTo(i*BLOCK_SIZE,canvas.height);ctx.stroke();}
-                for (let i=0;i<=ROWS;i++){ctx.beginPath();ctx.moveTo(0,i*BLOCK_SIZE);ctx.lineTo(canvas.width,i*BLOCK_SIZE);ctx.stroke();}
-                if (board) {
-                    for (let r=0;r<ROWS;r++) for (let c=0;c<COLS;c++) if (board[r][c]) {
-                        ctx.fillStyle = board[r][c]; ctx.fillRect(c*BLOCK_SIZE+1,r*BLOCK_SIZE+1,BLOCK_SIZE-2,BLOCK_SIZE-2);
-                    }
-                }
-                if (currentPiece && !gameOver) {
-                    const {shape,color,x,y}=currentPiece; ctx.fillStyle = color;
-                    for (let r=0;r<shape.length;r++) for (let c=0;c<shape[0].length;c++) if (shape[r][c])
-                        ctx.fillRect((x+c)*BLOCK_SIZE+1,(y+r)*BLOCK_SIZE+1,BLOCK_SIZE-2,BLOCK_SIZE-2);
-                }
-                const nc = document.getElementById('nextCanvas');
-                if (nc && nextPiece) {
-                    const nctx = nc.getContext('2d'); nctx.clearRect(0,0,nc.width,nc.height);
-                    const shape = nextPiece.shape, ox = (3 - shape[0].length)*BLOCK_SIZE/2, oy = (3 - shape.length)*BLOCK_SIZE/2;
-                    nctx.fillStyle = nextPiece.color;
-                    for (let r=0;r<shape.length;r++) for (let c=0;c<shape[0].length;c++) if (shape[r][c])
-                        nctx.fillRect(ox+c*BLOCK_SIZE+1,oy+r*BLOCK_SIZE+1,BLOCK_SIZE-2,BLOCK_SIZE-2);
-                }
-            }
-
-            function gameLoop(ts) {
-                if (!gameOver) {
-                    if (keys.left) { move(-1,0); keys.left=false; }
-                    if (keys.right) { move(1,0); keys.right=false; }
-                    if (keys.down) { move(0,1); keys.down=false; }
-                    if (keys.rotate) { rotatePiece(); keys.rotate=false; }
-                    if (keys.hardDrop) { hardDrop(); keys.hardDrop=false; }
-                    if (ts - lastDropTime >= DROP_INTERVAL) { move(0,1); lastDropTime = ts; }
-                    draw();
-                    animationFrameId = requestAnimationFrame(gameLoop);
-                } else {
-                    if (animationFrameId) cancelAnimationFrame(animationFrameId);
-                    animationFrameId = null;
-                    draw();
-                }
-            }
-
-            function stopTetris() {
-                if (animationFrameId) { cancelAnimationFrame(animationFrameId); animationFrameId = null; }
-                for (let k in keys) keys[k] = false;
-            }
-
-            function startTetris() {
-                stopTetris();
-                board = Array(ROWS).fill().map(()=>Array(COLS).fill(0));
-                score = 0; lines = 0; gameOver = false;
-                document.getElementById('tetrisScore').textContent = '0';
-                document.getElementById('tetrisLines').textContent = '0';
-                currentPiece = null; nextPiece = null;
-                spawnNext();
-                lastDropTime = performance.now();
-                resizeGame();
-                animationFrameId = requestAnimationFrame(gameLoop);
-            }
-
-            function bindTetrisControls() {
-                const setKey = k => () => { keys[k]=true; };
-                const ids = { left:'btnMoveLeft', right:'btnMoveRight', down:'btnMoveDown', rotate:'btnRotate', hardDrop:'btnHardDrop' };
-                for (let [k,id] of Object.entries(ids)) {
-                    const btn = document.getElementById(id);
-                    if (btn) { btn.onpointerdown = setKey(k); btn.addEventListener('touchstart', e=>e.preventDefault(), {passive:false}); }
-                }
-                document.getElementById('restartTetrisBtn').onclick = startTetris;
-                document.getElementById('backFromGameBtnTop').onclick = () => window.switchView('profileView');
-                document.getElementById('sizeUpBtn').onclick = () => { sizeScale = Math.min(sizeScale+0.1, 2.0); resizeGame(); };
-                document.getElementById('sizeDownBtn').onclick = () => { sizeScale = Math.max(sizeScale-0.1, 0.5); resizeGame(); };
-            }
-
-            window.addEventListener('resize', () => {
-                if (document.getElementById('gameView')?.classList.contains('active')) {
-                    resizeGame();
-                    draw();
-                }
-            });
-
-            async function initApp(){
-                if(isAppInitialized)return;isAppInitialized=true;
-                loadLocalData();applySettings();updateProfileUI();subscribeToChat();
-                if(currentUser&&currentUser.is_admin){const nav=document.getElementById('bottomNav');if(!document.querySelector('.nav-item[data-view="adminView"]')){const item=document.createElement('div');item.className='nav-item';item.dataset.view='adminView';item.innerHTML='👑<span>管理</span>';nav.appendChild(item);}}
-                const dateInput=document.getElementById('searchDateInput');if(dateInput)dateInput.value=getTodayString();viewDate=getTodayString();await renderQueryRecords();
-                const navs=document.querySelectorAll('.nav-item');
-                const views={
-                    scannerPageView:document.getElementById('scannerPageView'),
-                    queryView:document.getElementById('queryView'),
-                    locationView:document.getElementById('locationView'),
-                    chatView:document.getElementById('chatView'),
-                    profileView:document.getElementById('profileView'),
-                    adminView:document.getElementById('adminView'),
-                    gameView:document.getElementById('gameView')
-                };
-                window.switchView = function(id) {
-                    if (id === 'gameView') {
-                        stopTetris();
-                        Object.keys(views).forEach(k => views[k]?.classList.remove('active'));
-                        views.gameView?.classList.add('active');
-                        navs.forEach(n => n.classList.remove('active'));
-                        bindTetrisControls();
-                        startTetris();
-                    } else {
-                        stopTetris();
-                        Object.keys(views).forEach(k => views[k]?.classList.toggle('active', k===id));
-                        navs.forEach(n => n.classList.toggle('active', n.dataset.view===id));
-                        if (id === 'queryView') renderQueryRecords();
-                        if (id === 'adminView' && currentUser?.is_admin) loadAdminUsers();
-                        if (id === 'chatView') { loadChatMessages(); startChatAutoRefresh(); } else stopChatAutoRefresh();
-                        if (id === 'scannerPageView' && settings.autoOpenCamera && window.startCameraFn) setTimeout(window.startCameraFn, 500);
-                        else if (window.stopCameraFn) window.stopCameraFn();
-                    }
-                };
-                navs.forEach(n => n.addEventListener('click', () => window.switchView(n.dataset.view)));
-
-                document.getElementById('btnFocus').addEventListener('click',triggerFocus);
-                document.getElementById('scannerWrapper').addEventListener('click',(e)=>{if(e.target.tagName==='VIDEO'||e.target.id==='scannerWrapper')triggerFocus();});
-                document.getElementById('searchBtn').onclick=async()=>{viewDate=document.getElementById('searchDateInput').value;await renderQueryRecords();};
-                document.getElementById('todaySearchBtn').onclick=async()=>{viewDate=getTodayString();dateInput.value=viewDate;await renderQueryRecords();};
-                document.getElementById('deleteDayBtn').onclick=async()=>{if(!(await window.showConfirm('删除确认',`确定要删除 ${viewDate} 的全部盘点记录吗？`)))return;await deleteAllRecordsByDate(viewDate);await renderQueryRecords();window.showToast('已删除当天全部记录');};
-                document.getElementById('detailViewBtn').onclick=()=>{queryMode='detail';renderQueryRecords();};
-                document.getElementById('summaryViewBtn').onclick=()=>{queryMode='summary_by_part';renderQueryRecords();};
-                document.getElementById('mpnSummaryViewBtn').onclick=()=>{queryMode='summary_by_mpn';renderQueryRecords();};
-                document.getElementById('listContainer').addEventListener('click',async(e)=>{const btn=e.target.closest('.delete-btn');if(!btn||!btn.dataset.id)return;if(!(await window.showConfirm('删除确认','确定删除这条盘点记录吗？')))return;await deleteRecordById(parseInt(btn.dataset.id));await renderQueryRecords();window.showToast('已删除');});
-                document.getElementById('exportExcelBtn').onclick = async () => {
-                    const records = await getRecordsByDate(viewDate);
-                    if (!records.length) { window.showToast('无数据可导出'); return; }
-                    let sheetData = [];
-                    if (queryMode === 'detail') {
-                        sheetData = [['时间', '料号', '数量', 'MPN']];
-                        records.forEach(r => sheetData.push([r.time, r.part, r.qty, r.mpn || '']));
-                    } else if (queryMode === 'summary_by_part') {
-                        sheetData = [['料号', '合计数量']];
-                        const m = new Map();
-                        records.forEach(r => m.set(r.part, (m.get(r.part) || 0) + r.qty));
-                        m.forEach((v, k) => sheetData.push([k, v]));
-                    } else {
-                        sheetData = [['料号', 'MPN', '合计数量']];
-                        const m = new Map();
-                        records.forEach(r => { const k = `${r.part}||${r.mpn || ''}`; m.set(k, (m.get(k) || 0) + r.qty); });
-                        m.forEach((v, k) => { const [p, mp] = k.split('||'); sheetData.push([p, mp || '', v]); });
-                    }
-                    const wb = XLSX.utils.book_new();
-                    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(sheetData), '盘点');
-                    const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
-                    const blob = new Blob([wbout], { type: 'application/octet-stream' });
-                    const fileName = `盘点_${viewDate}.xlsx`;
-                    const choice = await showExportChoice();
-                    if (!choice) return;
-                    const file = new File([blob], fileName, { type: 'application/octet-stream' });
-                    if (choice === 'share') {
-                        if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
-                            try { await navigator.share({ title: fileName, files: [file] }); window.showToast('分享成功'); } catch (e) { if (e.name !== 'AbortError') { downloadBlob(blob, fileName); window.showToast('分享失败，已自动下载'); } }
-                        } else { downloadBlob(blob, fileName); window.showToast('当前设备不支持分享，已自动下载'); }
-                    } else if (choice === 'download') { downloadBlob(blob, fileName); window.showToast('文件已下载'); }
-                };
-                document.getElementById('locationSearchBtn').onclick=refreshLocationSearch;
-                document.getElementById('locationResult').addEventListener('click',async(e)=>{const btn=e.target.closest('button[data-action]');if(!btn)return;const action=btn.dataset.action,part=btn.dataset.part;if(action==='edit'){const curLoc=await getLocationByPart(part);const newLoc=await showEditLocationPrompt(part,curLoc||'');if(newLoc&&newLoc.trim()!==''){await upsertLocation(part,newLoc.trim());await refreshLocationSearch();window.showToast('已更新');}}else if(action==='delete'){if(!(await window.showConfirm('删除储位',`确定删除料号 ${part} 的储位信息吗？`)))return;await deleteLocationByPart(part);await refreshLocationSearch();window.showToast('已删除');}});
-                document.getElementById('manualAddLocationBtn').onclick=async()=>{const part=document.getElementById('manualPartInputDB').value.trim();const loc=document.getElementById('manualLocationInputDB').value.trim();if(!part||!loc){document.getElementById('manualAddStatus').innerText='❌ 料号和储位必填';return;}await upsertLocation(part,loc);document.getElementById('manualAddStatus').innerText=`✅ 已添加 ${part}→${loc}`;document.getElementById('manualPartInputDB').value='';document.getElementById('manualLocationInputDB').value='';setTimeout(()=>document.getElementById('manualAddStatus').innerText='',1500);};
-                document.getElementById('batchImportBtn').addEventListener('click', async () => {
-                    const fileInput = document.getElementById('locationFileInput');
-                    const file = fileInput.files[0];
-                    const statusDiv = document.getElementById('batchImportStatus');
-                    const progressContainer = document.getElementById('progressContainer');
-                    const progressBar = document.getElementById('progressBar');
-                    if (!file) { statusDiv.innerText = '❌ 请选择一个 Excel 文件'; return; }
-                    progressContainer.style.display = 'block'; progressBar.style.width = '0%'; statusDiv.innerText = '⏳ 正在读取文件...';
-                    const reader = new FileReader();
-                    reader.onload = async (e) => {
-                        try {
-                            const data = new Uint8Array(e.target.result);
-                            const workbook = XLSX.read(data, { type: 'array' });
-                            const firstSheet = workbook.SheetNames[0];
-                            const worksheet = workbook.Sheets[firstSheet];
-                            const rows = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
-                            if (!rows || rows.length === 0) { statusDiv.innerText = '❌ Excel 为空'; progressContainer.style.display = 'none'; return; }
-                            let startRow = 0;
-                            if (rows[0] && (typeof rows[0][0] === 'string') && (rows[0][0].includes('料号') || rows[0][0].includes('part'))) startRow = 1;
-                            const totalRows = rows.length - startRow;
-                            let processed = 0, successCount = 0;
-                            for (let i = startRow; i < rows.length; i++) {
-                                const row = rows[i];
-                                if (!row || row.length < 2) { processed++; continue; }
-                                const part = (row[0] || '').toString().trim();
-                                const location = (row[1] || '').toString().trim();
-                                if (part && location) { const result = await upsertLocation(part, location); if (result) successCount++; }
-                                processed++;
-                                progressBar.style.width = Math.round((processed / totalRows) * 100) + '%';
-                                statusDiv.innerText = `⏳ 处理中 ${processed}/${totalRows} (${successCount} 条成功)`;
-                            }
-                            statusDiv.innerText = `✅ 导入完成！共 ${successCount} 条`;
-                            progressContainer.style.display = 'none';
-                            fileInput.value = '';
-                            setTimeout(() => statusDiv.innerText = '', 3000);
-                        } catch (err) { statusDiv.innerText = '❌ 解析文件失败: ' + err.message; progressContainer.style.display = 'none'; }
-                    };
-                    reader.readAsArrayBuffer(file);
-                });
-
-                document.getElementById('nightSwitchTrack').onclick=()=>{settings.nightMode=!settings.nightMode;saveSettings();applySettings();};
-                document.getElementById('fontSizeSelect').onchange=e=>{settings.fontSize=e.target.value;saveSettings();applySettings();};
-                document.getElementById('cameraPreviewHeightRange').oninput=e=>{settings.cameraPreviewHeight=parseInt(e.target.value);saveSettings();applySettings();};
-                document.getElementById('scanWindowSizeRange').oninput=e=>{settings.scanWindowSize=parseInt(e.target.value);saveSettings();applySettings();};
-                document.getElementById('scanCooldownSelect').onchange=e=>{settings.scanCooldown=parseFloat(e.target.value);saveSettings();};
-                document.getElementById('toastDurationSelect').onchange=e=>{settings.toastDuration=parseFloat(e.target.value);saveSettings();};
-                document.getElementById('soundSwitchTrack').onclick=()=>{settings.soundEnabled=!settings.soundEnabled;saveSettings();document.getElementById('soundSwitchTrack').classList.toggle('on',settings.soundEnabled);};
-                document.getElementById('autoOpenCameraSelect').onchange=e=>{settings.autoOpenCamera=e.target.value==='auto';saveSettings();};
-                document.getElementById('focusModeSelect').onchange=e=>{settings.focusMode=e.target.value;saveSettings();};
-                document.getElementById('voiceTimeoutSelect').onchange=e=>{settings.voiceTimeout=parseInt(e.target.value);saveSettings();};
-
-                document.getElementById('changePasswordBtn').onclick=()=>{document.getElementById('passwordModal').style.display='flex';};
-                document.getElementById('closePasswordModalBtn').onclick=()=>document.getElementById('passwordModal').style.display='none';
-                document.getElementById('editNameBtn').onclick=()=>{document.getElementById('renameModal').style.display='flex';document.getElementById('newNicknameInput').value=userData.name;document.getElementById('renameModalError').textContent='';};
-                document.getElementById('cancelRenameBtn').onclick=()=>document.getElementById('renameModal').style.display='none';
-                document.getElementById('submitRenameBtn').onclick=()=>{const newName=document.getElementById('newNicknameInput').value.trim();if(!newName){document.getElementById('renameModalError').textContent='昵称不能为空';return;}userData.name=newName;saveUserData();updateProfileUI();document.getElementById('renameModal').style.display='none';window.showToast('昵称已更新');};
-                const avatarDisplay=document.getElementById('avatarDisplay'),avatarFileInput=document.getElementById('avatarFileInput');
-                if(avatarDisplay&&avatarFileInput){avatarDisplay.addEventListener('click',()=>avatarFileInput.click());avatarFileInput.addEventListener('change',(e)=>{const file=e.target.files[0];if(!file)return;if(!file.type.startsWith('image/')){window.showToast('请选择图片文件');avatarFileInput.value='';return;}const reader=new FileReader();reader.onload=(ev)=>{userData.avatar=ev.target.result;saveUserData();updateProfileUI();window.showToast('头像已更新');};reader.onerror=()=>window.showToast('图片读取失败');reader.readAsDataURL(file);avatarFileInput.value='';});}
-                document.getElementById('clearCacheBtn').onclick=async()=>{if(await window.showConfirm('清除缓存','确定清除当前用户的所有本地设置吗？（云端数据不受影响）')){if(currentUser){localStorage.removeItem(getUserDataKey(currentUser.id));localStorage.removeItem(getSettingsKey(currentUser.id));localStorage.removeItem(CHAT_CACHE_KEY(currentUser.id));}localStorage.removeItem(BG_CACHE_KEY);window.showToast('缓存已清除，即将刷新...');setTimeout(()=>location.reload(),400);}};
-                document.getElementById('logoutBtn').onclick=async()=>{if(await window.showConfirm('退出登录','确定要退出登录吗？')){unsubscribeChat();stopChatAutoRefresh();if(stream){stream.getTracks().forEach(t=>t.stop());stream=null;}localStorage.removeItem(SESSION_KEY);if(window.stopCameraFn)window.stopCameraFn();document.getElementById('appMain').style.display='none';document.getElementById('loginContainer').style.display='flex';document.getElementById('registerContainer').style.display='none';isAppInitialized=false;currentUser=null;window.showToast('已退出登录');}};
-
-                document.getElementById('chatSendBtn').addEventListener('click',sendChatMessage);
-                document.getElementById('chatMessageInput').addEventListener('keydown',e=>{if(e.key==='Enter')sendChatMessage();});
-
-                document.getElementById('openGameBtn').addEventListener('click', () => window.switchView('gameView'));
-
-                if(typeof initScanner==='function')initScanner();
-                window.switchView('scannerPageView');
-            }
-
-            function initScanner(){
-                if(window.__scannerLoaded)return;window.__scannerLoaded=true;
-                const video=document.getElementById('video'),canvas=document.getElementById('canvas'),ctx=canvas.getContext('2d',{willReadFrequently:true});
-                const btnStart=document.getElementById('btnStart'),btnUpload=document.getElementById('btnUpload'),imgFile=document.getElementById('imgFile'),btnTorch=document.getElementById('btnTorch');
-                const partInput=document.getElementById('partNumber'),qtyInput=document.getElementById('quantity'),mpnInput=document.getElementById('mpn'),multiplierSelect=document.getElementById('multiplierSelect');
-                const autoSaveSwitch=document.getElementById('autoSaveSwitchTrack'),btnConfirm=document.getElementById('btnConfirmSave'),btnCancel=document.getElementById('btnCancelSave');
-                const resultCard=document.getElementById('resultCard'),resultContent=document.getElementById('resultContent');
-                let scanning=false,animId=null,lastScanData='',cooldownUntil=0;
-                function getCooldown(){return (settings.scanCooldown||2.5)*1000;}
-                function parseSmart(str){const parts=str.trim().split(/[ ,\t|]+/);if(parts.length>=2){let qty=parseInt(parts[1].replace(/[^0-9]/g,''))||1;return{part:parts[0],qty,mpn:parts[2]||''};}return{part:str,qty:1,mpn:''};}
-                function fillFields(raw){
-                    let{part,qty,mpn}=parseSmart(raw);
-                    part = part && part.length > 1 ? part.substring(1) : part;
-                    mpn = mpn && mpn.length > 1 ? mpn.substring(1) : mpn;
-                    partInput.value=part; qtyInput.value=qty; mpnInput.value=mpn;
-                }
-                async function performSave(){const part=partInput.value.trim();let baseQty=parseInt(qtyInput.value,10)||1;const mul=parseInt(multiplierSelect.value,10)||1;const mpn=mpnInput.value.trim();if(!part){window.showToast('❌ 料号不能为空');return false;}const finalQty=baseQty*mul;const ok=await addRecord(part,finalQty,mpn);if(ok){partInput.value='';qtyInput.value='1';mpnInput.value='';}return ok;}
-                function handleScan(data){const now=Date.now();if(data===lastScanData&&now<cooldownUntil)return;lastScanData=data;cooldownUntil=now+getCooldown();resultContent.innerText=data;resultCard.style.display='block';fillFields(data);const line=document.getElementById('scanLine');if(line){line.classList.add('cooling');setTimeout(()=>line.classList.remove('cooling'),getCooldown());}if(settings.soundEnabled){initAudio();playBeep();}if(settings.autoSave){performSave().then(saved=>{if(saved)resultCard.style.display='none';});}else window.showToast('✅ 识别成功');}
-                async function scanFrame(){if(!scanning||!video.readyState)return;let w=video.videoWidth,h=video.videoHeight;if(!w||!h){animId=requestAnimationFrame(scanFrame);return;}const maxDim=640;if(w>maxDim||h>maxDim){const r=Math.min(maxDim/w,maxDim/h);w*=r;h*=r;}canvas.width=w;canvas.height=h;ctx.drawImage(video,0,0,w,h);const imgData=ctx.getImageData(0,0,w,h);const code=jsQR(imgData.data,w,h,{inversionAttempts:'dontInvert'});if(code&&code.data)handleScan(code.data);animId=requestAnimationFrame(scanFrame);}
-                async function startCam(){if(stream)await stopCam();try{stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment',width:{ideal:640},height:{ideal:480},focusMode:{ideal:settings.focusMode||'continuous'}}});const videoTrack=stream.getVideoTracks()[0];if(videoTrack){try{await videoTrack.applyConstraints({advanced:[{focusMode:settings.focusMode||'continuous'}]});}catch(e){}}video.srcObject=stream;await video.play();document.getElementById('placeholder').style.display='none';document.getElementById('overlay').style.display='block';btnStart.textContent='⏹️ 停止';btnStart.className='btn btn-danger';btnTorch.disabled=false;document.getElementById('btnFocus').disabled=false;scanning=true;animId=requestAnimationFrame(scanFrame);window.showToast('📷 摄像头已启动');}catch(e){window.showToast('❌ 摄像头启动失败');stopCam();}}
-                async function stopCam(){scanning=false;if(animId){cancelAnimationFrame(animId);animId=null;}if(stream){stream.getTracks().forEach(t=>t.stop());stream=null;}video.srcObject=null;document.getElementById('placeholder').style.display='flex';document.getElementById('overlay').style.display='none';btnStart.textContent='🎥 开始扫描';btnStart.className='btn btn-primary';btnTorch.disabled=true;document.getElementById('btnFocus').disabled=true;}
-                window.startCameraFn=startCam;window.stopCameraFn=stopCam;
-                btnStart.onclick=()=>scanning?stopCam():startCam();
-                btnUpload.onclick=()=>imgFile.click();
-                imgFile.onchange=async e=>{const file=e.target.files[0];if(!file)return;const img=await new Promise((r,rej)=>{const rd=new FileReader();rd.onload=ev=>{const im=new Image();im.onload=()=>r(im);im.onerror=rej;im.src=ev.target.result;};rd.onerror=rej;rd.readAsDataURL(file);});canvas.width=img.width;canvas.height=img.height;ctx.drawImage(img,0,0);const imgData=ctx.getImageData(0,0,img.width,img.height);const code=jsQR(imgData.data,img.width,img.height);if(code&&code.data)handleScan(code.data);else window.showToast('未识别到二维码');imgFile.value='';};
-                if(btnTorch)btnTorch.onclick=async()=>{if(!stream)return;const track=stream.getVideoTracks()[0];if(!track)return;try{const newState=!window.torchState;await track.applyConstraints({advanced:[{torch:newState}]});window.torchState=newState;btnTorch.classList.toggle('active',newState);window.showToast(newState?'补光开启':'补光关闭');}catch(e){window.showToast('设备不支持补光');}};
-                if(autoSaveSwitch)autoSaveSwitch.onclick=()=>{settings.autoSave=!settings.autoSave;autoSaveSwitch.classList.toggle('on',settings.autoSave);saveSettings();window.showToast(settings.autoSave?'自动保存已开启':'手动保存模式');};
-                btnConfirm.onclick=async()=>{await performSave();resultCard.style.display='none';};
-                btnCancel.onclick=()=>{partInput.value='';qtyInput.value='1';mpnInput.value='';resultCard.style.display='none';};
-                document.getElementById('btnCopy')?.addEventListener('click',()=>{const t=resultContent?.innerText;if(t)navigator.clipboard.writeText(t).then(()=>window.showToast('已复制')).catch(()=>window.showToast('复制失败'));});
-                document.getElementById('btnClearResult')?.addEventListener('click',()=>{resultCard.style.display='none';resultContent.innerText='';lastScanData='';});
-
-                const voiceBtn = document.getElementById('voiceQuantityBtn');
-                if (voiceBtn && ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window)) {
-                    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-                    const recognition = new SpeechRecognition();
-                    recognition.lang = 'zh-CN'; recognition.continuous = false; recognition.interimResults = false;
-                    let voiceTimeout;
-                    recognition.onstart = () => { voiceTimeout = setTimeout(() => { recognition.abort(); window.showToast('⏰ 语音输入超时'); }, (settings.voiceTimeout||5)*1000); };
-                    recognition.onresult = (event) => {
-                        clearTimeout(voiceTimeout);
-                        const transcript = event.results[0][0].transcript.trim();
-                        let num = parseInt(transcript,10);
-                        if (isNaN(num)) {
-                            const map = {'零':0,'一':1,'二':2,'三':3,'四':4,'五':5,'六':6,'七':7,'八':8,'九':9,'十':10};
-                            if (map[transcript] !== undefined) num = map[transcript];
-                            else if (transcript === '百') num = 100;
-                            else if (transcript === '千') num = 1000;
-                        }
-                        if (!isNaN(num) && num > 0) { document.getElementById('quantity').value = num; window.showToast('数量已设为 ' + num); }
-                        else window.showToast('未识别到有效数字');
-                        voiceBtn.classList.remove('listening');
-                    };
-                    recognition.onerror = (event) => { clearTimeout(voiceTimeout); if (event.error !== 'aborted') window.showToast('语音识别失败: ' + event.error); voiceBtn.classList.remove('listening'); };
-                    recognition.onend = () => { clearTimeout(voiceTimeout); voiceBtn.classList.remove('listening'); };
-                    voiceBtn.addEventListener('click', () => {
-                        if (voiceBtn.classList.contains('listening')) return;
-                        voiceBtn.classList.add('listening');
-                        recognition.start();
-                        window.showToast(`请说出数量（${settings.voiceTimeout||5}秒）...`);
-                    });
-                } else if (voiceBtn) voiceBtn.style.display = 'none';
-            }
-
-            document.addEventListener('pointerdown', function(e) { const btn = e.target.closest('.btn'); if (btn) btn.classList.add('clicked'); });
-            document.addEventListener('pointerup', function(e) { const btn = e.target.closest('.btn'); if (btn) btn.classList.remove('clicked'); });
-            document.addEventListener('pointerleave', function(e) { const btn = e.target.closest('.btn'); if (btn) btn.classList.remove('clicked'); });
-
-            window.handleLogin=async function(){const username=document.getElementById('loginUsernameInput').value.trim(),password=document.getElementById('loginPasswordInput').value;const err=document.getElementById('loginError');err.textContent='';if(!username||!password){err.textContent='请输入用户名和密码';return;}err.textContent='登录中...';try{const{data,error}=await supabaseClient.rpc('login_user',{p_username:username,p_password:password});if(error){err.textContent='登录失败: '+error.message;return;}if(!data.success){err.textContent=data.message;return;}currentUser={id:data.id,username:data.username,real_name:data.real_name,is_admin:data.is_admin};saveSession();showMainApp();}catch(e){err.textContent='登录异常: '+e.message;}};
-            window.handleRegister=async function(){const username=document.getElementById('registerUsernameInput').value.trim(),realName=document.getElementById('registerRealNameInput').value.trim(),password=document.getElementById('registerPasswordInput').value,confirm=document.getElementById('registerPasswordConfirmInput').value;const err=document.getElementById('registerError');err.textContent='';if(!username||!realName||!password||!confirm){err.textContent='所有字段均为必填';return;}if(!/^[a-zA-Z0-9_]+$/.test(username)){err.textContent='用户名只能包含英文字母、数字和下划线';return;}if(password.length<4){err.textContent='密码至少4位';return;}if(password!==confirm){err.textContent='两次密码不一致';return;}err.textContent='注册中...';try{const{data,error}=await supabaseClient.rpc('register_user',{p_username:username,p_password:password,p_real_name:realName});if(error){err.textContent='注册失败: '+error.message;return;}if(!data.success){err.textContent=data.message;return;}currentUser={id:data.id,username:data.username,real_name:data.real_name,is_admin:false};saveSession();showMainApp();}catch(e){err.textContent='注册异常: '+e.message;}};
-
-            function showMainApp(){document.getElementById('loginContainer').style.display='none';document.getElementById('registerContainer').style.display='none';document.getElementById('appMain').style.display='block';if(!isAppInitialized){initApp();initScanner();}}
-
-            document.getElementById('goToRegisterBtn').addEventListener('click',()=>{document.getElementById('loginContainer').style.display='none';document.getElementById('registerContainer').style.display='flex';document.getElementById('registerError').textContent='';});
-            document.getElementById('goToLoginBtn').addEventListener('click',()=>{document.getElementById('registerContainer').style.display='none';document.getElementById('loginContainer').style.display='flex';document.getElementById('loginError').textContent='';});
-
-            (async()=>{const saved=loadSession();if(saved&&saved.id&&saved.username){currentUser=saved;showMainApp();}else document.getElementById('loginContainer').style.display='flex';})();
-        })();
-    </script>
+    function init() {
+        load();
+        materials.forEach(m => countChanges[m.id] = m.stock);
+        showPage('home');
+        populateSelects(); renderStock(); renderMaterialList(); updateDaily(); updateMarquee(); updateMine(); renderCustomMsgs();
+        $('#matId').placeholder = `例如: ${nextId()}`;
+        clearLocationResult();
+        console.log('📦 仓库管理系统 v3.1 已启动（苹果全屏适配）');
+    }
+    init();
+})();
+</script>
 </body>
 </html>
