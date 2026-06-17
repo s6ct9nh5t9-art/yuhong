@@ -2,7 +2,6 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <!-- 苹果全屏适配 Meta -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="仓库管理">
@@ -13,12 +12,7 @@
     <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        html, body {
-            height: 100%;
-            width: 100%;
-            overflow: hidden;
-            touch-action: manipulation;
-        }
+        html, body { height: 100%; width: 100%; overflow: hidden; touch-action: manipulation; }
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', Roboto, sans-serif;
             background: #f0f4f8; color: #1e293b;
@@ -26,29 +20,17 @@
             padding: 0;
         }
         #app {
-            width: 100%;
-            height: 100dvh;
-            max-width: 480px;
-            background: #fff;
+            width: 100%; height: 100dvh; max-width: 480px; background: #fff;
             box-shadow: 0 20px 60px rgba(0,0,0,0.12);
-            display: flex; flex-direction: column;
-            position: relative;
-            overflow: hidden;
+            display: flex; flex-direction: column; position: relative; overflow: hidden;
             border-radius: 0;
         }
         @media (min-width: 481px) {
-            #app {
-                border-radius: 32px;
-                margin: 16px;
-                height: calc(100dvh - 32px);
-            }
+            #app { border-radius: 32px; margin: 16px; height: calc(100dvh - 32px); }
         }
         .page-container {
-            flex: 1;
-            overflow-y: auto;
-            -webkit-overflow-scrolling: touch;
+            flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch;
             padding: 20px 20px 28px;
-            padding-bottom: calc(28px + env(safe-area-inset-bottom));
         }
         .page { display: none; animation: fadeUp 0.3s ease; }
         .page.active { display: block; }
@@ -57,16 +39,13 @@
             100% { opacity: 1; transform: translateY(0); }
         }
 
-        /* 预警滚动栏 */
+        /* 预警滚动栏 - 尺寸保持不变 */
         .alert-marquee {
             background: #fff; border: 1px solid #e2e8f0; border-radius: 14px;
             margin-bottom: 16px; padding: 16px 20px; overflow: hidden;
             height: 25vh; max-height: 220px; min-height: 140px; position: relative;
         }
-        .alert-marquee .marquee-track {
-            display: flex; flex-direction: column;
-            animation: scroll-up 12s linear infinite;
-        }
+        .alert-marquee .marquee-track { display: flex; flex-direction: column; animation: scroll-up 12s linear infinite; }
         .alert-marquee .marquee-item {
             font-size: 16px; color: #1e293b; white-space: nowrap;
             padding: 8px 0; display: flex; align-items: center; gap: 8px; line-height: 1.6;
@@ -81,10 +60,10 @@
         }
         .alert-marquee:hover .marquee-track { animation-play-state: paused; }
 
-        /* 首页卡片 */
-        .home-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; padding-top: 8px; }
+        /* 首页卡片 - 缩小尺寸 */
+        .home-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; padding-top: 8px; }
         .home-card {
-            background: #fff; border-radius: 20px; padding: 20px 8px 16px; text-align: center;
+            background: #fff; border-radius: 16px; padding: 14px 6px 12px; text-align: center;
             cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;
             box-shadow: 0 4px 12px rgba(0,0,0,0.04); border: 1px solid #f1f5f9;
             position: relative; overflow: hidden;
@@ -93,16 +72,14 @@
             content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
             background: var(--card-color); border-radius: 0 0 4px 4px;
         }
-        .home-card:hover { transform: translateY(-4px); box-shadow: 0 12px 28px rgba(0,0,0,0.08); }
         .home-card:active { transform: scale(0.96); }
         .home-card .icon-wrap {
-            width: 56px; height: 56px; border-radius: 18px; display: flex;
-            align-items: center; justify-content: center; margin: 0 auto 10px;
-            font-size: 26px; color: #fff; background: var(--card-color); transition: transform 0.2s;
+            width: 48px; height: 48px; border-radius: 14px; display: flex;
+            align-items: center; justify-content: center; margin: 0 auto 8px;
+            font-size: 22px; color: #fff; background: var(--card-color); transition: transform 0.2s;
         }
-        .home-card:hover .icon-wrap { transform: scale(1.05); }
-        .home-card .card-label { font-size: 14px; font-weight: 600; color: #1e293b; }
-        .home-card .card-badge { font-size: 11px; color: #94a3b8; margin-top: 2px; }
+        .home-card .card-label { font-size: 13px; font-weight: 600; color: #1e293b; }
+        .home-card .card-badge { font-size: 10px; color: #94a3b8; margin-top: 2px; }
         .card-scan { --card-color: #8b5cf6; }
         .card-out { --card-color: #ef4444; }
         .card-in { --card-color: #22c55e; }
@@ -110,28 +87,48 @@
         .card-stock { --card-color: #3b82f6; }
         .card-material { --card-color: #ec4899; }
 
-        /* 今日数据 */
+        /* 今日数据 - 缩小面板 */
         .daily-stats {
-            margin-top: 24px; background: #f8fafc; border-radius: 20px;
-            padding: 18px 16px 14px; border: 1px solid #e9eef3;
+            margin-top: 16px; background: #f8fafc; border-radius: 16px;
+            padding: 12px 12px 10px; border: 1px solid #e9eef3;
             box-shadow: inset 0 1px 3px rgba(0,0,0,0.02);
         }
-        .stats-title { font-size: 13px; font-weight: 600; color: #475569; display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
-        .stats-title i { color: #3b82f6; font-size: 16px; }
-        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .stats-title { font-size: 12px; font-weight: 600; color: #475569; display: flex; align-items: center; gap: 6px; margin-bottom: 8px; }
+        .stats-title i { color: #3b82f6; font-size: 14px; }
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
         .stat-item {
-            background: #fff; border-radius: 14px; padding: 12px 10px;
+            background: #fff; border-radius: 12px; padding: 8px 6px;
             text-align: center; box-shadow: 0 2px 6px rgba(0,0,0,0.02);
             border: 1px solid #f1f5f9;
         }
-        .stat-value { font-size: 22px; font-weight: 700; line-height: 1.3; }
-        .stat-label { font-size: 12px; color: #94a3b8; margin-top: 2px; }
-        .in { color: #22c55e; }
-        .out { color: #ef4444; }
-        .total { color: #3b82f6; }
-        .count { color: #8b5cf6; }
+        .stat-value { font-size: 18px; font-weight: 700; line-height: 1.2; }
+        .stat-label { font-size: 11px; color: #94a3b8; margin-top: 2px; }
+        .in { color: #22c55e; } .out { color: #ef4444; } .total { color: #3b82f6; } .count { color: #8b5cf6; }
 
-        /* 公共组件 */
+        /* 底部导航栏 - 紧贴最底部 */
+        .bottom-nav {
+            position: relative;
+            padding: 6px 0 calc(6px + env(safe-area-inset-bottom)) 0;
+            background: #fff;
+            border-top: 1px solid #e9eef3;
+            display: flex;
+            align-items: center;
+            justify-content: space-around;
+            box-shadow: 0 -2px 12px rgba(0,0,0,0.04);
+            z-index: 20;
+            flex-shrink: 0;
+        }
+        .bottom-nav .nav-item {
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            flex: 1; padding: 4px 0; cursor: pointer; color: #94a3b8;
+            border: none; background: transparent; font-family: inherit;
+        }
+        .bottom-nav .nav-item i { font-size: 24px; margin-bottom: 2px; }
+        .bottom-nav .nav-item span { font-size: 11px; font-weight: 500; }
+        .bottom-nav .nav-item.active { color: #3b82f6; }
+        .bottom-nav .nav-item.active i { transform: translateY(-2px); }
+
+        /* 其余样式保持不变 */
         .section-title { font-size: 18px; font-weight: 700; color: #0f172a; margin-bottom: 16px; display: flex; align-items: center; gap: 10px; }
         .section-title i { font-size: 20px; }
         .form-group { margin-bottom: 16px; }
@@ -163,7 +160,6 @@
         .btn-sm { padding: 6px 14px; font-size: 12px; border-radius: 8px; }
         .btn-block { width: 100%; justify-content: center; }
 
-        /* 表格 */
         .table-wrap { overflow-x: auto; border-radius: 14px; border: 1px solid #f1f5f9; background: #fff; margin-top: 4px; }
         table { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 400px; }
         table th { background: #f8fafc; font-weight: 600; color: #475569; padding: 10px 12px; text-align: left; border-bottom: 2px solid #e2e8f0; white-space: nowrap; }
@@ -174,7 +170,6 @@
         .text-muted { color: #94a3b8; font-size: 13px; }
         .stock-low { color: #ef4444; font-weight: 600; }
 
-        /* 扫码 */
         .scan-area {
             background: #f1f5f9; border-radius: 20px; padding: 40px 20px;
             text-align: center; border: 2px dashed #cbd5e1; margin-bottom: 20px;
@@ -192,7 +187,6 @@
         .result-label { color: #64748b; }
         .result-value { font-weight: 600; color: #0f172a; }
 
-        /* 盘点 */
         .count-item {
             display: flex; align-items: center; justify-content: space-between;
             padding: 10px 14px; background: #f8fafc; border-radius: 12px;
@@ -205,11 +199,7 @@
         .qty-control { display: flex; align-items: center; gap: 8px; }
         .qty-control input { width: 70px; padding: 4px 6px; border: 1.5px solid #e2e8f0; border-radius: 8px; text-align: center; font-size: 14px; font-weight: 600; outline: none; background: #fff; }
 
-        /* 料号管理 */
-        .material-form {
-            background: #f8fafc; border-radius: 16px; padding: 16px;
-            margin-bottom: 16px; border: 1px solid #f1f5f9;
-        }
+        .material-form { background: #f8fafc; border-radius: 16px; padding: 16px; margin-bottom: 16px; border: 1px solid #f1f5f9; }
         .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
         .material-list .material-item {
             display: flex; align-items: center; justify-content: space-between;
@@ -217,7 +207,6 @@
             margin-bottom: 6px; border: 1px solid #f1f5f9;
         }
 
-        /* 我的页面 */
         .my-profile {
             background: #f8fafc; border-radius: 20px; padding: 20px;
             text-align: center; border: 1px solid #f1f5f9; margin-bottom: 20px;
@@ -233,7 +222,6 @@
         .my-info-item .num { font-size: 22px; font-weight: 700; color: #1e293b; }
         .my-info-item .label { font-size: 12px; color: #94a3b8; margin-top: 2px; }
 
-        /* 自定义消息 */
         .custom-msg-item {
             display: flex; align-items: center; justify-content: space-between;
             padding: 8px 12px; background: #fff; border-radius: 10px;
@@ -242,7 +230,6 @@
         .custom-msg-item .msg-text { flex: 1; color: #475569; }
         .btn-remove { color: #ef4444; cursor: pointer; padding: 4px 8px; border-radius: 6px; }
 
-        /* 数据导入卡片 */
         .upload-card {
             background: #f8fafc; border-radius: 16px; padding: 16px;
             margin-bottom: 16px; border: 1px solid #e9eef3;
@@ -253,36 +240,10 @@
         .empty-state { text-align: center; padding: 32px 16px; color: #94a3b8; }
         .empty-state i { font-size: 40px; margin-bottom: 12px; opacity: 0.5; }
 
-        /* 底部导航 */
-        .bottom-nav {
-            position: relative;
-            height: calc(68px + env(safe-area-inset-bottom));
-            background: #fff;
-            border-top: 1px solid #e9eef3;
-            display: flex;
-            align-items: center;
-            justify-content: space-around;
-            padding-bottom: env(safe-area-inset-bottom);
-            box-shadow: 0 -2px 12px rgba(0,0,0,0.04);
-            z-index: 20;
-            flex-shrink: 0;
-        }
-        .bottom-nav .nav-item {
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            flex: 1; padding: 4px 0; cursor: pointer; color: #94a3b8;
-            border: none; background: transparent; font-family: inherit;
-        }
-        .bottom-nav .nav-item i { font-size: 24px; margin-bottom: 2px; }
-        .bottom-nav .nav-item span { font-size: 11px; font-weight: 500; }
-        .bottom-nav .nav-item.active { color: #3b82f6; }
-        .bottom-nav .nav-item.active i { transform: translateY(-2px); }
-
-        /* Toast */
         .toast-container {
-            position: fixed;
-            bottom: calc(90px + env(safe-area-inset-bottom));
-            left: 50%; transform: translateX(-50%);
-            z-index: 999; display: flex; flex-direction: column; align-items: center;
+            position: fixed; bottom: calc(90px + env(safe-area-inset-bottom));
+            left: 50%; transform: translateX(-50%); z-index: 999;
+            display: flex; flex-direction: column; align-items: center;
             gap: 8px; pointer-events: none; max-width: 420px; width: 90%;
         }
         .toast {
@@ -305,10 +266,10 @@
         }
 
         @media (max-width: 400px) {
-            .home-grid { gap: 12px; }
-            .home-card { padding: 16px 4px 12px; }
-            .home-card .icon-wrap { width: 46px; height: 46px; font-size: 20px; }
-            .my-info-grid { grid-template-columns: 1fr 1fr; }
+            .home-grid { gap: 8px; }
+            .home-card { padding: 12px 4px 10px; }
+            .home-card .icon-wrap { width: 40px; height: 40px; font-size: 18px; }
+            .home-card .card-label { font-size: 12px; }
         }
     </style>
 </head>
@@ -469,7 +430,7 @@
             </div>
             <div style="margin-top:20px; background:#f8fafc; border-radius:16px; padding:16px; border:1px solid #f1f5f9;">
                 <div style="font-size:14px; font-weight:600; color:#0f172a; margin-bottom:8px;"><i class="fas fa-info-circle" style="color:#3b82f6;"></i> 系统信息</div>
-                <div style="display:flex; justify-content:space-between; font-size:13px; color:#475569; padding:4px 0;"><span>版本</span><span>v3.1</span></div>
+                <div style="display:flex; justify-content:space-between; font-size:13px; color:#475569; padding:4px 0;"><span>版本</span><span>v3.3</span></div>
                 <div style="display:flex; justify-content:space-between; font-size:13px; color:#475569; padding:4px 0;"><span>运行时间</span><span id="sysUptime">--</span></div>
                 <div style="display:flex; justify-content:space-between; font-size:13px; color:#475569; padding:4px 0;"><span>数据更新</span><span id="lastUpdateTime">--</span></div>
             </div>
@@ -478,6 +439,7 @@
         </div>
     </div>
 
+    <!-- 底部导航栏 – 紧贴最下面 -->
     <nav class="bottom-nav" id="bottomNav">
         <button class="nav-item active" data-tab="home"><i class="fas fa-home"></i><span>首页</span></button>
         <button class="nav-item" data-tab="location"><i class="fas fa-map-pin"></i><span>储位查询</span></button>
@@ -488,469 +450,469 @@
 <div class="toast-container" id="toastContainer"></div>
 
 <script>
-(function() {
-    const STORAGE_MAT = 'wms_materials', STORAGE_REC = 'wms_records', STORAGE_MSG = 'wms_messages';
-    const LOW = 5;
-    const defaults = [
-        { id:'M001', name:'螺丝', spec:'M4×10', unit:'个', stock:120, location:'A1-01' },
-        { id:'M002', name:'螺母', spec:'M4', unit:'个', stock:200, location:'A1-02' },
-        { id:'M003', name:'垫片', spec:'4mm', unit:'个', stock:150, location:'B2-03' },
-        { id:'M004', name:'轴承', spec:'6202', unit:'个', stock:45, location:'C3-01' },
-        { id:'M005', name:'齿轮', spec:'20齿', unit:'个', stock:30, location:'C3-02' },
-        { id:'M006', name:'皮带', spec:'A型', unit:'条', stock:18, location:'D4-01' },
-        { id:'M007', name:'电机', spec:'12V', unit:'台', stock:8, location:'E5-01' }
-    ];
+    (function() {
+        const STORAGE_MAT = 'wms_materials', STORAGE_REC = 'wms_records', STORAGE_MSG = 'wms_messages';
+        const LOW = 5;
+        const defaults = [
+            { id:'M001', name:'螺丝', spec:'M4×10', unit:'个', stock:120, location:'A1-01' },
+            { id:'M002', name:'螺母', spec:'M4', unit:'个', stock:200, location:'A1-02' },
+            { id:'M003', name:'垫片', spec:'4mm', unit:'个', stock:150, location:'B2-03' },
+            { id:'M004', name:'轴承', spec:'6202', unit:'个', stock:45, location:'C3-01' },
+            { id:'M005', name:'齿轮', spec:'20齿', unit:'个', stock:30, location:'C3-02' },
+            { id:'M006', name:'皮带', spec:'A型', unit:'条', stock:18, location:'D4-01' },
+            { id:'M007', name:'电机', spec:'12V', unit:'台', stock:8, location:'E5-01' }
+        ];
 
-    let materials=[], records=[], userMessages=[], countChanges={}, locationEditOriginals={};
-    const startTime = new Date();
-    const $ = s => document.querySelector(s);
-    const pages = {
-        home: $('#page-home'), scan: $('#page-scan'), out: $('#page-out'), in: $('#page-in'),
-        count: $('#page-count'), stock: $('#page-stock'), material: $('#page-material'),
-        location: $('#page-location'), data: $('#page-data'), mine: $('#page-mine')
-    };
+        let materials=[], records=[], userMessages=[], countChanges={}, locationEditOriginals={};
+        const startTime = new Date();
+        const $ = s => document.querySelector(s);
+        const pages = {
+            home: $('#page-home'), scan: $('#page-scan'), out: $('#page-out'), in: $('#page-in'),
+            count: $('#page-count'), stock: $('#page-stock'), material: $('#page-material'),
+            location: $('#page-location'), data: $('#page-data'), mine: $('#page-mine')
+        };
 
-    function load() {
-        try {
-            materials = JSON.parse(localStorage.getItem(STORAGE_MAT)) || JSON.parse(JSON.stringify(defaults));
-            records = JSON.parse(localStorage.getItem(STORAGE_REC)) || [];
-            userMessages = JSON.parse(localStorage.getItem(STORAGE_MSG)) || [];
-        } catch(e) {
-            materials = JSON.parse(JSON.stringify(defaults)); records = []; userMessages = [];
-        }
-        materials.forEach(m => { if(m.location===undefined) m.location = ''; });
-    }
-    function save() {
-        localStorage.setItem(STORAGE_MAT, JSON.stringify(materials));
-        localStorage.setItem(STORAGE_REC, JSON.stringify(records));
-        localStorage.setItem(STORAGE_MSG, JSON.stringify(userMessages));
-        updateLastUpdateTime();
-    }
-    function find(id) { return materials.find(m => m.id === id); }
-    function nextId() {
-        const nums = materials.map(m => parseInt(m.id.replace(/\D/g,'')) || 0);
-        return 'M' + String(Math.max(0,...nums)+1).padStart(3,'0');
-    }
-    function isToday(d) { return d && new Date(d).toDateString()===new Date().toDateString(); }
-    function toast(msg, type='info') {
-        const icons = { success:'fa-check-circle', error:'fa-exclamation-circle', info:'fa-info-circle' };
-        const el = document.createElement('div');
-        el.className = `toast toast-${type}`;
-        el.innerHTML = `<i class="fas ${icons[type]}"></i> ${msg}`;
-        $('#toastContainer').appendChild(el);
-        setTimeout(() => el.remove(), 3000);
-    }
-
-    function updateMarquee() {
-        const track = $('#marqueeTrack');
-        const lows = materials.filter(m => m.stock <= LOW).map(m => 
-            `<div class="marquee-item"><i class="fas fa-exclamation-triangle"></i> ${m.id} ${m.name} 库存仅剩 ${m.stock} ${m.unit||'个'}</div>`);
-        const customs = userMessages.map(m => 
-            `<div class="marquee-item"><i class="fas fa-bullhorn"></i> ${m.text}</div>`);
-        const all = [...lows, ...customs];
-        track.innerHTML = all.length ? all.join('') + all.join('')
-            : `<div class="marquee-item"><i class="fas fa-check-circle"></i> 所有物料库存充足</div><div class="marquee-item"><i class="fas fa-check-circle"></i> 所有物料库存充足</div>`;
-    }
-
-    function renderCustomMsgs() {
-        const c = $('#customMsgList');
-        if(!c) return;
-        c.innerHTML = userMessages.length ? userMessages.map((m,i) => 
-            `<div class="custom-msg-item"><span class="msg-text">${m.text}</span><button class="btn-remove" data-index="${i}"><i class="fas fa-times"></i></button></div>`).join('')
-            : '<div class="text-muted" style="font-size:13px; padding:8px;">暂无自定义消息</div>';
-        c.querySelectorAll('.btn-remove').forEach(b => b.onclick = function() {
-            userMessages.splice(this.dataset.index, 1);
-            save(); updateMarquee(); renderCustomMsgs();
-            toast('自定义消息已删除','info');
-        });
-    }
-
-    let current = 'home';
-    function showPage(name) {
-        Object.values(pages).forEach(p => p.classList.remove('active'));
-        pages[name].classList.add('active');
-        current = name;
-        document.querySelectorAll('.bottom-nav .nav-item').forEach(n => n.classList.toggle('active', n.dataset.tab === name));
-        if(name==='home') { updateDaily(); updateMarquee(); }
-        if(name==='stock') renderStock();
-        if(name==='count') renderCount();
-        if(name==='material') renderMaterialList();
-        if(name==='out'||name==='in') populateSelects();
-        if(name==='scan') clearScan();
-        if(name==='location') clearLocationResult();
-        if(name==='mine') { updateMine(); renderCustomMsgs(); }
-        window.scrollTo({top:0, behavior:'smooth'});
-    }
-
-    $('#bottomNav').onclick = e => {
-        const btn = e.target.closest('.nav-item');
-        if(btn && pages[btn.dataset.tab]) showPage(btn.dataset.tab);
-    };
-    $('#page-home').onclick = e => {
-        const card = e.target.closest('.home-card[data-page]');
-        if(card && pages[card.dataset.page]) showPage(card.dataset.page);
-    };
-
-    function refreshAll() {
-        save(); populateSelects(); renderStock(); updateDaily(); updateMarquee();
-        if(current==='count') renderCount();
-        if(current==='mine') { updateMine(); renderCustomMsgs(); }
-    }
-
-    function updateDaily() {
-        const today = records.filter(r => isToday(r.date));
-        let tin=0, tout=0;
-        today.forEach(r => { if(r.type==='in') tin+=r.quantity; else tout+=r.quantity; });
-        $('#todayIn').textContent = tin;
-        $('#todayOut').textContent = tout;
-        $('#todayTotalStock').textContent = materials.reduce((s,m) => s+m.stock, 0);
-        $('#todayOps').textContent = today.length;
-    }
-
-    function populateSelects() {
-        ['outMaterial','inMaterial'].forEach(id => {
-            const sel = $(`#${id}`); if(!sel) return;
-            sel.innerHTML = '<option value="">请选择料号</option>';
-            materials.forEach(m => { const o = document.createElement('option'); o.value=m.id; o.textContent=`${m.id} - ${m.name} (库存: ${m.stock})`; sel.appendChild(o); });
-        });
-    }
-
-    // 出库
-    $('#outMaterial').onchange = function() {
-        const m = find(this.value);
-        $('#outStockHint').textContent = m ? `当前库存: ${m.stock}` : '';
-        $('#outQty').max = m ? m.stock : '';
-    };
-    $('#outForm').onsubmit = function(e) {
-        e.preventDefault();
-        const id = $('#outMaterial').value, qty = parseInt($('#outQty').value);
-        if(!id) return toast('请选择料号','error');
-        if(!qty || qty<1) return toast('请输入有效数量','error');
-        const m = find(id);
-        if(!m) return toast('料号不存在','error');
-        if(m.stock < qty) return toast(`库存不足！当前库存: ${m.stock}`,'error');
-        m.stock -= qty;
-        records.push({ type:'out', materialId:id, quantity:qty, date:new Date().toISOString(), dest:$('#outDest').value.trim()||'未指定', note:$('#outNote').value.trim()||'' });
-        toast(`出库成功：${id} x ${qty}`,'success');
-        this.reset(); $('#outStockHint').textContent = '';
-        refreshAll();
-    };
-
-    // 入库
-    $('#inForm').onsubmit = function(e) {
-        e.preventDefault();
-        const id = $('#inMaterial').value, qty = parseInt($('#inQty').value);
-        if(!id) return toast('请选择料号','error');
-        if(!qty || qty<1) return toast('请输入有效数量','error');
-        const m = find(id);
-        if(!m) return toast('料号不存在','error');
-        m.stock += qty;
-        records.push({ type:'in', materialId:id, quantity:qty, date:new Date().toISOString(), source:$('#inSource').value.trim()||'未指定', note:$('#inNote').value.trim()||'' });
-        toast(`入库成功：${id} x ${qty}`,'success');
-        this.reset();
-        refreshAll();
-    };
-
-    // 盘点
-    function renderCount() {
-        const c = $('#countList');
-        if(!materials.length) { c.innerHTML = '<div class="empty-state"><i class="fas fa-box-open"></i><p>暂无料号数据</p></div>'; return; }
-        materials.forEach(m => { if(!(m.id in countChanges)) countChanges[m.id] = m.stock; });
-        c.innerHTML = materials.map(m => {
-            const v = countChanges[m.id], changed = v !== m.stock;
-            return `<div class="count-item ${changed?'changed':''}"><div class="info"><div class="name">${m.id} - ${m.name}</div><div class="spec">${m.spec||''} · 单位: ${m.unit||'-'} · 原库存: ${m.stock}</div></div><div class="qty-control"><span class="qty-label">盘点</span><input type="number" class="count-input" data-id="${m.id}" value="${v}" min="0"></div></div>`;
-        }).join('');
-        c.querySelectorAll('.count-input').forEach(inp => inp.oninput = function() {
-            const id = this.dataset.id;
-            countChanges[id] = parseInt(this.value)||0;
-            this.closest('.count-item').classList.toggle('changed', countChanges[id] !== find(id).stock);
-        });
-    }
-    $('#saveCountBtn').onclick = () => {
-        let changed = 0;
-        materials.forEach(m => { if(countChanges[m.id]!==undefined && countChanges[m.id]!==m.stock) { m.stock = countChanges[m.id]; changed++; } });
-        if(!changed) return toast('没有变化需要保存','info');
-        toast(`盘点保存成功，更新了 ${changed} 项库存`,'success');
-        refreshAll();
-        materials.forEach(m => countChanges[m.id] = m.stock);
-        renderCount();
-    };
-
-    // 库存
-    function renderStock(filter='') {
-        const kw = filter.trim().toLowerCase();
-        let list = kw ? materials.filter(m => m.id.toLowerCase().includes(kw) || m.name.toLowerCase().includes(kw) || (m.spec&&m.spec.toLowerCase().includes(kw))) : materials;
-        $('#stockBody').innerHTML = list.length ? list.map(m => `<tr><td><strong>${m.id}</strong></td><td>${m.name}</td><td>${m.spec||'-'}</td><td class="${m.stock<=LOW?'stock-low':''}">${m.stock}</td><td>${m.location||'-'}</td></tr>`).join('') : '<tr><td colspan="5" class="text-center text-muted" style="padding:24px;">暂无数据</td></tr>';
-        $('#stockCount').textContent = list.length;
-    }
-    let searchTimer;
-    $('#stockSearch').oninput = function() { clearTimeout(searchTimer); searchTimer = setTimeout(() => renderStock(this.value), 250); };
-
-    // 料号管理
-    function renderMaterialList() {
-        const c = $('#materialList');
-        c.innerHTML = materials.length ? materials.map(m => `<div class="material-item"><div class="info"><div class="name">${m.id} - ${m.name}</div><div class="detail">规格: ${m.spec||'-'} · 单位: ${m.unit||'-'} · 库存: ${m.stock} · 储位: ${m.location||'-'}</div></div><div class="actions"><button class="btn btn-danger btn-sm del-material" data-id="${m.id}"><i class="fas fa-trash"></i></button></div></div>`).join('') : '<div class="empty-state"><i class="fas fa-database"></i><p>暂无料号，请添加</p></div>';
-        c.querySelectorAll('.del-material').forEach(b => b.onclick = function() {
-            if(!confirm(`确定删除料号 ${this.dataset.id}?`)) return;
-            materials.splice(materials.findIndex(m => m.id===this.dataset.id), 1);
-            delete countChanges[this.dataset.id];
-            toast(`已删除料号 ${this.dataset.id}`,'info');
-            refreshAll(); renderMaterialList();
-        });
-    }
-    $('#addMaterialBtn').onclick = () => {
-        const id = $('#matId').value.trim().toUpperCase(), name = $('#matName').value.trim();
-        if(!id) return toast('请输入料号','error');
-        if(!name) return toast('请输入名称','error');
-        if(find(id)) return toast('料号已存在','error');
-        materials.push({ id, name, spec:$('#matSpec').value.trim(), unit:$('#matUnit').value.trim()||'个', location:$('#matLocation').value.trim(), stock:parseInt($('#matStock').value)||0 });
-        toast(`添加成功：${id} ${name}`,'success');
-        ['matId','matName','matSpec','matUnit','matLocation','matStock'].forEach(f => $('#'+f).value='');
-        $('#matStock').value = '0';
-        refreshAll(); renderMaterialList();
-        $('#matId').placeholder = `例如: ${nextId()}`;
-    };
-    $('#matId').onfocus = function() { if(!this.value) this.placeholder = `例如: ${nextId()}`; };
-
-    // 扫码
-    const scanInput = $('#scanInput'), scanResult = $('#scanResult'), scanArea = $('#scanArea');
-    function clearScan() { scanResult.classList.remove('show'); scanArea.classList.remove('active'); scanInput.value = ''; }
-    function displayScan(m) {
-        $('#srId').textContent=m.id; $('#srName').textContent=m.name; $('#srSpec').textContent=m.spec||'-';
-        $('#srUnit').textContent=m.unit||'-'; $('#srStock').textContent=m.stock; $('#srLocation').textContent=m.location||'未设置';
-        scanResult.classList.add('show'); scanArea.classList.add('active');
-    }
-    function handleScan(q) {
-        q = q.trim().toUpperCase();
-        if(!q) return toast('请输入料号','error');
-        const f = find(q) || materials.find(m => m.id.toUpperCase().includes(q) || m.name.includes(q));
-        f ? (displayScan(f), toast(`扫码成功：${f.id} ${f.name}`,'success')) : (toast('未找到料号','error'), scanResult.classList.remove('show'), scanArea.classList.remove('active'));
-    }
-    $('#scanBtn').onclick = () => handleScan(scanInput.value);
-    scanInput.onkeydown = e => { if(e.key==='Enter') handleScan(scanInput.value); };
-    $('#scanMockBtn').onclick = () => {
-        if(!materials.length) return toast('暂无料号','error');
-        const r = materials[Math.floor(Math.random()*materials.length)];
-        scanInput.value = r.id; displayScan(r); toast(`模拟扫码：${r.id}`,'info');
-    };
-
-    // 储位查找（含行内编辑）
-    const locInput = $('#locationSearchInput'), locBody = $('#locationResultBody'), locCount = $('#locationResultCount');
-    function clearLocationResult() {
-        locBody.innerHTML = '<tr><td colspan="5" class="text-center text-muted" style="padding:24px;">请输入关键词查找</td></tr>';
-        locCount.textContent = '0'; locInput.value = ''; locationEditOriginals = {};
-    }
-    function performLocationSearch() {
-        const kw = locInput.value.trim().toLowerCase();
-        if(!kw) return toast('请输入关键词','info');
-        const res = materials.filter(m => m.id.toLowerCase().includes(kw) || m.name.toLowerCase().includes(kw) || (m.location&&m.location.toLowerCase().includes(kw)));
-        if(!res.length) {
-            locBody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">未找到匹配项</td></tr>';
-            locCount.textContent = '0'; toast('未找到','info'); return;
-        }
-        locBody.innerHTML = res.map(m => `<tr id="loc-row-${m.id}">
-            <td class="cell-id"><span class="display-id">${m.id}</span><input class="form-control edit-id" value="${m.id}" style="display:none;width:80px;font-size:12px;padding:4px;"></td>
-            <td>${m.name}</td>
-            <td class="cell-loc"><span class="display-loc">${m.location||'-'}</span><input class="form-control edit-loc" value="${m.location||''}" style="display:none;width:80px;font-size:12px;padding:4px;"></td>
-            <td>${m.stock}</td>
-            <td>
-                <button class="btn btn-sm btn-outline btn-edit-loc" data-id="${m.id}"><i class="fas fa-pen"></i></button>
-                <button class="btn btn-sm btn-success btn-save-loc" data-id="${m.id}" style="display:none;"><i class="fas fa-check"></i></button>
-                <button class="btn btn-sm btn-outline btn-cancel-loc" data-id="${m.id}" style="display:none;"><i class="fas fa-times"></i></button>
-            </td>
-        </tr>`).join('');
-        locCount.textContent = res.length;
-    }
-    $('#locationSearchBtn').onclick = performLocationSearch;
-    locInput.onkeydown = e => { if(e.key==='Enter') performLocationSearch(); };
-    $('#locationClearBtn').onclick = clearLocationResult;
-
-    function enterEdit(id) {
-        const row = document.getElementById(`loc-row-${id}`); if(!row) return;
-        const m = find(id); if(!m) return;
-        locationEditOriginals[id] = { id: m.id, location: m.location };
-        row.querySelector('.display-id').style.display='none';
-        row.querySelector('.edit-id').style.display='inline-block';
-        row.querySelector('.display-loc').style.display='none';
-        row.querySelector('.edit-loc').style.display='inline-block';
-        row.querySelector('.btn-edit-loc').style.display='none';
-        row.querySelector('.btn-save-loc').style.display='inline-flex';
-        row.querySelector('.btn-cancel-loc').style.display='inline-flex';
-        row.querySelector('.edit-id').focus();
-    }
-    function cancelEdit(id) {
-        const row = document.getElementById(`loc-row-${id}`); if(!row) return;
-        const orig = locationEditOriginals[id];
-        if(orig) { row.querySelector('.edit-id').value = orig.id; row.querySelector('.edit-loc').value = orig.location||''; }
-        exitEditUI(row, id);
-    }
-    function exitEditUI(row, id) {
-        row.querySelector('.display-id').style.display='inline';
-        row.querySelector('.edit-id').style.display='none';
-        row.querySelector('.display-loc').style.display='inline';
-        row.querySelector('.edit-loc').style.display='none';
-        row.querySelector('.btn-edit-loc').style.display='inline-flex';
-        row.querySelector('.btn-save-loc').style.display='none';
-        row.querySelector('.btn-cancel-loc').style.display='none';
-        delete locationEditOriginals[id];
-    }
-    function saveEdit(id) {
-        const row = document.getElementById(`loc-row-${id}`); if(!row) return;
-        const newId = row.querySelector('.edit-id').value.trim().toUpperCase();
-        const newLoc = row.querySelector('.edit-loc').value.trim();
-        if(!newId) return toast('料号不能为空','error');
-        if(newId !== id && find(newId)) return toast(`料号 ${newId} 已存在`,'error');
-        const m = find(id); if(!m) return toast('料号不存在','error');
-        const oldId = m.id;
-        m.id = newId; m.location = newLoc;
-        if(countChanges[oldId]!==undefined) { countChanges[newId] = countChanges[oldId]; if(newId!==oldId) delete countChanges[oldId]; }
-        records.forEach(r => { if(r.materialId === oldId) r.materialId = newId; });
-        row.querySelector('.display-id').textContent = newId;
-        row.querySelector('.display-loc').textContent = newLoc||'-';
-        row.id = `loc-row-${newId}`;
-        row.querySelector('.btn-edit-loc').dataset.id = newId;
-        row.querySelector('.btn-save-loc').dataset.id = newId;
-        row.querySelector('.btn-cancel-loc').dataset.id = newId;
-        exitEditUI(row, newId);
-        refreshAll();
-        toast(`已更新：${newId}，储位：${newLoc||'未设置'}`,'success');
-    }
-    $('#locationResult').onclick = e => {
-        const btn = e.target.closest('button'); if(!btn) return;
-        const id = btn.dataset.id; if(!id) return;
-        if(btn.classList.contains('btn-edit-loc')) enterEdit(id);
-        else if(btn.classList.contains('btn-save-loc')) saveEdit(id);
-        else if(btn.classList.contains('btn-cancel-loc')) cancelEdit(id);
-    };
-    $('#locationResult').onkeydown = e => {
-        if(e.key==='Enter' && e.target.closest('.edit-id, .edit-loc')) {
-            e.preventDefault();
-            const row = e.target.closest('tr');
-            row.querySelector('.btn-save-loc').click();
-        }
-    };
-
-    // 批量上传
-    function readExcel(file, cb) {
-        const reader = new FileReader();
-        reader.onload = e => {
+        function load() {
             try {
-                const wb = XLSX.read(new Uint8Array(e.target.result), {type:'array'});
-                const sheet = wb.Sheets[wb.SheetNames[0]];
-                cb(null, XLSX.utils.sheet_to_json(sheet, {header:1, defval:''}));
-            } catch(err) { cb(err); }
-        };
-        reader.readAsArrayBuffer(file);
-    }
-    function handleUpload(fileId, processor) {
-        const inp = $(`#${fileId}`);
-        if(!inp.files.length) return toast('请选择文件','error');
-        readExcel(inp.files[0], (err, rows) => {
-            if(err) return toast('解析失败','error');
-            processor(rows);
-            inp.value = '';
-        });
-    }
-    function processLocation(rows) {
-        if(!rows||rows.length<2) return toast('无有效数据','error');
-        const h = rows[0].map(h=>String(h).trim());
-        const iId = h.findIndex(x=>x.includes('料号')), iLoc = h.findIndex(x=>x.includes('储位'));
-        if(iId===-1||iLoc===-1) return toast('缺少必要列','error');
-        let u=0;
-        for(let i=1;i<rows.length;i++) {
-            const id = String(rows[i][iId]).trim().toUpperCase();
-            if(!id) continue;
-            const m = find(id);
-            if(!m) { toast(`料号 ${id} 不存在，已跳过`,'info'); continue; }
-            m.location = String(rows[i][iLoc]).trim(); u++;
-        }
-        if(u) { refreshAll(); toast(`储位更新完成，${u} 条`,'success'); }
-        else toast('无数据被更新','info');
-    }
-    function processStock(rows) {
-        if(!rows||rows.length<2) return toast('无有效数据','error');
-        const h = rows[0].map(h=>String(h).trim());
-        const iId = h.findIndex(x=>x.includes('料号')), iStock = h.findIndex(x=>x.includes('库存'));
-        if(iId===-1||iStock===-1) return toast('缺少必要列','error');
-        let u=0;
-        for(let i=1;i<rows.length;i++) {
-            const id = String(rows[i][iId]).trim().toUpperCase();
-            if(!id) continue;
-            const m = find(id);
-            if(!m) { toast(`料号 ${id} 不存在`,'info'); continue; }
-            m.stock = parseInt(rows[i][iStock])||0; u++;
-        }
-        if(u) { refreshAll(); toast(`库存更新完成，${u} 条`,'success'); }
-        else toast('无数据被更新','info');
-    }
-    function processMaterial(rows) {
-        if(!rows||rows.length<2) return toast('无有效数据','error');
-        const h = rows[0].map(h=>String(h).trim());
-        const idx = {
-            id: h.findIndex(x=>x.includes('料号')), name: h.findIndex(x=>x.includes('名称')),
-            spec: h.findIndex(x=>x.includes('规格')), unit: h.findIndex(x=>x.includes('单位')),
-            loc: h.findIndex(x=>x.includes('储位')), stock: h.findIndex(x=>x.includes('库存'))
-        };
-        if(idx.id===-1) return toast('缺少料号列','error');
-        let added=0, updated=0;
-        for(let i=1;i<rows.length;i++) {
-            const id = String(rows[i][idx.id]).trim().toUpperCase();
-            if(!id) continue;
-            const name = idx.name!==-1 ? String(rows[i][idx.name]).trim() : '';
-            const spec = idx.spec!==-1 ? String(rows[i][idx.spec]).trim() : '';
-            const unit = idx.unit!==-1 ? String(rows[i][idx.unit]).trim()||'个' : '个';
-            const loc = idx.loc!==-1 ? String(rows[i][idx.loc]).trim() : '';
-            const stock = idx.stock!==-1 ? parseInt(rows[i][idx.stock])||0 : 0;
-            const exist = find(id);
-            if(exist) {
-                if(name) exist.name=name; if(spec) exist.spec=spec;
-                exist.unit = unit; exist.location = loc; exist.stock = stock; updated++;
-            } else {
-                materials.push({ id, name, spec, unit, location: loc, stock }); added++;
+                materials = JSON.parse(localStorage.getItem(STORAGE_MAT)) || JSON.parse(JSON.stringify(defaults));
+                records = JSON.parse(localStorage.getItem(STORAGE_REC)) || [];
+                userMessages = JSON.parse(localStorage.getItem(STORAGE_MSG)) || [];
+            } catch(e) {
+                materials = JSON.parse(JSON.stringify(defaults)); records = []; userMessages = [];
             }
+            materials.forEach(m => { if(m.location===undefined) m.location = ''; });
         }
-        if(added||updated) { refreshAll(); toast(`导入完成：新增 ${added}，更新 ${updated}`,'success'); }
-        else toast('无数据被导入','info');
-    }
-    $('#uploadLocationBtn').onclick = () => handleUpload('locationFile', processLocation);
-    $('#uploadStockBtn').onclick = () => handleUpload('stockFile', processStock);
-    $('#uploadMaterialBtn').onclick = () => handleUpload('materialFile', processMaterial);
+        function save() {
+            localStorage.setItem(STORAGE_MAT, JSON.stringify(materials));
+            localStorage.setItem(STORAGE_REC, JSON.stringify(records));
+            localStorage.setItem(STORAGE_MSG, JSON.stringify(userMessages));
+            updateLastUpdateTime();
+        }
+        function find(id) { return materials.find(m => m.id === id); }
+        function nextId() {
+            const nums = materials.map(m => parseInt(m.id.replace(/\D/g,'')) || 0);
+            return 'M' + String(Math.max(0,...nums)+1).padStart(3,'0');
+        }
+        function isToday(d) { return d && new Date(d).toDateString()===new Date().toDateString(); }
+        function toast(msg, type='info') {
+            const icons = { success:'fa-check-circle', error:'fa-exclamation-circle', info:'fa-info-circle' };
+            const el = document.createElement('div');
+            el.className = `toast toast-${type}`;
+            el.innerHTML = `<i class="fas ${icons[type]}"></i> ${msg}`;
+            $('#toastContainer').appendChild(el);
+            setTimeout(() => el.remove(), 3000);
+        }
 
-    // 我的
-    function updateLastUpdateTime() { const el = $('#lastUpdateTime'); if(el) el.textContent = new Date().toLocaleTimeString('zh-CN',{hour12:false}); }
-    function updateMine() {
-        $('#myTotalMaterials').textContent = materials.length;
-        $('#myTotalStock').textContent = materials.reduce((s,m)=>s+m.stock,0);
-        $('#myTotalRecords').textContent = records.length;
-        const d = Math.floor((new Date()-startTime)/1000);
-        $('#sysUptime').textContent = `${Math.floor(d/3600)}h ${Math.floor((d%3600)/60)}m`;
-        updateLastUpdateTime();
-    }
-    $('#addCustomMsgBtn').onclick = () => {
-        const txt = $('#customMsgInput').value.trim();
-        if(!txt) return toast('请输入内容','error');
-        userMessages.push({ text: txt }); save(); updateMarquee(); renderCustomMsgs();
-        $('#customMsgInput').value = ''; toast('已添加','success');
-    };
-    $('#logoutBtn').onclick = () => toast('已退出登录 (模拟)','info');
-    $('#resetDataBtn').onclick = () => {
-        if(!confirm('确定重置所有数据？不可恢复！')) return;
-        localStorage.removeItem(STORAGE_MAT); localStorage.removeItem(STORAGE_REC); localStorage.removeItem(STORAGE_MSG);
-        location.reload();
-    };
-    document.onkeydown = e => { if(e.key==='Escape' && current!=='home') showPage('home'); };
+        function updateMarquee() {
+            const track = $('#marqueeTrack');
+            const lows = materials.filter(m => m.stock <= LOW).map(m => 
+                `<div class="marquee-item"><i class="fas fa-exclamation-triangle"></i> ${m.id} ${m.name} 库存仅剩 ${m.stock} ${m.unit||'个'}</div>`);
+            const customs = userMessages.map(m => 
+                `<div class="marquee-item"><i class="fas fa-bullhorn"></i> ${m.text}</div>`);
+            const all = [...lows, ...customs];
+            track.innerHTML = all.length ? all.join('') + all.join('')
+                : `<div class="marquee-item"><i class="fas fa-check-circle"></i> 所有物料库存充足</div><div class="marquee-item"><i class="fas fa-check-circle"></i> 所有物料库存充足</div>`;
+        }
 
-    function init() {
-        load();
-        materials.forEach(m => countChanges[m.id] = m.stock);
-        showPage('home');
-        populateSelects(); renderStock(); renderMaterialList(); updateDaily(); updateMarquee(); updateMine(); renderCustomMsgs();
-        $('#matId').placeholder = `例如: ${nextId()}`;
-        clearLocationResult();
-        console.log('📦 仓库管理系统 v3.1 已启动（苹果全屏适配）');
-    }
-    init();
-})();
+        function renderCustomMsgs() {
+            const c = $('#customMsgList');
+            if(!c) return;
+            c.innerHTML = userMessages.length ? userMessages.map((m,i) => 
+                `<div class="custom-msg-item"><span class="msg-text">${m.text}</span><button class="btn-remove" data-index="${i}"><i class="fas fa-times"></i></button></div>`).join('')
+                : '<div class="text-muted" style="font-size:13px; padding:8px;">暂无自定义消息</div>';
+            c.querySelectorAll('.btn-remove').forEach(b => b.onclick = function() {
+                userMessages.splice(this.dataset.index, 1);
+                save(); updateMarquee(); renderCustomMsgs();
+                toast('自定义消息已删除','info');
+            });
+        }
+
+        let current = 'home';
+        function showPage(name) {
+            Object.values(pages).forEach(p => p.classList.remove('active'));
+            pages[name].classList.add('active');
+            current = name;
+            document.querySelectorAll('.bottom-nav .nav-item').forEach(n => n.classList.toggle('active', n.dataset.tab === name));
+            if(name==='home') { updateDaily(); updateMarquee(); }
+            if(name==='stock') renderStock();
+            if(name==='count') renderCount();
+            if(name==='material') renderMaterialList();
+            if(name==='out'||name==='in') populateSelects();
+            if(name==='scan') clearScan();
+            if(name==='location') clearLocationResult();
+            if(name==='mine') { updateMine(); renderCustomMsgs(); }
+            window.scrollTo({top:0, behavior:'smooth'});
+        }
+
+        $('#bottomNav').onclick = e => {
+            const btn = e.target.closest('.nav-item');
+            if(btn && pages[btn.dataset.tab]) showPage(btn.dataset.tab);
+        };
+        $('#page-home').onclick = e => {
+            const card = e.target.closest('.home-card[data-page]');
+            if(card && pages[card.dataset.page]) showPage(card.dataset.page);
+        };
+
+        function refreshAll() {
+            save(); populateSelects(); renderStock(); updateDaily(); updateMarquee();
+            if(current==='count') renderCount();
+            if(current==='mine') { updateMine(); renderCustomMsgs(); }
+        }
+
+        function updateDaily() {
+            const today = records.filter(r => isToday(r.date));
+            let tin=0, tout=0;
+            today.forEach(r => { if(r.type==='in') tin+=r.quantity; else tout+=r.quantity; });
+            $('#todayIn').textContent = tin;
+            $('#todayOut').textContent = tout;
+            $('#todayTotalStock').textContent = materials.reduce((s,m) => s+m.stock, 0);
+            $('#todayOps').textContent = today.length;
+        }
+
+        function populateSelects() {
+            ['outMaterial','inMaterial'].forEach(id => {
+                const sel = $(`#${id}`); if(!sel) return;
+                sel.innerHTML = '<option value="">请选择料号</option>';
+                materials.forEach(m => { const o = document.createElement('option'); o.value=m.id; o.textContent=`${m.id} - ${m.name} (库存: ${m.stock})`; sel.appendChild(o); });
+            });
+        }
+
+        // 出库
+        $('#outMaterial').onchange = function() {
+            const m = find(this.value);
+            $('#outStockHint').textContent = m ? `当前库存: ${m.stock}` : '';
+            $('#outQty').max = m ? m.stock : '';
+        };
+        $('#outForm').onsubmit = function(e) {
+            e.preventDefault();
+            const id = $('#outMaterial').value, qty = parseInt($('#outQty').value);
+            if(!id) return toast('请选择料号','error');
+            if(!qty || qty<1) return toast('请输入有效数量','error');
+            const m = find(id);
+            if(!m) return toast('料号不存在','error');
+            if(m.stock < qty) return toast(`库存不足！当前库存: ${m.stock}`,'error');
+            m.stock -= qty;
+            records.push({ type:'out', materialId:id, quantity:qty, date:new Date().toISOString(), dest:$('#outDest').value.trim()||'未指定', note:$('#outNote').value.trim()||'' });
+            toast(`出库成功：${id} x ${qty}`,'success');
+            this.reset(); $('#outStockHint').textContent = '';
+            refreshAll();
+        };
+
+        // 入库
+        $('#inForm').onsubmit = function(e) {
+            e.preventDefault();
+            const id = $('#inMaterial').value, qty = parseInt($('#inQty').value);
+            if(!id) return toast('请选择料号','error');
+            if(!qty || qty<1) return toast('请输入有效数量','error');
+            const m = find(id);
+            if(!m) return toast('料号不存在','error');
+            m.stock += qty;
+            records.push({ type:'in', materialId:id, quantity:qty, date:new Date().toISOString(), source:$('#inSource').value.trim()||'未指定', note:$('#inNote').value.trim()||'' });
+            toast(`入库成功：${id} x ${qty}`,'success');
+            this.reset();
+            refreshAll();
+        };
+
+        // 盘点
+        function renderCount() {
+            const c = $('#countList');
+            if(!materials.length) { c.innerHTML = '<div class="empty-state"><i class="fas fa-box-open"></i><p>暂无料号数据</p></div>'; return; }
+            materials.forEach(m => { if(!(m.id in countChanges)) countChanges[m.id] = m.stock; });
+            c.innerHTML = materials.map(m => {
+                const v = countChanges[m.id], changed = v !== m.stock;
+                return `<div class="count-item ${changed?'changed':''}"><div class="info"><div class="name">${m.id} - ${m.name}</div><div class="spec">${m.spec||''} · 单位: ${m.unit||'-'} · 原库存: ${m.stock}</div></div><div class="qty-control"><span class="qty-label">盘点</span><input type="number" class="count-input" data-id="${m.id}" value="${v}" min="0"></div></div>`;
+            }).join('');
+            c.querySelectorAll('.count-input').forEach(inp => inp.oninput = function() {
+                const id = this.dataset.id;
+                countChanges[id] = parseInt(this.value)||0;
+                this.closest('.count-item').classList.toggle('changed', countChanges[id] !== find(id).stock);
+            });
+        }
+        $('#saveCountBtn').onclick = () => {
+            let changed = 0;
+            materials.forEach(m => { if(countChanges[m.id]!==undefined && countChanges[m.id]!==m.stock) { m.stock = countChanges[m.id]; changed++; } });
+            if(!changed) return toast('没有变化需要保存','info');
+            toast(`盘点保存成功，更新了 ${changed} 项库存`,'success');
+            refreshAll();
+            materials.forEach(m => countChanges[m.id] = m.stock);
+            renderCount();
+        };
+
+        // 库存
+        function renderStock(filter='') {
+            const kw = filter.trim().toLowerCase();
+            let list = kw ? materials.filter(m => m.id.toLowerCase().includes(kw) || m.name.toLowerCase().includes(kw) || (m.spec&&m.spec.toLowerCase().includes(kw))) : materials;
+            $('#stockBody').innerHTML = list.length ? list.map(m => `<tr><td><strong>${m.id}</strong></td><td>${m.name}</td><td>${m.spec||'-'}</td><td class="${m.stock<=LOW?'stock-low':''}">${m.stock}</td><td>${m.location||'-'}</td></tr>`).join('') : '<tr><td colspan="5" class="text-center text-muted" style="padding:24px;">暂无数据</td></tr>';
+            $('#stockCount').textContent = list.length;
+        }
+        let searchTimer;
+        $('#stockSearch').oninput = function() { clearTimeout(searchTimer); searchTimer = setTimeout(() => renderStock(this.value), 250); };
+
+        // 料号管理
+        function renderMaterialList() {
+            const c = $('#materialList');
+            c.innerHTML = materials.length ? materials.map(m => `<div class="material-item"><div class="info"><div class="name">${m.id} - ${m.name}</div><div class="detail">规格: ${m.spec||'-'} · 单位: ${m.unit||'-'} · 库存: ${m.stock} · 储位: ${m.location||'-'}</div></div><div class="actions"><button class="btn btn-danger btn-sm del-material" data-id="${m.id}"><i class="fas fa-trash"></i></button></div></div>`).join('') : '<div class="empty-state"><i class="fas fa-database"></i><p>暂无料号，请添加</p></div>';
+            c.querySelectorAll('.del-material').forEach(b => b.onclick = function() {
+                if(!confirm(`确定删除料号 ${this.dataset.id}?`)) return;
+                materials.splice(materials.findIndex(m => m.id===this.dataset.id), 1);
+                delete countChanges[this.dataset.id];
+                toast(`已删除料号 ${this.dataset.id}`,'info');
+                refreshAll(); renderMaterialList();
+            });
+        }
+        $('#addMaterialBtn').onclick = () => {
+            const id = $('#matId').value.trim().toUpperCase(), name = $('#matName').value.trim();
+            if(!id) return toast('请输入料号','error');
+            if(!name) return toast('请输入名称','error');
+            if(find(id)) return toast('料号已存在','error');
+            materials.push({ id, name, spec:$('#matSpec').value.trim(), unit:$('#matUnit').value.trim()||'个', location:$('#matLocation').value.trim(), stock:parseInt($('#matStock').value)||0 });
+            toast(`添加成功：${id} ${name}`,'success');
+            ['matId','matName','matSpec','matUnit','matLocation','matStock'].forEach(f => $('#'+f).value='');
+            $('#matStock').value = '0';
+            refreshAll(); renderMaterialList();
+            $('#matId').placeholder = `例如: ${nextId()}`;
+        };
+        $('#matId').onfocus = function() { if(!this.value) this.placeholder = `例如: ${nextId()}`; };
+
+        // 扫码
+        const scanInput = $('#scanInput'), scanResult = $('#scanResult'), scanArea = $('#scanArea');
+        function clearScan() { scanResult.classList.remove('show'); scanArea.classList.remove('active'); scanInput.value = ''; }
+        function displayScan(m) {
+            $('#srId').textContent=m.id; $('#srName').textContent=m.name; $('#srSpec').textContent=m.spec||'-';
+            $('#srUnit').textContent=m.unit||'-'; $('#srStock').textContent=m.stock; $('#srLocation').textContent=m.location||'未设置';
+            scanResult.classList.add('show'); scanArea.classList.add('active');
+        }
+        function handleScan(q) {
+            q = q.trim().toUpperCase();
+            if(!q) return toast('请输入料号','error');
+            const f = find(q) || materials.find(m => m.id.toUpperCase().includes(q) || m.name.includes(q));
+            f ? (displayScan(f), toast(`扫码成功：${f.id} ${f.name}`,'success')) : (toast('未找到料号','error'), scanResult.classList.remove('show'), scanArea.classList.remove('active'));
+        }
+        $('#scanBtn').onclick = () => handleScan(scanInput.value);
+        scanInput.onkeydown = e => { if(e.key==='Enter') handleScan(scanInput.value); };
+        $('#scanMockBtn').onclick = () => {
+            if(!materials.length) return toast('暂无料号','error');
+            const r = materials[Math.floor(Math.random()*materials.length)];
+            scanInput.value = r.id; displayScan(r); toast(`模拟扫码：${r.id}`,'info');
+        };
+
+        // 储位查找（含行内编辑）
+        const locInput = $('#locationSearchInput'), locBody = $('#locationResultBody'), locCount = $('#locationResultCount');
+        function clearLocationResult() {
+            locBody.innerHTML = '<tr><td colspan="5" class="text-center text-muted" style="padding:24px;">请输入关键词查找</td></tr>';
+            locCount.textContent = '0'; locInput.value = ''; locationEditOriginals = {};
+        }
+        function performLocationSearch() {
+            const kw = locInput.value.trim().toLowerCase();
+            if(!kw) return toast('请输入关键词','info');
+            const res = materials.filter(m => m.id.toLowerCase().includes(kw) || m.name.toLowerCase().includes(kw) || (m.location&&m.location.toLowerCase().includes(kw)));
+            if(!res.length) {
+                locBody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">未找到匹配项</td></tr>';
+                locCount.textContent = '0'; toast('未找到','info'); return;
+            }
+            locBody.innerHTML = res.map(m => `<tr id="loc-row-${m.id}">
+                <td class="cell-id"><span class="display-id">${m.id}</span><input class="form-control edit-id" value="${m.id}" style="display:none;width:80px;font-size:12px;padding:4px;"></td>
+                <td>${m.name}</td>
+                <td class="cell-loc"><span class="display-loc">${m.location||'-'}</span><input class="form-control edit-loc" value="${m.location||''}" style="display:none;width:80px;font-size:12px;padding:4px;"></td>
+                <td>${m.stock}</td>
+                <td>
+                    <button class="btn btn-sm btn-outline btn-edit-loc" data-id="${m.id}"><i class="fas fa-pen"></i></button>
+                    <button class="btn btn-sm btn-success btn-save-loc" data-id="${m.id}" style="display:none;"><i class="fas fa-check"></i></button>
+                    <button class="btn btn-sm btn-outline btn-cancel-loc" data-id="${m.id}" style="display:none;"><i class="fas fa-times"></i></button>
+                </td>
+            </tr>`).join('');
+            locCount.textContent = res.length;
+        }
+        $('#locationSearchBtn').onclick = performLocationSearch;
+        locInput.onkeydown = e => { if(e.key==='Enter') performLocationSearch(); };
+        $('#locationClearBtn').onclick = clearLocationResult;
+
+        function enterEdit(id) {
+            const row = document.getElementById(`loc-row-${id}`); if(!row) return;
+            const m = find(id); if(!m) return;
+            locationEditOriginals[id] = { id: m.id, location: m.location };
+            row.querySelector('.display-id').style.display='none';
+            row.querySelector('.edit-id').style.display='inline-block';
+            row.querySelector('.display-loc').style.display='none';
+            row.querySelector('.edit-loc').style.display='inline-block';
+            row.querySelector('.btn-edit-loc').style.display='none';
+            row.querySelector('.btn-save-loc').style.display='inline-flex';
+            row.querySelector('.btn-cancel-loc').style.display='inline-flex';
+            row.querySelector('.edit-id').focus();
+        }
+        function cancelEdit(id) {
+            const row = document.getElementById(`loc-row-${id}`); if(!row) return;
+            const orig = locationEditOriginals[id];
+            if(orig) { row.querySelector('.edit-id').value = orig.id; row.querySelector('.edit-loc').value = orig.location||''; }
+            exitEditUI(row, id);
+        }
+        function exitEditUI(row, id) {
+            row.querySelector('.display-id').style.display='inline';
+            row.querySelector('.edit-id').style.display='none';
+            row.querySelector('.display-loc').style.display='inline';
+            row.querySelector('.edit-loc').style.display='none';
+            row.querySelector('.btn-edit-loc').style.display='inline-flex';
+            row.querySelector('.btn-save-loc').style.display='none';
+            row.querySelector('.btn-cancel-loc').style.display='none';
+            delete locationEditOriginals[id];
+        }
+        function saveEdit(id) {
+            const row = document.getElementById(`loc-row-${id}`); if(!row) return;
+            const newId = row.querySelector('.edit-id').value.trim().toUpperCase();
+            const newLoc = row.querySelector('.edit-loc').value.trim();
+            if(!newId) return toast('料号不能为空','error');
+            if(newId !== id && find(newId)) return toast(`料号 ${newId} 已存在`,'error');
+            const m = find(id); if(!m) return toast('料号不存在','error');
+            const oldId = m.id;
+            m.id = newId; m.location = newLoc;
+            if(countChanges[oldId]!==undefined) { countChanges[newId] = countChanges[oldId]; if(newId!==oldId) delete countChanges[oldId]; }
+            records.forEach(r => { if(r.materialId === oldId) r.materialId = newId; });
+            row.querySelector('.display-id').textContent = newId;
+            row.querySelector('.display-loc').textContent = newLoc||'-';
+            row.id = `loc-row-${newId}`;
+            row.querySelector('.btn-edit-loc').dataset.id = newId;
+            row.querySelector('.btn-save-loc').dataset.id = newId;
+            row.querySelector('.btn-cancel-loc').dataset.id = newId;
+            exitEditUI(row, newId);
+            refreshAll();
+            toast(`已更新：${newId}，储位：${newLoc||'未设置'}`,'success');
+        }
+        $('#locationResult').onclick = e => {
+            const btn = e.target.closest('button'); if(!btn) return;
+            const id = btn.dataset.id; if(!id) return;
+            if(btn.classList.contains('btn-edit-loc')) enterEdit(id);
+            else if(btn.classList.contains('btn-save-loc')) saveEdit(id);
+            else if(btn.classList.contains('btn-cancel-loc')) cancelEdit(id);
+        };
+        $('#locationResult').onkeydown = e => {
+            if(e.key==='Enter' && e.target.closest('.edit-id, .edit-loc')) {
+                e.preventDefault();
+                const row = e.target.closest('tr');
+                row.querySelector('.btn-save-loc').click();
+            }
+        };
+
+        // 批量上传
+        function readExcel(file, cb) {
+            const reader = new FileReader();
+            reader.onload = e => {
+                try {
+                    const wb = XLSX.read(new Uint8Array(e.target.result), {type:'array'});
+                    const sheet = wb.Sheets[wb.SheetNames[0]];
+                    cb(null, XLSX.utils.sheet_to_json(sheet, {header:1, defval:''}));
+                } catch(err) { cb(err); }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+        function handleUpload(fileId, processor) {
+            const inp = $(`#${fileId}`);
+            if(!inp.files.length) return toast('请选择文件','error');
+            readExcel(inp.files[0], (err, rows) => {
+                if(err) return toast('解析失败','error');
+                processor(rows);
+                inp.value = '';
+            });
+        }
+        function processLocation(rows) {
+            if(!rows||rows.length<2) return toast('无有效数据','error');
+            const h = rows[0].map(h=>String(h).trim());
+            const iId = h.findIndex(x=>x.includes('料号')), iLoc = h.findIndex(x=>x.includes('储位'));
+            if(iId===-1||iLoc===-1) return toast('缺少必要列','error');
+            let u=0;
+            for(let i=1;i<rows.length;i++) {
+                const id = String(rows[i][iId]).trim().toUpperCase();
+                if(!id) continue;
+                const m = find(id);
+                if(!m) { toast(`料号 ${id} 不存在，已跳过`,'info'); continue; }
+                m.location = String(rows[i][iLoc]).trim(); u++;
+            }
+            if(u) { refreshAll(); toast(`储位更新完成，${u} 条`,'success'); }
+            else toast('无数据被更新','info');
+        }
+        function processStock(rows) {
+            if(!rows||rows.length<2) return toast('无有效数据','error');
+            const h = rows[0].map(h=>String(h).trim());
+            const iId = h.findIndex(x=>x.includes('料号')), iStock = h.findIndex(x=>x.includes('库存'));
+            if(iId===-1||iStock===-1) return toast('缺少必要列','error');
+            let u=0;
+            for(let i=1;i<rows.length;i++) {
+                const id = String(rows[i][iId]).trim().toUpperCase();
+                if(!id) continue;
+                const m = find(id);
+                if(!m) { toast(`料号 ${id} 不存在`,'info'); continue; }
+                m.stock = parseInt(rows[i][iStock])||0; u++;
+            }
+            if(u) { refreshAll(); toast(`库存更新完成，${u} 条`,'success'); }
+            else toast('无数据被更新','info');
+        }
+        function processMaterial(rows) {
+            if(!rows||rows.length<2) return toast('无有效数据','error');
+            const h = rows[0].map(h=>String(h).trim());
+            const idx = {
+                id: h.findIndex(x=>x.includes('料号')), name: h.findIndex(x=>x.includes('名称')),
+                spec: h.findIndex(x=>x.includes('规格')), unit: h.findIndex(x=>x.includes('单位')),
+                loc: h.findIndex(x=>x.includes('储位')), stock: h.findIndex(x=>x.includes('库存'))
+            };
+            if(idx.id===-1) return toast('缺少料号列','error');
+            let added=0, updated=0;
+            for(let i=1;i<rows.length;i++) {
+                const id = String(rows[i][idx.id]).trim().toUpperCase();
+                if(!id) continue;
+                const name = idx.name!==-1 ? String(rows[i][idx.name]).trim() : '';
+                const spec = idx.spec!==-1 ? String(rows[i][idx.spec]).trim() : '';
+                const unit = idx.unit!==-1 ? String(rows[i][idx.unit]).trim()||'个' : '个';
+                const loc = idx.loc!==-1 ? String(rows[i][idx.loc]).trim() : '';
+                const stock = idx.stock!==-1 ? parseInt(rows[i][idx.stock])||0 : 0;
+                const exist = find(id);
+                if(exist) {
+                    if(name) exist.name=name; if(spec) exist.spec=spec;
+                    exist.unit = unit; exist.location = loc; exist.stock = stock; updated++;
+                } else {
+                    materials.push({ id, name, spec, unit, location: loc, stock }); added++;
+                }
+            }
+            if(added||updated) { refreshAll(); toast(`导入完成：新增 ${added}，更新 ${updated}`,'success'); }
+            else toast('无数据被导入','info');
+        }
+        $('#uploadLocationBtn').onclick = () => handleUpload('locationFile', processLocation);
+        $('#uploadStockBtn').onclick = () => handleUpload('stockFile', processStock);
+        $('#uploadMaterialBtn').onclick = () => handleUpload('materialFile', processMaterial);
+
+        // 我的
+        function updateLastUpdateTime() { const el = $('#lastUpdateTime'); if(el) el.textContent = new Date().toLocaleTimeString('zh-CN',{hour12:false}); }
+        function updateMine() {
+            $('#myTotalMaterials').textContent = materials.length;
+            $('#myTotalStock').textContent = materials.reduce((s,m)=>s+m.stock,0);
+            $('#myTotalRecords').textContent = records.length;
+            const d = Math.floor((new Date()-startTime)/1000);
+            $('#sysUptime').textContent = `${Math.floor(d/3600)}h ${Math.floor((d%3600)/60)}m`;
+            updateLastUpdateTime();
+        }
+        $('#addCustomMsgBtn').onclick = () => {
+            const txt = $('#customMsgInput').value.trim();
+            if(!txt) return toast('请输入内容','error');
+            userMessages.push({ text: txt }); save(); updateMarquee(); renderCustomMsgs();
+            $('#customMsgInput').value = ''; toast('已添加','success');
+        };
+        $('#logoutBtn').onclick = () => toast('已退出登录 (模拟)','info');
+        $('#resetDataBtn').onclick = () => {
+            if(!confirm('确定重置所有数据？不可恢复！')) return;
+            localStorage.removeItem(STORAGE_MAT); localStorage.removeItem(STORAGE_REC); localStorage.removeItem(STORAGE_MSG);
+            location.reload();
+        };
+        document.onkeydown = e => { if(e.key==='Escape' && current!=='home') showPage('home'); };
+
+        function init() {
+            load();
+            materials.forEach(m => countChanges[m.id] = m.stock);
+            showPage('home');
+            populateSelects(); renderStock(); renderMaterialList(); updateDaily(); updateMarquee(); updateMine(); renderCustomMsgs();
+            $('#matId').placeholder = `例如: ${nextId()}`;
+            clearLocationResult();
+            console.log('📦 仓库管理系统 v3.3 已启动');
+        }
+        init();
+    })();
 </script>
 </body>
 </html>
