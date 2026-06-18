@@ -150,6 +150,9 @@
         .btn-inline{padding:8px 20px;font-size:15px;width:auto}
         .back-header{display:flex;align-items:center;gap:12px;margin-bottom:20px}
         .back-header button{background:none;border:none;font-size:20px;color:#3b82f6;cursor:pointer}
+        .progress-bar-wrap{width:100%;height:6px;background:#e2e8f0;border-radius:3px;margin-top:8px;overflow:hidden;display:none}
+        .progress-bar-inner{height:100%;width:0%;background:#3b82f6;border-radius:3px;transition:width 0.1s}
+        .upload-status-text{font-size:12px;color:#64748b;margin-top:4px;display:none}
     </style>
 </head>
 <body>
@@ -326,13 +329,13 @@
             </div>
         </div>
 
-        <!-- 储位查找页 -->
+        <!-- 储位查找页（含担当） -->
         <div id="page-location" class="page">
             <div class="section-title"><i class="fas fa-map-pin" style="color:#0ea5e9;"></i> 储位查找</div>
             <div class="form-group"><label>输入料号 / 储位</label><div style="display:flex; gap:8px;"><input type="text" class="form-control" id="locationSearchInput" placeholder="例如: M001"><button class="btn btn-info" id="locationSearchBtn"><i class="fas fa-search"></i> 查找</button></div></div>
             <button class="btn btn-outline btn-block" id="locationClearBtn" style="margin-bottom:16px;"><i class="fas fa-undo"></i> 清空结果</button>
             <div id="locationResult">
-                <div class="table-wrap"><table><thead><tr><th>料号</th><th>储位</th><th>操作</th></tr></thead><tbody id="locationResultBody"><tr><td colspan="3" class="text-center text-muted">请输入关键词查找</td></tr></tbody></table></div>
+                <div class="table-wrap"><table><thead><tr><th>料号</th><th>储位</th><th>担当</th><th>操作</th></tr></thead><tbody id="locationResultBody"><tr><td colspan="4" class="text-center text-muted">请输入关键词查找</td></tr></tbody></table></div>
                 <div style="margin-top:8px;text-align:right;font-size:12px;color:#94a3b8;">找到 <span id="locationResultCount">0</span> 项</div>
             </div>
         </div>
@@ -343,7 +346,7 @@
             <div class="upload-card">
                 <div class="upload-header"><i class="fas fa-file-excel" style="color:#22c55e;"></i> 批量上传 Excel</div>
                 <div class="file-input-wrap"><input type="file" id="excelFile" accept=".xls,.xlsx" class="form-control"><button class="btn btn-primary btn-sm" id="uploadExcelBtn"><i class="fas fa-upload"></i> 导入</button></div>
-                <small class="text-muted">表格列：料号、储位、MPN、厂商、数量</small>
+                <small class="text-muted">表格列：料号、储位、MPN、厂商、数量、担当</small>
             </div>
             <div class="manual-location-card" style="margin-top:0;">
                 <div class="upload-header"><i class="fas fa-hand-pointer" style="color:#22c55e;"></i> 手动添加数据</div>
@@ -353,6 +356,7 @@
                     <div class="form-group"><label>MPN <span class="required">*</span></label><input type="text" class="form-control" id="manMpn" placeholder="MPN" style="background:#fff;"></div>
                     <div class="form-group"><label>厂商</label><input type="text" class="form-control" id="manManufacturer" placeholder="厂商" style="background:#fff;"></div>
                     <div class="form-group"><label>数量</label><input type="number" class="form-control" id="manStock" value="0" min="0" style="background:#fff;"></div>
+                    <div class="form-group"><label>担当</label><input type="text" class="form-control" id="manResponsible" placeholder="负责人" style="background:#fff;"></div>
                 </div>
                 <button class="btn btn-success btn-block" id="saveManualBtn"><i class="fas fa-save"></i> 添加数据</button>
             </div>
@@ -385,7 +389,7 @@
             <button class="btn btn-outline btn-block" style="margin-top:20px;" id="goCustomMsgBtn"><i class="fas fa-bullhorn"></i> 滚动预警设置</button>
             <div style="margin-top:20px;background:#f8fafc;border-radius:16px;padding:16px;">
                 <div style="font-weight:600;margin-bottom:8px;"><i class="fas fa-info-circle" style="color:#3b82f6;"></i> 系统信息</div>
-                <div style="display:flex;justify-content:space-between;font-size:13px;color:#475569;padding:4px 0;"><span>版本</span><span>v10.5</span></div>
+                <div style="display:flex;justify-content:space-between;font-size:13px;color:#475569;padding:4px 0;"><span>版本</span><span>v10.6</span></div>
                 <div style="display:flex;justify-content:space-between;font-size:13px;color:#475569;padding:4px 0;"><span>运行时间</span><span id="sysUptime">--</span></div>
                 <div style="display:flex;justify-content:space-between;font-size:13px;color:#475569;padding:4px 0;"><span>数据更新</span><span id="lastUpdateTime">--</span></div>
             </div>
@@ -442,10 +446,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     async function loadData() {
         const { data: mat } = await supabase.from('materials').select('*');
         materials = mat || [];
-        materials.forEach(m => { m.mpn = m.mpn || ''; m.manufacturer = m.manufacturer || ''; });
+        materials.forEach(m => { m.mpn = m.mpn || ''; m.manufacturer = m.manufacturer || ''; m.responsible = m.responsible || ''; });
         const { data: rec } = await supabase.from('records').select('*').order('date',{ascending:false}).limit(2000);
         records = rec || [];
-        // 从云端加载当前用户消息
         if (currentUser) {
             const { data: msgData } = await supabase.from('messages').select('text').eq('user_id', currentUser.id);
             userMessages = (msgData || []).map(r => ({ text: r.text }));
@@ -829,15 +832,20 @@ document.addEventListener('DOMContentLoaded', async () => {
         }).join('');
     });
 
-    // 储位查找
+    // 储位查找（含担当）
     const locInput = $('#locationSearchInput'), locBody = $('#locationResultBody'), locCount = $('#locationResultCount');
-    function clearLocationResult() { locBody.innerHTML = '<tr><td colspan="3" class="text-center text-muted">请输入关键词查找</td></tr>'; locCount.textContent = '0'; locInput.value = ''; }
+    function clearLocationResult() { locBody.innerHTML = '<tr><td colspan="4" class="text-center text-muted">请输入关键词查找</td></tr>'; locCount.textContent = '0'; locInput.value = ''; }
     function performLocationSearch() {
         const kw = locInput.value.trim().toLowerCase();
         if(!kw) return toast('请输入关键词', 'info');
         const res = materials.filter(m => m.id.toLowerCase().includes(kw) || (m.location&&m.location.toLowerCase().includes(kw)));
-        if(!res.length) { locBody.innerHTML = '<tr><td colspan="3" class="text-center text-muted">未找到匹配项</td></tr>'; locCount.textContent = '0'; return; }
-        locBody.innerHTML = res.map(m => `<tr id="loc-row-${m.id}|${m.mpn}"><td>${m.id}</td><td class="cell-loc"><span class="display-loc">${m.location||'-'}</span><input class="form-control edit-loc" value="${m.location||''}" style="display:none;width:80px;font-size:12px;padding:4px;"></td><td><button class="btn btn-sm btn-outline btn-edit-loc" data-id="${m.id}" data-mpn="${m.mpn}"><i class="fas fa-pen"></i></button><button class="btn btn-sm btn-success btn-save-loc" data-id="${m.id}" data-mpn="${m.mpn}" style="display:none;"><i class="fas fa-check"></i></button></td></tr>`).join('');
+        if(!res.length) { locBody.innerHTML = '<tr><td colspan="4" class="text-center text-muted">未找到匹配项</td></tr>'; locCount.textContent = '0'; return; }
+        locBody.innerHTML = res.map(m => `<tr id="loc-row-${m.id}|${m.mpn}">
+            <td>${m.id}</td>
+            <td class="cell-loc"><span class="display-loc">${m.location||'-'}</span><input class="form-control edit-loc" value="${m.location||''}" style="display:none;width:80px;font-size:12px;padding:4px;"></td>
+            <td>${m.responsible||'-'}</td>
+            <td><button class="btn btn-sm btn-outline btn-edit-loc" data-id="${m.id}" data-mpn="${m.mpn}"><i class="fas fa-pen"></i></button><button class="btn btn-sm btn-success btn-save-loc" data-id="${m.id}" data-mpn="${m.mpn}" style="display:none;"><i class="fas fa-check"></i></button></td>
+        </tr>`).join('');
         locCount.textContent = res.length;
     }
     $('#locationSearchBtn').onclick = performLocationSearch;
@@ -870,18 +878,19 @@ document.addEventListener('DOMContentLoaded', async () => {
         const manufacturer = $('#manManufacturer').value.trim();
         const location = $('#manLocation').value.trim();
         const stock = parseInt($('#manStock').value) || 0;
+        const responsible = $('#manResponsible').value.trim();
         if(!id) return toast('请输入料号', 'error');
         if(!mpn) return toast('请输入MPN', 'error');
         if(findMaterial(id, mpn)) return toast('该料号+MPN已存在', 'error');
-        materials.push({ id, mpn, manufacturer, location, stock });
+        materials.push({ id, mpn, manufacturer, location, stock, responsible });
         await saveMaterialsToCloud();
         toast('添加成功', 'success');
-        ['manId','manLocation','manMpn','manManufacturer','manStock'].forEach(f => $('#'+f).value = '');
+        ['manId','manLocation','manMpn','manManufacturer','manStock','manResponsible'].forEach(f => $('#'+f).value = '');
         $('#manStock').value = '0';
         refreshAll();
     };
 
-    // Excel上传
+    // Excel 上传（带进度条）
     function readExcel(file, cb) {
         const reader = new FileReader();
         reader.onload = e => {
@@ -892,75 +901,112 @@ document.addEventListener('DOMContentLoaded', async () => {
         };
         reader.readAsArrayBuffer(file);
     }
+    async function processExcelRows(rows) {
+        if(!rows || rows.length<2) throw new Error('无数据');
+        const h = rows[0].map(h=>String(h).trim());
+        const idxId = h.findIndex(x=>x.includes('料号'));
+        const idxLoc = h.findIndex(x=>x.includes('储位'));
+        const idxMpn = h.findIndex(x=>x.includes('MPN'));
+        const idxManu = h.findIndex(x=>x.includes('厂商'));
+        const idxStock = h.findIndex(x=>x.includes('数量'));
+        const idxResp = h.findIndex(x=>x.includes('担当') || x.includes('responsible'));
+        if(idxId===-1 || idxMpn===-1) throw new Error('缺少料号或MPN列');
+        let updated = 0, added = 0;
+        for(let i=1;i<rows.length;i++) {
+            const id = String(rows[i][idxId]).trim().toUpperCase();
+            const mpn = String(rows[i][idxMpn]).trim();
+            if(!id || !mpn) continue;
+            const exist = findMaterial(id, mpn);
+            const location = idxLoc!==-1 ? String(rows[i][idxLoc]).trim() : (exist ? exist.location : '');
+            const manufacturer = idxManu!==-1 ? String(rows[i][idxManu]).trim() : (exist ? exist.manufacturer : '');
+            const stock = idxStock!==-1 ? parseInt(rows[i][idxStock])||0 : (exist ? exist.stock : 0);
+            const responsible = idxResp!==-1 ? String(rows[i][idxResp]).trim() : (exist ? exist.responsible : '');
+            if(exist) {
+                exist.location = location || exist.location;
+                exist.manufacturer = manufacturer || exist.manufacturer;
+                exist.stock = stock;
+                exist.responsible = responsible || exist.responsible;
+                updated++;
+            } else {
+                materials.push({ id, mpn, location, manufacturer, stock, responsible });
+                added++;
+            }
+        }
+        await saveMaterialsToCloud();
+    }
     $('#uploadExcelBtn').onclick = () => {
         const inp = $('#excelFile');
         if(!inp.files.length) return toast('请选择文件', 'error');
+        const progressWrap = document.createElement('div');
+        progressWrap.className = 'progress-bar-wrap';
+        progressWrap.innerHTML = '<div class="progress-bar-inner" id="uploadProgressBar"></div>';
+        const statusText = document.createElement('div');
+        statusText.className = 'upload-status-text';
+        statusText.textContent = '正在处理...';
+        inp.parentNode.appendChild(progressWrap);
+        inp.parentNode.appendChild(statusText);
+        progressWrap.style.display = 'block';
+        statusText.style.display = 'block';
+        const progressBar = document.getElementById('uploadProgressBar');
         readExcel(inp.files[0], async (err, rows) => {
-            if(err) return toast('解析失败', 'error');
-            if(!rows || rows.length<2) return toast('无数据', 'error');
-            const h = rows[0].map(h=>String(h).trim());
-            const idxId = h.findIndex(x=>x.includes('料号'));
-            const idxLoc = h.findIndex(x=>x.includes('储位'));
-            const idxMpn = h.findIndex(x=>x.includes('MPN'));
-            const idxManu = h.findIndex(x=>x.includes('厂商'));
-            const idxStock = h.findIndex(x=>x.includes('数量'));
-            if(idxId===-1 || idxMpn===-1) return toast('缺少料号或MPN列', 'error');
-            let updated = 0, added = 0;
-            for(let i=1;i<rows.length;i++) {
-                const id = String(rows[i][idxId]).trim().toUpperCase();
-                const mpn = String(rows[i][idxMpn]).trim();
-                if(!id || !mpn) continue;
-                const exist = findMaterial(id, mpn);
-                const location = idxLoc!==-1 ? String(rows[i][idxLoc]).trim() : (exist ? exist.location : '');
-                const manufacturer = idxManu!==-1 ? String(rows[i][idxManu]).trim() : (exist ? exist.manufacturer : '');
-                const stock = idxStock!==-1 ? parseInt(rows[i][idxStock])||0 : (exist ? exist.stock : 0);
-                if(exist) {
-                    exist.location = location || exist.location;
-                    exist.manufacturer = manufacturer || exist.manufacturer;
-                    exist.stock = stock;
-                    updated++;
-                } else {
-                    materials.push({ id, mpn, location, manufacturer, stock });
-                    added++;
-                }
+            if(err) {
+                toast('解析失败', 'error');
+                progressWrap.remove();
+                statusText.remove();
+                return;
             }
-            await saveMaterialsToCloud();
-            refreshAll();
-            toast(`导入完成：新增${added}，更新${updated}`, 'success');
-            inp.value = '';
+            let fakeProgress = 0;
+            const interval = setInterval(() => {
+                fakeProgress += 5;
+                if(fakeProgress > 90) clearInterval(interval);
+                progressBar.style.width = fakeProgress + '%';
+            }, 50);
+            try {
+                await processExcelRows(rows);
+            } catch(e) {
+                toast(e.message, 'error');
+            }
+            clearInterval(interval);
+            progressBar.style.width = '100%';
+            setTimeout(() => {
+                progressWrap.remove();
+                statusText.remove();
+                toast('导入完成', 'success');
+                inp.value = '';
+                refreshAll();
+            }, 500);
         });
     };
 
-    // 清空本地缓存（不清除后端）
+    // 清空本地缓存（仅本地）
     $('#clearAllDataBtn').onclick = async () => {
-        // 同时清空当前用户云端消息
-        if (currentUser) {
-            await supabase.from('messages').delete().eq('user_id', currentUser.id);
-        }
         materials = [];
         records = [];
         userMessages = [];
         countChanges = {};
+        if (currentUser) {
+            await supabase.from('messages').delete().eq('user_id', currentUser.id);
+        }
         localStorage.removeItem('wms_messages');
-        toast('本地缓存已清空（云端消息已同步清空）', 'info');
+        toast('本地缓存已清空（云端物料和记录未受影响）', 'info');
         refreshAll();
         showPage('home');
     };
 
-    // 重置数据（清后端）
+    // 重置数据（格式化后端）
     $('#resetDataBtn').onclick = async () => {
-        if(!confirm('确定重置所有云端数据？')) return;
+        if(!confirm('此操作将删除所有云端物料、出入库记录和个人消息，不可恢复！确定继续吗？')) return;
         await supabase.from('records').delete().neq('id',0);
         await supabase.from('materials').delete().neq('id','');
         if (currentUser) await supabase.from('messages').delete().eq('user_id', currentUser.id);
         materials=[]; records=[]; userMessages=[]; countChanges={};
         localStorage.removeItem('wms_messages');
-        toast('已重置', 'info');
+        toast('后端数据已格式化', 'success');
         refreshAll();
         showPage('home');
     };
 
-    // 自定义头像背景（仅作用于卡片）
+    // 头像/背景
     function loadCustomStyles() {
         const avatar = localStorage.getItem('wms_avatar');
         if (avatar) {
@@ -979,7 +1025,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (img) img.remove();
         }
     }
-
     function loadProfileBg() {
         const bg = localStorage.getItem('wms_profile_bg');
         const card = document.getElementById('myProfileCard');
@@ -987,7 +1032,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             card.style.backgroundImage = bg ? `url(${bg})` : '';
         }
     }
-
     document.getElementById('changeAvatarBtn').addEventListener('click', () => {
         const input = document.createElement('input');
         input.type = 'file';
@@ -1006,7 +1050,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         };
         input.click();
     });
-
     document.getElementById('changeBgBtn').addEventListener('click', () => {
         const input = document.createElement('input');
         input.type = 'file';
@@ -1025,7 +1068,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         };
         input.click();
     });
-
     document.getElementById('resetBgBtn').addEventListener('click', () => {
         localStorage.removeItem('wms_avatar');
         localStorage.removeItem('wms_profile_bg');
@@ -1092,8 +1134,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             currentUser = { id:r.id, username:r.username, real_name:r.real_name, is_admin:r.is_admin };
             localStorage.setItem('wms_user', JSON.stringify(currentUser));
             toast('登录成功', 'success');
-            // 登录后加载消息
-            await loadData(); // 重新加载云端消息
+            await loadData();
             setupAutocompletes();
             showPage('home');
             updateMine();
