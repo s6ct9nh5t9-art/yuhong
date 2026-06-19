@@ -7,10 +7,11 @@
     <meta name="apple-mobile-web-app-title" content="仓库管理">
     <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📦</text></svg>">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>仓库管理系统 v19.0</title>
+    <title>仓库管理系统 v21.0</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
         *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
         html,body{height:100%;width:100%;overflow:hidden;touch-action:manipulation}
@@ -190,6 +191,13 @@
         .manual-card .form-group{margin-bottom:12px}
         .manual-card .form-control{background:#fff;border-radius:10px;padding:12px 14px;font-size:15px}
         .manual-card .btn{margin-top:8px;font-size:15px;padding:12px}
+        /* 半屏扫码面板 */
+        .scan-panel{position:fixed;top:0;left:0;width:100%;height:100%;background:#fff;z-index:200;transform:translateY(-100%);transition:transform 0.3s ease;display:flex;flex-direction:column}
+        .scan-panel.show{transform:translateY(0)}
+        .scan-panel-header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid #e2e8f0}
+        .scan-panel-body{flex:1;display:flex;align-items:center;justify-content:center;background:#000}
+        .scan-panel-body div{width:100% !important}
+        .scan-panel-footer{padding:12px 16px;text-align:center}
     </style>
 </head>
 <body>
@@ -205,12 +213,15 @@
         </div>
     </div>
     <div class="page-container" id="pageContainer">
+        <!-- 登录页 -->
         <div id="page-login" class="page active">
             <div class="auth-wrap"><div class="auth-card"><h2><i class="fas fa-warehouse" style="color:#3b82f6;"></i> 仓库管理</h2><div class="form-group"><label>账号</label><input type="text" class="form-control" id="loginUsername" placeholder="请输入账号"></div><div class="form-group"><label>密码</label><input type="password" class="form-control" id="loginPassword" placeholder="请输入密码"></div><button class="btn btn-primary" id="loginBtn"><i class="fas fa-sign-in-alt"></i> 登录</button><div class="auth-link">还没有账号？<a id="goRegisterLink">立即注册</a></div></div></div>
         </div>
+        <!-- 注册页 -->
         <div id="page-register" class="page">
             <div class="auth-wrap"><div class="auth-card"><h2><i class="fas fa-user-plus" style="color:#22c55e;"></i> 注册新账号</h2><div class="form-group"><label>账号</label><input type="text" class="form-control" id="regUsername" placeholder="请输入账号"></div><div class="form-group"><label>密码</label><input type="password" class="form-control" id="regPassword" placeholder="请输入密码"></div><div class="form-group"><label>真实姓名</label><input type="text" class="form-control" id="regRealName" placeholder="请输入姓名"></div><button class="btn btn-success" id="registerBtn"><i class="fas fa-check"></i> 注册</button><div class="auth-link">已有账号？<a id="goLoginLink">返回登录</a></div></div></div>
         </div>
+        <!-- 首页 -->
         <div id="page-home" class="page">
             <div class="section-title">首页</div>
             <div class="alert-marquee" id="alertMarquee"><div class="marquee-track" id="marqueeTrack"></div></div>
@@ -224,11 +235,10 @@
             </div>
             <div class="daily-stats" id="dailyStats"><div class="stats-title"><i class="fas fa-calendar-day"></i> 今日数据</div><div class="stats-grid"><div class="stat-item"><div class="stat-value in" id="todayIn">0</div><div class="stat-label">入库总量</div></div><div class="stat-item"><div class="stat-value out" id="todayOut">0</div><div class="stat-label">出库总量</div></div><div class="stat-item"><div class="stat-value total" id="todayTotalStock">0</div><div class="stat-label">当前总库存</div></div><div class="stat-item"><div class="stat-value count" id="todayOps">0</div><div class="stat-label">今日操作笔数</div></div></div></div>
         </div>
+        <!-- 扫码页（手动查询） -->
         <div id="page-scan" class="page">
-            <div class="section-title"><i class="fas fa-qrcode"></i> 扫码</div>
-            <div class="scan-area" id="scanArea"><div class="scan-icon"><i class="fas fa-camera"></i></div><div class="scan-hint">点击下方按钮模拟扫码，或手动输入料号</div></div>
+            <div class="section-title"><i class="fas fa-qrcode"></i> 扫码查询</div>
             <div class="form-group"><label>手动输入料号 / MPN</label><div style="display:flex;gap:8px;"><input type="text" class="form-control" id="scanInput" placeholder="例如: M001"><button class="btn btn-primary" id="scanBtn"><i class="fas fa-search"></i> 查询</button></div></div>
-            <button class="btn btn-primary btn-block" id="scanMockBtn" style="margin-bottom:16px;"><i class="fas fa-camera"></i> 模拟扫码</button>
             <div class="scan-result" id="scanResult">
                 <div class="result-item"><span class="result-label">料号</span><span class="result-value" id="srId">-</span></div>
                 <div class="result-item"><span class="result-label">MPN</span><span class="result-value" id="srMpn">-</span></div>
@@ -237,37 +247,54 @@
                 <div class="result-item"><span class="result-label">当前库存</span><span class="result-value" id="srStock">-</span></div>
             </div>
         </div>
+        <!-- 出库页（含半屏扫码面板） -->
         <div id="page-out" class="page">
             <div class="section-title"><i class="fas fa-sign-out-alt" style="color:#ef4444;"></i> 出库</div>
-            <form id="outForm">
+            <button class="btn btn-outline btn-block" id="outScanBtn"><i class="fas fa-qrcode"></i> 扫码</button>
+            <form id="outForm" style="margin-top:12px;">
                 <div class="form-group"><label>料号 <span class="required">*</span></label><div class="autocomplete-wrapper"><input type="text" class="form-control" id="outMaterialInput" placeholder="输入料号后四位搜索" autocomplete="off"><input type="hidden" id="outMaterialId"><div class="autocomplete-dropdown" id="outMaterialDropdown"></div></div></div>
                 <div class="form-group"><label>MPN <span class="required">*</span></label><select class="form-control" id="outMpn" disabled><option value="">请先选择料号</option></select></div>
                 <div class="form-group"><label>数量 <span class="required">*</span></label><input type="number" class="form-control" id="outQty" placeholder="请输入数量" min="1" required><small style="color:#94a3b8;" id="outStockHint"></small></div>
                 <div class="form-group"><label>仓码 <span class="required">*</span></label><select class="form-control" id="outCangma"><option value="">请选择</option><option value="B8SA">B8SA</option><option value="B909">B909</option><option value="B907">B907</option></select></div>
                 <button type="submit" class="btn btn-danger btn-block" id="outSubmitBtn" disabled><i class="fas fa-arrow-right"></i> 确认出库</button>
             </form>
+            <div class="scan-panel" id="outScanPanel">
+                <div class="scan-panel-header"><span>扫码出库</span><i class="fas fa-times" id="closeOutScan"></i></div>
+                <div class="scan-panel-body" id="outScanBody"></div>
+                <div class="scan-panel-footer"><small class="text-muted">扫描成功后自动填入料号</small></div>
+            </div>
         </div>
+        <!-- 入库页（含半屏扫码面板） -->
         <div id="page-in" class="page">
             <div class="section-title"><i class="fas fa-sign-in-alt" style="color:#22c55e;"></i> 入库</div>
-            <form id="inForm">
+            <button class="btn btn-outline btn-block" id="inScanBtn"><i class="fas fa-qrcode"></i> 扫码</button>
+            <form id="inForm" style="margin-top:12px;">
                 <div class="form-group"><label>料号 <span class="required">*</span></label><div class="autocomplete-wrapper"><input type="text" class="form-control" id="inMaterialInput" placeholder="输入料号后四位搜索" autocomplete="off"><input type="hidden" id="inMaterialId"><div class="autocomplete-dropdown" id="inMaterialDropdown"></div></div></div>
                 <div class="form-group"><label>MPN <span class="required">*</span></label><select class="form-control" id="inMpn" disabled><option value="">请先选择料号</option></select></div>
                 <div class="form-group"><label>数量 <span class="required">*</span></label><input type="number" class="form-control" id="inQty" placeholder="请输入数量" min="1" required></div>
                 <button type="submit" class="btn btn-success btn-block"><i class="fas fa-arrow-left"></i> 确认入库</button>
             </form>
+            <div class="scan-panel" id="inScanPanel">
+                <div class="scan-panel-header"><span>扫码入库</span><i class="fas fa-times" id="closeInScan"></i></div>
+                <div class="scan-panel-body" id="inScanBody"></div>
+                <div class="scan-panel-footer"><small class="text-muted">扫描成功后自动填入料号</small></div>
+            </div>
         </div>
+        <!-- 盘点页 -->
         <div id="page-count" class="page">
             <div class="section-title"><i class="fas fa-clipboard-list" style="color:#f59e0b;"></i> 盘点</div>
             <p style="font-size:13px;color:#64748b;margin-bottom:16px;"><i class="fas fa-info-circle"></i> 仅显示已上传或手动添加的盘点数据，修改数量后点击「保存盘点」生效。</p>
             <div id="countList"></div>
             <button class="btn btn-warning btn-block" id="saveCountBtn" style="margin-top:12px;"><i class="fas fa-save"></i> 保存盘点</button>
         </div>
+        <!-- 库存页 -->
         <div id="page-stock" class="page">
             <div class="section-title"><i class="fas fa-boxes" style="color:#3b82f6;"></i> 库存</div>
             <div class="form-group" style="margin-bottom:12px;"><input type="text" class="form-control" id="stockSearch" placeholder="🔍 搜索料号 / MPN ..."></div>
             <div class="table-wrap"><table><thead><tr><th>料号</th><th>MPN</th><th>库存</th></tr></thead><tbody id="stockBody"></tbody></table></div>
             <div style="margin-top:12px;text-align:right;font-size:12px;color:#94a3b8;">共 <span id="stockCount">0</span> 项 · <small>点击库存数字可修改</small></div>
         </div>
+        <!-- 出入库清单页 -->
         <div id="page-report" class="page">
             <div class="section-title"><i class="fas fa-list" style="color:#ec4899;"></i> 出入库清单</div>
             <div class="tab-nav"><button class="tab-btn active" data-tab="tab-out">出库</button><button class="tab-btn" data-tab="tab-in">入库</button></div>
@@ -281,12 +308,14 @@
                 <div class="table-wrap" style="margin-top:12px;"><table><thead><tr><th>料号</th><th>MPN</th><th>入库总数</th></tr></thead><tbody id="inReportBody"><tr><td colspan="3" class="text-center text-muted">输入料号查询所有历史入库</td></tr></tbody></table></div>
             </div>
         </div>
+        <!-- 储位查找页 -->
         <div id="page-location" class="page">
             <div class="section-title"><i class="fas fa-map-pin" style="color:#0ea5e9;"></i> 储位查找</div>
             <div class="form-group"><label>输入料号后四位</label><div style="display:flex;gap:8px;"><input type="text" class="form-control" id="locationSearchInput" placeholder="例如: 0034"><button class="btn btn-info" id="locationSearchBtn"><i class="fas fa-search"></i> 查找</button></div></div>
             <button class="btn btn-outline btn-block" id="locationClearBtn" style="margin-bottom:16px;"><i class="fas fa-undo"></i> 清空结果</button>
             <div id="locationResult"><div class="table-wrap"><table><thead><tr><th>料号</th><th>储位</th><th>担当</th><th>操作</th></tr></thead><tbody id="locationResultBody"><tr><td colspan="4" class="text-center text-muted">输入后四位查找（储位数据库）</td></tr></tbody></table></div><div style="margin-top:8px;text-align:right;font-size:12px;color:#94a3b8;">找到 <span id="locationResultCount">0</span> 项</div></div>
         </div>
+        <!-- 数据导入页 -->
         <div id="page-data" class="page">
             <div class="section-title"><i class="fas fa-cloud-upload-alt" style="color:#3b82f6;"></i> 数据导入</div>
             <div class="upload-card"><div class="upload-header"><i class="fas fa-file-excel" style="color:#22c55e;"></i> 批量上传库存 Excel</div><div class="file-input-wrap"><input type="file" id="excelFile" accept=".xls,.xlsx" class="form-control"><button class="btn btn-primary btn-sm" id="uploadExcelBtn"><i class="fas fa-upload"></i> 导入</button></div><small class="text-muted">表格列：料号、储位、MPN、厂商、数量、担当</small></div>
@@ -333,14 +362,16 @@
                 </div>
             </div>
         </div>
+        <!-- 我的页面 -->
         <div id="page-mine" class="page">
             <div class="section-title"><i class="fas fa-user" style="color:#8b5cf6;"></i> 我的</div>
             <div class="my-profile" id="myProfileCard"><div class="avatar" id="avatarBtn"><i class="fas fa-user-circle" id="avatarIcon"></i></div><div class="username" id="profileName">仓库管理员</div><div class="user-role" id="profileRole">WMS 系统</div><div class="bg-actions" style="display:flex;gap:8px;justify-content:center;margin-top:8px;"><button class="btn btn-outline btn-sm" id="changeAvatarBtn"><i class="fas fa-camera"></i> 头像</button><button class="btn btn-outline btn-sm" id="changeBgBtn"><i class="fas fa-image"></i> 背景</button><button class="btn btn-outline btn-sm" id="resetBgBtn"><i class="fas fa-undo"></i> 重置</button></div></div>
             <div class="my-info-grid"><div class="my-info-item"><div class="num" id="myTotalMaterials">0</div><div class="label">料号总数</div></div><div class="my-info-item"><div class="num" id="myTotalStock">0</div><div class="label">总库存量</div></div><div class="my-info-item"><div class="num" id="myTotalRecords">0</div><div class="label">操作记录</div></div></div>
             <button class="btn btn-outline btn-block" style="margin-top:20px;" id="goCustomMsgBtn"><i class="fas fa-bullhorn"></i> 滚动预警设置</button>
-            <div style="margin-top:20px;background:#f8fafc;border-radius:16px;padding:16px;"><div style="font-weight:600;margin-bottom:8px;"><i class="fas fa-info-circle" style="color:#3b82f6;"></i> 系统信息</div><div style="display:flex;justify-content:space-between;font-size:13px;color:#475569;padding:4px 0;"><span>版本</span><span>v19.0</span></div><div style="display:flex;justify-content:space-between;font-size:13px;color:#475569;padding:4px 0;"><span>运行时间</span><span id="sysUptime">--</span></div><div style="display:flex;justify-content:space-between;font-size:13px;color:#475569;padding:4px 0;"><span>数据更新</span><span id="lastUpdateTime">--</span></div></div>
+            <div style="margin-top:20px;background:#f8fafc;border-radius:16px;padding:16px;"><div style="font-weight:600;margin-bottom:8px;"><i class="fas fa-info-circle" style="color:#3b82f6;"></i> 系统信息</div><div style="display:flex;justify-content:space-between;font-size:13px;color:#475569;padding:4px 0;"><span>版本</span><span>v21.0</span></div><div style="display:flex;justify-content:space-between;font-size:13px;color:#475569;padding:4px 0;"><span>运行时间</span><span id="sysUptime">--</span></div><div style="display:flex;justify-content:space-between;font-size:13px;color:#475569;padding:4px 0;"><span>数据更新</span><span id="lastUpdateTime">--</span></div></div>
             <button class="btn btn-outline btn-block" style="margin-top:16px;" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> 退出登录</button>
         </div>
+        <!-- 滚动预警子页面 -->
         <div id="page-custom-msg" class="page" style="padding-top:20px;">
             <div class="back-header"><button id="backFromMsgBtn"><i class="fas fa-arrow-left"></i></button><h2 style="font-size:18px;font-weight:700;">滚动预警设置</h2></div>
             <div style="display:flex;gap:8px;margin-bottom:16px;"><input type="text" class="form-control" id="subCustomMsgInput" placeholder="输入要显示的文字..."><button class="btn btn-primary btn-sm" id="subAddCustomMsgBtn"><i class="fas fa-plus"></i> 添加</button></div>
@@ -475,33 +506,74 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     function getSummaryAlerts() {
         const sums = {};
-        materials.forEach(m => {
-            if (!sums[m.id]) sums[m.id] = 0;
-            sums[m.id] += m.stock;
-        });
-        return Object.entries(sums)
-            .filter(([id, total]) => total < LOW)
-            .map(([id, total]) => ({ id, total }));
+        materials.forEach(m => { if (!sums[m.id]) sums[m.id] = 0; sums[m.id] += m.stock; });
+        return Object.entries(sums).filter(([id, total]) => total < LOW).map(([id, total]) => ({ id, total }));
     }
 
     function updateMarquee() {
         const track = $('#marqueeTrack');
         const summaryAlerts = getSummaryAlerts();
-        const lowItems = summaryAlerts.filter(a => !hiddenAlerts.has(`LOW:${a.id}`)).map(a => {
-            const isZero = a.total === 0;
-            return `<div class="marquee-item ${isZero ? 'red' : ''}"><i class="fas fa-exclamation-triangle"></i> ${a.id} 库存 ${a.total}</div>`;
-        });
+        const lowItems = summaryAlerts.filter(a => !hiddenAlerts.has(`LOW:${a.id}`)).map(a => `<div class="marquee-item ${a.total===0?'red':''}"><i class="fas fa-exclamation-triangle"></i> ${a.id} 库存 ${a.total}</div>`);
         const customItems = userMessages.filter(m => !hiddenAlerts.has(`MSG:${m.text}`)).map(m => `<div class="marquee-item"><i class="fas fa-bullhorn"></i> ${m.text}</div>`);
-        const all = [...lowItems, ...customItems];
-        track.innerHTML = all.length ? all.join('') + all.join('') : '<div class="marquee-item"><i class="fas fa-check-circle"></i> 库存充足</div>';
+        track.innerHTML = [...lowItems, ...customItems].join('') + [...lowItems, ...customItems].join('') || '<div class="marquee-item"><i class="fas fa-check-circle"></i> 库存充足</div>';
     }
+
+    // 半屏实时扫码（不停止）
+    let html5QrCode = null;
+    async function startSlideScanner(mode) {
+        const panelId = mode === 'out' ? 'outScanPanel' : 'inScanPanel';
+        const bodyId = mode === 'out' ? 'outScanBody' : 'inScanBody';
+        const panel = $(`#${panelId}`);
+        const body = $(`#${bodyId}`);
+        body.innerHTML = '';
+        panel.classList.add('show');
+        if (html5QrCode) {
+            await html5QrCode.stop();
+            html5QrCode.clear();
+        }
+        html5QrCode = new Html5Qrcode(bodyId);
+        try {
+            await html5QrCode.start(
+                { facingMode: 'environment' },
+                { fps: 10, qrbox: { width: 250, height: 250 } },
+                (decodedText) => {
+                    const parts = decodedText.split('|');
+                    const id = parts[0]?.trim() || '';
+                    const input = document.getElementById(mode === 'out' ? 'outMaterialInput' : 'inMaterialInput');
+                    const hidden = document.getElementById(mode === 'out' ? 'outMaterialId' : 'inMaterialId');
+                    input.value = id;
+                    hidden.value = id;
+                    input.dispatchEvent(new Event('input'));
+                    // 保持摄像头继续
+                },
+                (errorMessage) => {}
+            );
+        } catch (err) {
+            toast('无法启动摄像头: ' + err.message, 'error');
+        }
+    }
+
+    function stopScanner() {
+        if (html5QrCode) {
+            html5QrCode.stop().then(() => html5QrCode.clear()).catch(e => console.error(e));
+            html5QrCode = null;
+        }
+    }
+
+    // 扫码按钮事件
+    $('#outScanBtn').addEventListener('click', () => startSlideScanner('out'));
+    $('#closeOutScan').addEventListener('click', () => { $('#outScanPanel').classList.remove('show'); stopScanner(); });
+    $('#inScanBtn').addEventListener('click', () => startSlideScanner('in'));
+    $('#closeInScan').addEventListener('click', () => { $('#inScanPanel').classList.remove('show'); stopScanner(); });
 
     let currentPage='home';
     function showPage(name) {
         if (!currentUser && name!=='login' && name!=='register') { showPage('login'); return; }
+        // 离开出入库页面时停止摄像头
+        if (currentPage === 'out' || currentPage === 'in') stopScanner();
         Object.values(pages).forEach(p=>p.classList.remove('active'));
         if(pages[name]) pages[name].classList.add('active');
-        currentPage=name;
+        currentPage = name;
         $('#bottomNav').style.display=(name==='customMsg'||!currentUser||name==='login'||name==='register')?'none':'flex';
         document.querySelectorAll('.bottom-nav .nav-item').forEach(n=>n.classList.toggle('active',n.dataset.tab===name));
         if (name==='mine') { $('#settingsBtn').classList.add('visible'); } else { $('#settingsBtn').classList.remove('visible'); }
@@ -510,7 +582,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         if(name==='stock') renderStock();
         if(name==='count') renderCount();
         if(name==='report') { document.querySelector('.tab-btn.active')?.click(); }
-        if(name==='scan') clearScan();
         if(name==='location') clearLocationResult();
         if(name==='mine'){updateMine();loadCustomStyles();loadProfileBg();}
         if(name==='customMsg') renderSubCustomMsgs();
@@ -569,54 +640,27 @@ document.addEventListener('DOMContentLoaded', async () => {
     function onMaterialSelected(mat, type){
         const mpnOptions = materials.filter(m => m.id === mat.id).map(m => m.mpn);
         const mpnSel = document.getElementById(type==='out'?'outMpn':'inMpn');
-        mpnSel.innerHTML = '';
-        mpnOptions.forEach(mpn => {
-            const opt = document.createElement('option');
-            opt.value = mpn;
-            opt.textContent = mpn;
-            mpnSel.appendChild(opt);
-        });
-        if (mpnOptions.length > 0) {
-            mpnSel.disabled = false;
-            mpnSel.value = mat.mpn;
-            if (type === 'out') {
-                const m = findMaterial(mat.id, mat.mpn);
-                if (m) {
-                    document.getElementById('outStockHint').textContent = `当前库存: ${m.stock}`;
-                    document.getElementById('outQty').max = m.stock;
-                }
-            }
-        } else {
-            mpnSel.disabled = true;
-        }
+        mpnSel.innerHTML = ''; mpnOptions.forEach(mpn => { const opt = document.createElement('option'); opt.value = mpn; opt.textContent = mpn; mpnSel.appendChild(opt); });
+        if (mpnOptions.length > 0) { mpnSel.disabled = false; mpnSel.value = mat.mpn; if (type === 'out') { const m = findMaterial(mat.id, mat.mpn); if (m) { document.getElementById('outStockHint').textContent = `当前库存: ${m.stock}`; document.getElementById('outQty').max = m.stock; } } }
+        else { mpnSel.disabled = true; }
     }
 
     // 出库
-    const outCangma = document.getElementById('outCangma');
-    const outSubmitBtn = document.getElementById('outSubmitBtn');
+    const outCangma = document.getElementById('outCangma'); const outSubmitBtn = document.getElementById('outSubmitBtn');
     outCangma.addEventListener('change', function() { outSubmitBtn.disabled = !this.value; });
     document.getElementById('outMpn').addEventListener('change',function(){const id=document.getElementById('outMaterialId').value;const m=findMaterial(id,this.value);if(m){document.getElementById('outStockHint').textContent=`当前库存: ${m.stock}`;document.getElementById('outQty').max=m.stock;}});
     document.getElementById('outForm').addEventListener('submit', async function(e) {
-        e.preventDefault();
-        if (!outCangma.value) return toast('请选择仓码', 'error');
+        e.preventDefault(); if (!outCangma.value) return toast('请选择仓码', 'error');
         const id = document.getElementById('outMaterialId').value, mpn = document.getElementById('outMpn').value, cangma = outCangma.value, qty = parseInt(document.getElementById('outQty').value);
         if(!id||!mpn||!qty||qty<1) return toast('请完善信息','error');
-        const m = findMaterial(id, mpn);
-        if(!m) return toast('物料不存在','error');
-        if(m.stock < qty) return toast(`库存不足，当前库存: ${m.stock}`,'error');
-        m.stock -= qty;
-        const record = { type:'out', material_id:id, mpn, quantity:qty, date: new Date().toISOString(), dest: mpn, note: cangma };
-        records.unshift(record);
-        toast(`出库成功：${id} ${mpn} x ${qty}`, 'success');
-        document.getElementById('outMaterialInput').value = '';
-        document.getElementById('outMaterialId').value = '';
-        document.getElementById('outMpn').innerHTML = '<option value="">请先选择料号</option>';
-        document.getElementById('outMpn').disabled = true;
-        document.getElementById('outQty').value = '';
-        document.getElementById('outStockHint').textContent = '';
+        const m = findMaterial(id, mpn); if(!m) return toast('物料不存在','error'); if(m.stock < qty) return toast(`库存不足，当前库存: ${m.stock}`,'error');
+        m.stock -= qty; const record = { type:'out', material_id:id, mpn, quantity:qty, date: new Date().toISOString(), dest: mpn, note: cangma };
+        records.unshift(record); toast(`出库成功：${id} ${mpn} x ${qty}`, 'success');
+        document.getElementById('outMaterialInput').value = ''; document.getElementById('outMaterialId').value = '';
+        document.getElementById('outMpn').innerHTML = '<option value="">请先选择料号</option>'; document.getElementById('outMpn').disabled = true;
+        document.getElementById('outQty').value = ''; document.getElementById('outStockHint').textContent = '';
         renderStock(); updateDaily(); updateMarquee();
-        saveRecordToCloud(record).catch(err => console.error(err));
-        saveMaterialsToCloud().catch(err => console.error(err));
+        saveRecordToCloud(record).catch(err => console.error(err)); saveMaterialsToCloud().catch(err => console.error(err));
     });
 
     // 入库
@@ -624,52 +668,30 @@ document.addEventListener('DOMContentLoaded', async () => {
         e.preventDefault();
         const id = document.getElementById('inMaterialId').value, mpn = document.getElementById('inMpn').value, qty = parseInt(document.getElementById('inQty').value);
         if(!id||!mpn||!qty||qty<1) return toast('请完善信息','error');
-        const m = findMaterial(id, mpn);
-        if(!m) return toast('物料不存在，请先在数据页添加','error');
-        m.stock += qty;
-        const record = { type:'in', material_id:id, mpn, quantity:qty, date: new Date().toISOString(), source: mpn, note: '' };
-        records.unshift(record);
-        toast(`入库成功：${id} ${mpn} x ${qty}`, 'success');
-        document.getElementById('inMaterialInput').value = '';
-        document.getElementById('inMaterialId').value = '';
-        document.getElementById('inMpn').innerHTML = '<option value="">请先选择料号</option>';
-        document.getElementById('inMpn').disabled = true;
+        const m = findMaterial(id, mpn); if(!m) return toast('物料不存在，请先在数据页添加','error');
+        m.stock += qty; const record = { type:'in', material_id:id, mpn, quantity:qty, date: new Date().toISOString(), source: mpn, note: '' };
+        records.unshift(record); toast(`入库成功：${id} ${mpn} x ${qty}`, 'success');
+        document.getElementById('inMaterialInput').value = ''; document.getElementById('inMaterialId').value = '';
+        document.getElementById('inMpn').innerHTML = '<option value="">请先选择料号</option>'; document.getElementById('inMpn').disabled = true;
         document.getElementById('inQty').value = '';
         renderStock(); updateDaily(); updateMarquee();
-        saveRecordToCloud(record).catch(err => console.error(err));
-        saveMaterialsToCloud().catch(err => console.error(err));
+        saveRecordToCloud(record).catch(err => console.error(err)); saveMaterialsToCloud().catch(err => console.error(err));
     });
 
     // 盘点
     function renderCount(){
-        const c=$('#countList');
-        if(!countItems.length){ c.innerHTML='<div class="empty-state"><i class="fas fa-clipboard"></i><p>暂无盘点数据，请先通过数据页上传或手动添加</p></div>'; return; }
-        c.innerHTML=countItems.map(item=>{
-            const changed=item.newStock!==item.originalStock;
-            return `<div class="count-item ${changed?'changed':''}"><div class="info"><div class="name">${item.id} (${item.location})</div><div class="spec">原库存: ${item.originalStock} · 新库存</div></div><div class="qty-control"><input type="number" class="count-input" data-id="${item.id}" data-location="${item.location}" value="${item.newStock}" min="0"></div></div>`;
-        }).join('');
-        c.querySelectorAll('.count-input').forEach(inp=>inp.oninput=function(){
-            const id=this.dataset.id, location=this.dataset.location;
-            const item=countItems.find(i=>i.id===id && i.location===location);
-            if(item) item.newStock=parseInt(this.value)||0;
-            this.closest('.count-item').classList.toggle('changed', item.newStock!==item.originalStock);
-        });
+        const c=$('#countList'); if(!countItems.length){ c.innerHTML='<div class="empty-state"><i class="fas fa-clipboard"></i><p>暂无盘点数据，请先通过数据页上传或手动添加</p></div>'; return; }
+        c.innerHTML=countItems.map(item=>`<div class="count-item ${item.newStock!==item.originalStock?'changed':''}"><div class="info"><div class="name">${item.id} (${item.location})</div><div class="spec">原库存: ${item.originalStock} · 新库存</div></div><div class="qty-control"><input type="number" class="count-input" data-id="${item.id}" data-location="${item.location}" value="${item.newStock}" min="0"></div></div>`).join('');
+        c.querySelectorAll('.count-input').forEach(inp=>inp.oninput=function(){const id=this.dataset.id, location=this.dataset.location; const item=countItems.find(i=>i.id===id && i.location===location); if(item) item.newStock=parseInt(this.value)||0; this.closest('.count-item').classList.toggle('changed', item.newStock!==item.originalStock);});
     }
     document.getElementById('saveCountBtn').onclick=async()=>{
         if(!countItems.length) return toast('无盘点数据','info');
         let changed=0;
-        for(const item of countItems){
-            const matchedMaterials = materials.filter(m => m.id===item.id && m.location===item.location);
-            for(const m of matchedMaterials){
-                if(m.stock!==item.newStock){ m.stock=item.newStock; changed++; }
-            }
-        }
+        for(const item of countItems){ const matched = materials.filter(m => m.id===item.id && m.location===item.location); for(const m of matched){ if(m.stock!==item.newStock){ m.stock=item.newStock; changed++; } } }
         if(!changed) return toast('没有变化','info');
         await saveMaterialsToCloud(); toast(`保存成功，更新了${changed}项`,'success');
         countItems=[]; renderCount(); refreshAll();
-    };
-
-    // 库存搜索（保持不变）
+    }; // 库存搜索
     let stockSearchTimer;
     async function renderStock(filter=''){
         const tbody=document.getElementById('stockBody'),countSpan=document.getElementById('stockCount');
@@ -677,11 +699,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         const kw=filter.trim().toLowerCase(); let list=[],source='本地';
         if(kw) list=materials.filter(m=>m.id.toLowerCase().includes(kw)||m.mpn.toLowerCase().includes(kw));
         else list=[...materials];
-        if(list.length===0&&kw){
-            source='云端';
-            const {data,error}=await supabase.from('materials').select('*').or(`id.ilike.%${kw}%,mpn.ilike.%${kw}%`);
-            if(!error){list=data||[]; list.forEach(d=>{if(!materials.find(m=>m.id===d.id&&m.mpn===d.mpn)) materials.push(d);});}
-        }
+        if(list.length===0&&kw){ source='云端'; const {data,error}=await supabase.from('materials').select('*').or(`id.ilike.%${kw}%,mpn.ilike.%${kw}%`); if(!error){list=data||[]; list.forEach(d=>{if(!materials.find(m=>m.id===d.id&&m.mpn===d.mpn)) materials.push(d);});} }
         const total=list.length; if(list.length>MAX_STOCK_DISPLAY) list=list.slice(0,MAX_STOCK_DISPLAY);
         if(!list.length) tbody.innerHTML='<tr><td colspan="3" class="text-center text-muted">暂无数据</td></tr>';
         else {
@@ -704,40 +722,22 @@ document.addEventListener('DOMContentLoaded', async () => {
     // 出入库清单
     document.querySelectorAll('#page-report .tab-btn').forEach(btn=>{btn.addEventListener('click',function(){const tabName=this.dataset.tab;document.querySelectorAll('#page-report .tab-btn').forEach(b=>b.classList.remove('active'));this.classList.add('active');document.querySelectorAll('#page-report .report-tab-content').forEach(c=>c.classList.remove('active'));document.getElementById(tabName).classList.add('active');});});
     function renderOutReport() {
-        const date = document.getElementById('reportOutDate').value;
-        if (!date) return;
+        const date = document.getElementById('reportOutDate').value; if (!date) return;
         const cangma = document.getElementById('reportOutCangma').value;
         const filtered = records.filter(r => r.type==='out' && r.date && r.date.startsWith(date) && (cangma==='' || r.note===cangma));
-        const summary = {};
-        filtered.forEach(r => {
-            const key = `${r.material_id}|${r.mpn||''}`;
-            if (!summary[key]) summary[key] = { material_id: r.material_id, mpn: r.mpn||'', quantity: 0 };
-            summary[key].quantity += r.quantity;
-        });
+        const summary = {}; filtered.forEach(r => { const key = `${r.material_id}|${r.mpn||''}`; if (!summary[key]) summary[key] = { material_id: r.material_id, mpn: r.mpn||'', quantity: 0 }; summary[key].quantity += r.quantity; });
         const tbody = document.getElementById('outReportBody');
-        if (Object.keys(summary).length === 0) {
-            tbody.innerHTML = '<tr><td colspan="3" class="text-center text-muted">无出库记录</td></tr>';
-            return;
-        }
+        if (Object.keys(summary).length === 0) { tbody.innerHTML = '<tr><td colspan="3" class="text-center text-muted">无出库记录</td></tr>'; return; }
         tbody.innerHTML = Object.values(summary).map(row => `<tr><td>${row.material_id}</td><td>${row.mpn||'-'}</td><td>${row.quantity}</td></tr>`).join('');
     }
     document.getElementById('reportOutDate').addEventListener('change', renderOutReport);
     document.getElementById('reportOutCangma').addEventListener('change', renderOutReport);
     document.getElementById('queryInBtn').addEventListener('click', () => {
         const matId = document.getElementById('reportInMaterialId').value.trim();
-        let filtered = records.filter(r => r.type === 'in');
-        if (matId) filtered = filtered.filter(r => r.material_id === matId);
-        const summary = {};
-        filtered.forEach(r => {
-            const key = `${r.material_id}|${r.mpn || ''}`;
-            if (!summary[key]) summary[key] = { material_id: r.material_id, mpn: r.mpn || '', quantity: 0 };
-            summary[key].quantity += r.quantity;
-        });
+        let filtered = records.filter(r => r.type === 'in'); if (matId) filtered = filtered.filter(r => r.material_id === matId);
+        const summary = {}; filtered.forEach(r => { const key = `${r.material_id}|${r.mpn || ''}`; if (!summary[key]) summary[key] = { material_id: r.material_id, mpn: r.mpn || '', quantity: 0 }; summary[key].quantity += r.quantity; });
         const tbody = document.getElementById('inReportBody');
-        if (Object.keys(summary).length === 0) {
-            tbody.innerHTML = '<tr><td colspan="3" class="text-center text-muted">无入库记录</td></tr>';
-            return;
-        }
+        if (Object.keys(summary).length === 0) { tbody.innerHTML = '<tr><td colspan="3" class="text-center text-muted">无入库记录</td></tr>'; return; }
         tbody.innerHTML = Object.values(summary).map(row => `<tr><td>${row.material_id}</td><td>${row.mpn || '-'}</td><td>${row.quantity}</td></tr>`).join('');
     });
 
@@ -748,10 +748,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         const val=locInput.value.trim().toUpperCase();if(!val) return toast('请输入后四位','info');
         locBody.innerHTML='<tr><td colspan="4" class="text-center text-muted">搜索中...</td></tr>';locCount.textContent='...';
         let res=locationData.filter(d=>d.part.slice(-4)===val);
-        if(res.length===0){
-            const {data,error}=await supabase.from('locations').select('part,location,responsible').ilike('part',`%${val}`);
-            if(!error&&data){data.forEach(d=>{if(!locationData.find(item=>item.part===d.part)) locationData.push({part:d.part,location:d.location,responsible:d.responsible||''});});res=data.map(d=>({part:d.part,location:d.location,responsible:d.responsible||''}));}
-        }
+        if(res.length===0){ const {data,error}=await supabase.from('locations').select('part,location,responsible').ilike('part',`%${val}`); if(!error&&data){data.forEach(d=>{if(!locationData.find(item=>item.part===d.part)) locationData.push({part:d.part,location:d.location,responsible:d.responsible||''});});res=data.map(d=>({part:d.part,location:d.location,responsible:d.responsible||''}));} }
         if(!res.length){locBody.innerHTML='<tr><td colspan="4" class="text-center text-muted">未找到匹配项</td></tr>';locCount.textContent='0';return;}
         locBody.innerHTML=res.map(d=>`<tr id="loc-row-${d.part}"><td>${d.part}</td><td class="cell-loc"><span class="display-loc">${d.location||'-'}</span><input class="form-control edit-loc" value="${d.location||''}" style="display:none;width:80px;font-size:12px;padding:4px;"></td><td>${d.responsible||'-'}</td><td><button class="btn btn-sm btn-outline btn-edit-loc" data-part="${d.part}"><i class="fas fa-pen"></i></button><button class="btn btn-sm btn-success btn-save-loc" data-part="${d.part}" style="display:none;"><i class="fas fa-check"></i></button></td></tr>`).join('');
         locCount.textContent=res.length;
@@ -789,8 +786,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             const location=idxLoc!==-1?String(rows[i][idxLoc]).trim():(exist?exist.location:''),manufacturer=idxManu!==-1?String(rows[i][idxManu]).trim():(exist?exist.manufacturer:''),stock=idxStock!==-1?parseInt(rows[i][idxStock])||0:(exist?exist.stock:0),responsible=idxResp!==-1?String(rows[i][idxResp]).trim():(exist?exist.responsible:'');
             const record={id,mpn,manufacturer,location,stock,responsible};
             if(exist){exist.location=location||exist.location;exist.manufacturer=manufacturer||exist.manufacturer;exist.stock=stock;exist.responsible=responsible||exist.responsible;}else materials.push(record);
-            const {error}=await supabase.from('materials').upsert(record);
-            if(error){failCount++;}else{successCount++;}
+            const {error}=await supabase.from('materials').upsert(record); if(error){failCount++;}else{successCount++;}
             processed++;if(onProgress) onProgress(processed,total,successCount,failCount);
         }
         await loadData(); return {successCount,failCount};
@@ -821,10 +817,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             for(let i=1;i<rows.length;i++){
                 const part=String(rows[i][idxPart]).trim().toUpperCase(),location=String(rows[i][idxLoc]).trim(),responsible=idxResp!==-1?String(rows[i][idxResp]).trim():'';
                 if(!part||!location){skipped++;continue;}
-                try{
-                    const {error}=await supabase.from('locations').upsert({part,location,responsible},{onConflict:'part'});
-                    if(error){fail++;}else{const exist=locationData.find(d=>d.part===part);if(exist){exist.location=location;exist.responsible=responsible;}else locationData.push({part,location,responsible});success++;}
-                }catch{fail++;}
+                try{ const {error}=await supabase.from('locations').upsert({part,location,responsible},{onConflict:'part'}); if(error){fail++;}else{const exist=locationData.find(d=>d.part===part);if(exist){exist.location=location;exist.responsible=responsible;}else locationData.push({part,location,responsible});success++;} }catch{fail++;}
                 statusText.textContent=`共 ${total} 条，已处理 ${i} 条，成功 ${success} 条`;
             }
             statusText.textContent=`共 ${total} 条，成功 ${success} 条，失败 ${fail} 条，跳过 ${skipped} 条`;
@@ -834,73 +827,40 @@ document.addEventListener('DOMContentLoaded', async () => {
     };
 
     // 折叠面板
-    document.querySelectorAll('.collapsible-header').forEach(header => {
-        header.addEventListener('click', function() {
-            this.classList.toggle('expanded');
-            this.nextElementSibling.classList.toggle('show');
-        });
-    });
+    document.querySelectorAll('.collapsible-header').forEach(header => { header.addEventListener('click', function() { this.classList.toggle('expanded'); this.nextElementSibling.classList.toggle('show'); }); });
 
-    // 盘点上传和手动添加（数据页，基于料号+储位）
+    // 盘点上传和手动添加（数据页，料号+储位）
     document.getElementById('uploadCountExcelBtn').addEventListener('click', async function() {
-        const inp = document.getElementById('countExcelFile');
-        if (!inp.files.length) return toast('请选择文件','error');
+        const inp = document.getElementById('countExcelFile'); if (!inp.files.length) return toast('请选择文件','error');
         readExcel(inp.files[0], async (err, rows) => {
             if (err) { toast('解析失败','error'); return; }
             if (!rows || rows.length < 2) { toast('无数据','error'); return; }
             const h = rows[0].map(h => String(h).trim());
-            const idxId = h.findIndex(x => x.includes('料号'));
-            const idxLoc = h.findIndex(x => x.includes('储位'));
-            const idxQty = h.findIndex(x => x.includes('数量') || x.includes('盘点'));
+            const idxId = h.findIndex(x => x.includes('料号')), idxLoc = h.findIndex(x => x.includes('储位')), idxQty = h.findIndex(x => x.includes('数量') || x.includes('盘点'));
             if (idxId === -1 || idxLoc === -1 || idxQty === -1) return toast('缺少料号、储位或盘点数量列','error');
             for (let i = 1; i < rows.length; i++) {
-                const id = String(rows[i][idxId]).trim().toUpperCase();
-                const location = String(rows[i][idxLoc]).trim();
-                const qty = parseInt(rows[i][idxQty]) || 0;
+                const id = String(rows[i][idxId]).trim().toUpperCase(), location = String(rows[i][idxLoc]).trim(), qty = parseInt(rows[i][idxQty]) || 0;
                 if (!id || !location) continue;
-                const matched = materials.filter(m => m.id === id && m.location === location);
-                if (matched.length === 0) continue;
-                // 记录盘点项（以料号+储位为key）
+                const matched = materials.filter(m => m.id === id && m.location === location); if (matched.length === 0) continue;
                 const existItem = countItems.find(item => item.id === id && item.location === location);
                 const originalTotal = matched.reduce((sum, m) => sum + m.stock, 0);
-                if (existItem) {
-                    existItem.newStock = qty;
-                    existItem.originalStock = originalTotal;
-                } else {
-                    countItems.push({ id, location, originalStock: originalTotal, newStock: qty });
-                }
-                // 更新所有匹配物料的库存
+                if (existItem) { existItem.newStock = qty; existItem.originalStock = originalTotal; }
+                else { countItems.push({ id, location, originalStock: originalTotal, newStock: qty }); }
                 matched.forEach(m => m.stock = qty);
             }
-            await saveMaterialsToCloud();
-            toast('盘点数据已更新并同步云端', 'success');
-            renderCount();
-            refreshAll();
+            await saveMaterialsToCloud(); toast('盘点数据已更新并同步云端', 'success'); renderCount(); refreshAll();
         });
     });
     document.getElementById('addCountManBtn').addEventListener('click', function() {
-        const id = document.getElementById('countManId').value.trim().toUpperCase();
-        const location = document.getElementById('countManLocation').value.trim();
-        const qty = parseInt(document.getElementById('countManQty').value) || 0;
+        const id = document.getElementById('countManId').value.trim().toUpperCase(), location = document.getElementById('countManLocation').value.trim(), qty = parseInt(document.getElementById('countManQty').value) || 0;
         if (!id || !location) return toast('请输入料号和储位','error');
-        const matched = materials.filter(m => m.id === id && m.location === location);
-        if (matched.length === 0) return toast('未找到匹配的物料','error');
+        const matched = materials.filter(m => m.id === id && m.location === location); if (matched.length === 0) return toast('未找到匹配的物料','error');
         const originalTotal = matched.reduce((sum, m) => sum + m.stock, 0);
         const existItem = countItems.find(item => item.id === id && item.location === location);
-        if (existItem) {
-            existItem.newStock = qty;
-            existItem.originalStock = originalTotal;
-        } else {
-            countItems.push({ id, location, originalStock: originalTotal, newStock: qty });
-        }
-        matched.forEach(m => m.stock = qty);
-        saveMaterialsToCloud().catch(err => console.error(err));
-        document.getElementById('countManId').value = '';
-        document.getElementById('countManLocation').value = '';
-        document.getElementById('countManQty').value = '1';
-        toast('已添加并更新库存', 'success');
-        renderCount();
-        refreshAll();
+        if (existItem) { existItem.newStock = qty; existItem.originalStock = originalTotal; } else { countItems.push({ id, location, originalStock: originalTotal, newStock: qty }); }
+        matched.forEach(m => m.stock = qty); saveMaterialsToCloud().catch(err => console.error(err));
+        document.getElementById('countManId').value = ''; document.getElementById('countManLocation').value = ''; document.getElementById('countManQty').value = '1';
+        toast('已添加并更新库存', 'success'); renderCount(); refreshAll();
     });
 
     // 设置面板
@@ -921,27 +881,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         const c=$('#subCustomMsgList'); if(!c) return;
         const summaryAlerts = getSummaryAlerts();
         let html = '<div class="text-muted" style="font-size:16px;margin-bottom:8px;">低库存预警（勾选则显示）</div>';
-        html += summaryAlerts.map(a => {
-            const key = `LOW:${a.id}`;
-            const checked = !hiddenAlerts.has(key) ? 'checked' : '';
-            return `<label class="checkbox-label"><input type="checkbox" class="alert-check" data-key="${key}" ${checked}> ${a.id} 库存 ${a.total}</label>`;
-        }).join('');
+        html += summaryAlerts.map(a => { const key = `LOW:${a.id}`; const checked = !hiddenAlerts.has(key) ? 'checked' : ''; return `<label class="checkbox-label"><input type="checkbox" class="alert-check" data-key="${key}" ${checked}> ${a.id} 库存 ${a.total}</label>`; }).join('');
         html += '<div class="text-muted" style="font-size:16px;margin:12px 0 8px;">自定义消息（勾选则显示）</div>';
-        html += userMessages.map((m, i) => {
-            const key = `MSG:${m.text}`;
-            const checked = !hiddenAlerts.has(key) ? 'checked' : '';
-            return `<label class="checkbox-label"><input type="checkbox" class="alert-check" data-key="${key}" ${checked}> ${m.text}</label>`;
-        }).join('');
+        html += userMessages.map((m, i) => { const key = `MSG:${m.text}`; const checked = !hiddenAlerts.has(key) ? 'checked' : ''; return `<label class="checkbox-label"><input type="checkbox" class="alert-check" data-key="${key}" ${checked}> ${m.text}</label>`; }).join('');
         c.innerHTML = html || '<div class="text-muted">暂无预警或消息</div>';
-        c.querySelectorAll('.alert-check').forEach(cb => {
-            cb.addEventListener('change', async function() {
-                const key = this.dataset.key;
-                if (this.checked) hiddenAlerts.delete(key);
-                else hiddenAlerts.add(key);
-                await saveAlertConfig();
-                updateMarquee();
-            });
-        });
+        c.querySelectorAll('.alert-check').forEach(cb => { cb.addEventListener('change', async function() { const key = this.dataset.key; if (this.checked) hiddenAlerts.delete(key); else hiddenAlerts.add(key); await saveAlertConfig(); updateMarquee(); }); });
     }
     $('#subAddCustomMsgBtn').onclick=async()=>{const txt=$('#subCustomMsgInput').value.trim();if(!txt) return toast('请输入内容','error');userMessages.push({text:txt});await syncMessagesToCloud();updateMarquee();renderSubCustomMsgs();$('#subCustomMsgInput').value='';};
     $('#backFromMsgBtn').onclick=()=>showPage('mine'); $('#goCustomMsgBtn').onclick=()=>showPage('customMsg');
@@ -959,21 +903,21 @@ document.addEventListener('DOMContentLoaded', async () => {
     $('#goRegisterLink').onclick=e=>{e.preventDefault();showPage('register');};
     $('#goLoginLink').onclick=e=>{e.preventDefault();showPage('login');};
 
-    // 扫码
+    // 扫码查询（手动输入）
     const scanInput=$('#scanInput'),scanResult=$('#scanResult'),scanArea=$('#scanArea');
     function clearScan(){scanResult.classList.remove('show');scanArea.classList.remove('active');scanInput.value='';}
     function displayScan(m){$('#srId').textContent=m.id;$('#srMpn').textContent=m.mpn||'-';$('#srManufacturer').textContent=m.manufacturer||'-';$('#srLocation').textContent=m.location||'未设置';$('#srStock').textContent=m.stock;scanResult.classList.add('show');scanArea.classList.add('active');}
     function handleScan(q){q=q.trim().toUpperCase();if(!q) return toast('请输入料号','error');const f=materials.find(m=>m.id===q||m.mpn===q);f?(displayScan(f),toast(`扫码成功：${f.id}`,'success')):(toast('未找到','error'),clearScan());}
     $('#scanBtn').onclick=()=>handleScan(scanInput.value);
     scanInput.onkeydown=e=>{if(e.key==='Enter') handleScan(scanInput.value);};
-    $('#scanMockBtn').onclick=()=>{if(!materials.length) return toast('暂无物料','error');const r=materials[Math.floor(Math.random()*materials.length)];scanInput.value=r.id;displayScan(r);};
 
     // 首页滚动点击暂停/继续
     const marquee = $('#alertMarquee');
     marquee.addEventListener('click', function() { this.classList.toggle('paused'); });
 
     // 启动
-    await loadData(); materials.forEach(m=>{const key=m.id+'|'+m.mpn;/* countChanges 不再需要，改用 countItems */}); setupAutocompletes();
+    await loadData();
+    setupAutocompletes();
     if(currentUser){showPage('home');renderStock();updateDaily();updateMarquee();updateMine();loadCustomStyles();loadProfileBg();}
     else showPage('login');
     document.onkeydown=e=>{if(e.key==='Escape'&&currentPage!=='home'&&currentUser) showPage('home');};
