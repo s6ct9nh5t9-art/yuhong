@@ -206,7 +206,6 @@
         .scan-half-body video{width:100%;height:100%;object-fit:cover;}
         .scan-half-body canvas{position:absolute;top:0;left:0;width:100%;height:100%;}
         .scan-half-footer{display:flex;justify-content:center;padding:10px;background:#fff;}
-        /* 新增：当半屏扫码显示时，表单下移 */
         .shift-down{margin-top:50vh;}
         .setting-item{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid #f1f5f9}
         .setting-item:last-child{border-bottom:none}
@@ -280,8 +279,10 @@
             <div class="setting-item"><span class="setting-label">提示音</span><div class="switch-track" id="soundSwitchTrack"><div class="switch-thumb"></div></div></div>
             <div class="setting-item"><span class="setting-label">货架名称</span><button class="btn btn-outline btn-sm" id="editShelfNamesBtn"><i class="fas fa-pen"></i> 编辑</button></div>
             <div class="setting-item"><span class="setting-label">储位分类</span><button class="btn btn-outline btn-sm" id="editShelfRangesBtn"><i class="fas fa-pen"></i> 编辑</button></div>
+            <button id="settingResetStock" class="btn btn-outline btn-block" style="color:#ef4444;">重置库存数据</button>
+            <button id="settingResetCount" class="btn btn-outline btn-block" style="color:#ef4444;">重置盘点数据</button>
             <button id="settingClearCache" class="btn btn-outline btn-block">清空本地缓存</button>
-            <button id="settingReset" class="btn btn-outline btn-block" style="color:#ef4444;">重置数据</button>
+            <button id="settingReset" class="btn btn-outline btn-block" style="color:#ef4444;">重置所有数据</button>
         </div>
     </div>
     <div class="page-container" id="pageContainer">
@@ -486,12 +487,13 @@
         </div>
         <div id="page-data" class="page">
             <div class="section-title"><i class="fas fa-cloud-upload-alt" style="color:#3b82f6;"></i> 数据导入</div>
-            <div class="upload-card"><div class="upload-header"><i class="fas fa-file-excel" style="color:#22c55e;"></i> 批量上传库存 Excel</div><div class="file-input-wrap"><input type="file" id="excelFile" accept=".xls,.xlsx" class="form-control"><button class="btn btn-primary btn-sm" id="uploadExcelBtn"><i class="fas fa-upload"></i> 导入</button></div><small class="text-muted">表格列：料号、储位、MPN、数量</small></div>
-            <div class="upload-card"><div class="upload-header"><i class="fas fa-map-marker-alt" style="color:#0ea5e9;"></i> 批量上传储位 Excel</div><div class="file-input-wrap"><input type="file" id="locationExcelFile" accept=".xls,.xlsx" class="form-control"><button class="btn btn-info btn-sm" id="uploadLocationExcelBtn"><i class="fas fa-upload"></i> 导入储位</button></div><small class="text-muted">表格列：料号、储位、担当</small></div>
+            <div class="upload-card"><div class="upload-header"><i class="fas fa-file-excel" style="color:#22c55e;"></i> 批量上传库存 Excel</div><div class="file-input-wrap"><input type="file" id="excelFile" accept=".xls,.xlsx" class="form-control"><button class="btn btn-primary btn-sm" id="uploadExcelBtn"><i class="fas fa-upload"></i> 导入</button></div><small class="text-muted">表格列：料号、储位、MPN、数量</small><div class="upload-status-text" id="excelUploadStatus"></div></div>
+            <div class="upload-card"><div class="upload-header"><i class="fas fa-map-marker-alt" style="color:#0ea5e9;"></i> 批量上传储位 Excel</div><div class="file-input-wrap"><input type="file" id="locationExcelFile" accept=".xls,.xlsx" class="form-control"><button class="btn btn-info btn-sm" id="uploadLocationExcelBtn"><i class="fas fa-upload"></i> 导入储位</button></div><small class="text-muted">表格列：料号、储位、担当</small><div class="upload-status-text" id="locationUploadStatus"></div></div>
             <div class="upload-card">
                 <div class="upload-header"><i class="fas fa-clipboard-check" style="color:#f59e0b;"></i> 上传盘点 Excel</div>
                 <div class="file-input-wrap"><input type="file" id="countExcelFile" accept=".xls,.xlsx" class="form-control"><button class="btn btn-warning btn-sm" id="uploadCountExcelBtn"><i class="fas fa-upload"></i> 导入盘点</button></div>
                 <small class="text-muted">表格列：料号、储位（基准计划）</small>
+                <div class="upload-status-text" id="countUploadStatus"></div>
             </div>
             <div class="manual-card">
                 <div class="collapsible-header" id="countManualHeader"><i class="fas fa-chevron-down"></i> 手动添加盘点</div>
@@ -618,7 +620,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     let manualPartList = [];
     let manualPartIndex = 0;
 
-    // 连续扫码状态
     let outContinuous = false;
     let inContinuous = false;
 
@@ -800,7 +801,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     let currentPage='home';
     function showPage(name) {
         if (!currentUser && name!=='login' && name!=='register') { showPage('login'); return; }
-        // 离开扫码页面时自动关闭摄像头（修改点1）
+        // 离开扫码页面自动关闭摄像头
         if (currentPage === 'scan' && name !== 'scan') { stopCam(); }
         if (currentPage === 'out' || currentPage === 'in') { stopHalfScan(); }
         Object.values(pages).forEach(p=>p.classList.remove('active'));
@@ -823,7 +824,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         if(name==='mine'){updateMine();loadCustomStyles();loadProfileBg();}
         if(name==='customMsg') renderSubCustomMsgs();
         window.scrollTo({top:0,behavior:'smooth'});
-        // 出入库页面如果半屏面板已打开，表单下移（修改点2）
+        // 出入库半屏表单下移
         if (name === 'out' && document.getElementById('outHalfScanPanel').classList.contains('show')) {
             document.getElementById('outFormContainer').classList.add('shift-down');
         }
@@ -952,7 +953,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         document.getElementById('btnStart').className = 'btn btn-primary';
         document.getElementById('btnTorch').disabled = true;
     }
-    // 半屏扫码（支持连续模式）
+    // 半屏扫码
     async function startHalfScan(mode) {
         if (halfScanStream) await stopHalfScan();
         halfScanMode = mode;
@@ -964,7 +965,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         const video = document.getElementById(videoId);
         const canvas = document.getElementById(canvasId);
         panel.classList.add('show');
-        document.getElementById(containerId).classList.add('shift-down'); // 表单下移
+        document.getElementById(containerId).classList.add('shift-down');
         try {
             halfScanStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment', width: { ideal: 640 }, height: { ideal: 480 }, focusMode: { ideal: 'continuous' } } });
             video.srcObject = halfScanStream;
@@ -983,8 +984,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                         if (code && code.data) {
                             handleHalfScanResult(code.data, mode);
                             const isContinuous = mode === 'out' ? outContinuous : inContinuous;
-                            if (!isContinuous) stopHalfScan(); // 非连续模式扫到就关
-                            // 连续模式保持摄像头，不关闭
+                            if (!isContinuous) stopHalfScan();
                             return;
                         }
                     }
@@ -998,10 +998,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         halfScanning = false;
         if (halfScanAnimId) { cancelAnimationFrame(halfScanAnimId); halfScanAnimId = null; }
         if (halfScanStream) { halfScanStream.getTracks().forEach(t => t.stop()); halfScanStream = null; }
-        const outPanel = document.getElementById('outHalfScanPanel');
-        const inPanel = document.getElementById('inHalfScanPanel');
-        outPanel?.classList.remove('show');
-        inPanel?.classList.remove('show');
+        document.getElementById('outHalfScanPanel')?.classList.remove('show');
+        document.getElementById('inHalfScanPanel')?.classList.remove('show');
         document.getElementById('outFormContainer')?.classList.remove('shift-down');
         document.getElementById('inFormContainer')?.classList.remove('shift-down');
     }
@@ -1022,7 +1020,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         toast(`已识别料号: ${part}`, 'success');
     }
 
-    // 连续扫码开关处理
+    // 连续扫码开关
     document.getElementById('outContinuousSwitch').addEventListener('click', function() {
         outContinuous = !outContinuous;
         this.classList.toggle('on', outContinuous);
@@ -1207,12 +1205,10 @@ document.addEventListener('DOMContentLoaded', async () => {
             });
         });
 
-        // 出入库扫码按钮
         document.getElementById('outScanBtn').onclick = () => startHalfScan('out');
         document.getElementById('inScanBtn').onclick = () => startHalfScan('in');
         document.getElementById('closeOutHalfScan').onclick = stopHalfScan;
         document.getElementById('closeInHalfScan').onclick = stopHalfScan;
-        // 半屏内的按钮可根据需要保留，但连续扫码时摄像头不通过按钮关闭，改为开关控制
         document.getElementById('outHalfScanBtn').onclick = () => halfScanning ? stopHalfScan() : startHalfScan('out');
         document.getElementById('inHalfScanBtn').onclick = () => halfScanning ? stopHalfScan() : startHalfScan('in');
     }
@@ -1282,9 +1278,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         document.getElementById('outQty').value = ''; document.getElementById('outStockHint').textContent = '';
         renderStock(); updateDaily(); updateMarquee();
         saveRecordToCloud(record).catch(err => console.error(err)); saveMaterialsToCloud().catch(err => console.error(err));
-        // 如果非连续扫码，确认后关闭半屏面板
         if (!outContinuous) { stopHalfScan(); }
-        // 连续扫码时面板保持，摄像头继续运行，不清空（料号需手动清空）
     });
     document.getElementById('inForm').addEventListener('submit', async function(e) {
         if (!currentUser || !currentUser.id) return;
@@ -1300,7 +1294,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         renderStock(); updateDaily(); updateMarquee();
         saveRecordToCloud(record).catch(err => console.error(err)); saveMaterialsToCloud().catch(err => console.error(err));
         if (!inContinuous) { stopHalfScan(); }
-    }); // ========== 盘点计划导入 ==========
+    });
+
+    // ========== 盘点计划导入 ==========
     async function importPlan() {
         if (!currentUser || !currentUser.id) return;
         const date = countViewDate;
@@ -1475,24 +1471,38 @@ document.addEventListener('DOMContentLoaded', async () => {
         else if(btn.classList.contains('btn-save-loc')){const row=document.getElementById(`loc-row-${part}`);const newLoc=row.querySelector('.edit-loc').value.trim();const d=locationData.find(d=>d.part===part);if(d){d.location=newLoc;saveLocationDataToCloud();toast('已更新','success');}row.querySelector('.display-loc').textContent=newLoc||'-';row.querySelector('.display-loc').style.display='inline';row.querySelector('.edit-loc').style.display='none';row.querySelector('.btn-edit-loc').style.display='inline-flex';row.querySelector('.btn-save-loc').style.display='none';}
     });
 
-    // ========== 手动添加 ==========
+    // ========== 手动添加（带 loading 防重复） ==========
+    function setLoading(el, loading) {
+        if (loading) {
+            el.disabled = true;
+            el._originalText = el.innerHTML;
+            el.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 处理中...';
+        } else {
+            el.disabled = false;
+            el.innerHTML = el._originalText || el.innerHTML;
+        }
+    }
+
     function bindManualButtons() {
         const saveManualBtn = document.getElementById('saveManualBtn');
         const saveLocationManualBtn = document.getElementById('saveLocationManualBtn');
         const addCountManBtn = document.getElementById('addCountManBtn');
 
-        if (saveManualBtn) saveManualBtn.addEventListener('click', async () => {
+        if (saveManualBtn) saveManualBtn.addEventListener('click', async function() {
+            if (this.disabled) return;
             if (!currentUser || !currentUser.id) { toast('请先登录', 'error'); return; }
+            setLoading(this, true);
             const uid = Number(currentUser.id);
             const id = document.getElementById('manId').value.trim().toUpperCase();
             const mpn = document.getElementById('manMpn').value.trim();
             const location = document.getElementById('manLocation').value.trim();
             const stock = parseInt(document.getElementById('manStock').value) || 0;
-            if (!id) return toast('请输入料号', 'error');
-            if (!mpn) return toast('请输入MPN', 'error');
-            if (findMaterial(id, mpn)) return toast('该料号+MPN已存在', 'error');
+            if (!id) { setLoading(this, false); return toast('请输入料号', 'error'); }
+            if (!mpn) { setLoading(this, false); return toast('请输入MPN', 'error'); }
+            if (findMaterial(id, mpn)) { setLoading(this, false); return toast('该料号+MPN已存在', 'error'); }
             const newMat = { id, mpn, manufacturer: '', location, stock, responsible: '', user_id: uid };
             const { error } = await supabase.from('materials').upsert(newMat, { onConflict: 'user_id, id, mpn' });
+            setLoading(this, false);
             if (error) { toast('添加失败: ' + error.message, 'error'); console.error(error); return; }
             materials.push(newMat);
             toast('添加成功', 'success');
@@ -1503,14 +1513,17 @@ document.addEventListener('DOMContentLoaded', async () => {
             refreshAll();
         });
 
-        if (saveLocationManualBtn) saveLocationManualBtn.addEventListener('click', async () => {
+        if (saveLocationManualBtn) saveLocationManualBtn.addEventListener('click', async function() {
+            if (this.disabled) return;
+            setLoading(this, true);
             const part = document.getElementById('locManId').value.trim().toUpperCase();
             const location = document.getElementById('locManLocation').value.trim();
             const responsible = document.getElementById('locManResponsible').value.trim();
-            if (!part) return toast('请输入料号', 'error');
-            if (!location) return toast('请输入储位', 'error');
-            if (locationData.find(d => d.part === part)) return toast('该料号储位数据已存在', 'error');
+            if (!part) { setLoading(this, false); return toast('请输入料号', 'error'); }
+            if (!location) { setLoading(this, false); return toast('请输入储位', 'error'); }
+            if (locationData.find(d => d.part === part)) { setLoading(this, false); return toast('该料号储位数据已存在', 'error'); }
             const { error } = await supabase.from('locations').upsert({ part, location, responsible }, { onConflict: 'part' });
+            setLoading(this, false);
             if (error) { toast('添加失败: ' + error.message, 'error'); console.error(error); return; }
             locationData.push({ part, location, responsible });
             toast('储位数据添加成功', 'success');
@@ -1521,12 +1534,14 @@ document.addEventListener('DOMContentLoaded', async () => {
             refreshAll();
         });
 
-        if (addCountManBtn) addCountManBtn.addEventListener('click', async () => {
+        if (addCountManBtn) addCountManBtn.addEventListener('click', async function() {
+            if (this.disabled) return;
             if (!currentUser || !currentUser.id) { toast('请先登录', 'error'); return; }
+            setLoading(this, true);
             const uid = Number(currentUser.id);
             const id = document.getElementById('countManId').value.trim().toUpperCase();
             const location = document.getElementById('countManLoc').value.trim();
-            if (!id || !location) return toast('请输入料号和储位', 'error');
+            if (!id || !location) { setLoading(this, false); return toast('请输入料号和储位', 'error'); }
             const today = new Date().toISOString().slice(0, 10);
             const nowTime = new Date().toTimeString().slice(0, 8);
             const { error } = await supabase.from('scan_records').insert({
@@ -1538,6 +1553,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 mpn: '',
                 location: location
             });
+            setLoading(this, false);
             if (error) { toast('添加失败: ' + error.message, 'error'); console.error(error); return; }
             document.getElementById('countManId').value = '';
             document.getElementById('countManLoc').value = '';
@@ -1579,58 +1595,113 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
         await loadData(); return {successCount,failCount};
     }
+
+    // 库存上传（带进度提示）
     document.getElementById('uploadExcelBtn').addEventListener('click', async function() {
         if (!currentUser || !currentUser.id) { toast('请先登录', 'error'); return; }
-        const btn=this;if(btn.disabled) return;const inp=document.getElementById('excelFile');if(!inp.files.length) return toast('请选择文件','error');
-        btn.disabled=true; const statusText=document.createElement('div');statusText.className='upload-status-text';inp.parentNode.appendChild(statusText);statusText.style.display='block';statusText.textContent='读取文件中...';
+        const btn=this;if(btn.disabled) return;
+        const inp=document.getElementById('excelFile');if(!inp.files.length) return toast('请选择文件','error');
+        btn.disabled=true; btn.innerHTML='<i class="fas fa-spinner fa-spin"></i> 处理中...';
+        const statusEl = document.getElementById('excelUploadStatus');
+        statusEl.style.display='block'; statusEl.textContent='读取文件中...';
         readExcel(inp.files[0],async(err,rows)=>{
-            if(err){toast('解析失败','error');statusText.remove();btn.disabled=false;return;}
-            const total=rows.length>0?rows.length-1:0;if(total===0){toast('无数据行','error');statusText.remove();btn.disabled=false;return;}
-            statusText.textContent=`共 ${total} 条，已处理 0 条`; let result={successCount:0,failCount:0};
-            try{result=await processExcelRows(rows,(processed,totalCnt,success,fail)=>{statusText.textContent=`共 ${totalCnt} 条，已处理 ${processed} 条，成功 ${success} 条`;});}
-            catch(e){toast(e.message,'error');statusText.remove();btn.disabled=false;return;}
-            statusText.textContent=`共 ${total} 条，成功 ${result.successCount} 条，失败 ${result.failCount} 条`;
-            setTimeout(()=>{statusText.remove();toast(`上传完成！成功 ${result.successCount} 条，失败 ${result.failCount} 条`,result.failCount>0?'error':'success');inp.value='';btn.disabled=false;refreshAll();},800);
+            if(err){toast('解析失败','error');statusEl.textContent='';btn.disabled=false;btn.innerHTML='<i class="fas fa-upload"></i> 导入';return;}
+            const total=rows.length>0?rows.length-1:0;if(total===0){toast('无数据行','error');statusEl.textContent='';btn.disabled=false;btn.innerHTML='<i class="fas fa-upload"></i> 导入';return;}
+            let result={successCount:0,failCount:0};
+            try{result=await processExcelRows(rows,(processed,totalCnt,success,fail)=>{statusEl.textContent=`共 ${totalCnt} 条，已处理 ${processed} 条，成功 ${success} 条`;});}
+            catch(e){toast(e.message,'error');statusEl.textContent='';btn.disabled=false;btn.innerHTML='<i class="fas fa-upload"></i> 导入';return;}
+            statusEl.textContent=`共 ${total} 条，成功 ${result.successCount} 条，失败 ${result.failCount} 条`;
+            btn.disabled=false; btn.innerHTML='<i class="fas fa-upload"></i> 导入';
+            toast(`上传完成！成功 ${result.successCount} 条，失败 ${result.failCount} 条`,result.failCount>0?'error':'success');
+            inp.value='';
+            refreshAll();
         });
     });
+
+    // 储位上传（带进度提示）
     document.getElementById('uploadLocationExcelBtn').addEventListener('click', async function() {
-        const btn=this;if(btn.disabled) return;const inp=document.getElementById('locationExcelFile');if(!inp.files.length) return toast('请选择文件','error');
-        btn.disabled=true; const statusText=document.createElement('div');statusText.className='upload-status-text';inp.parentNode.appendChild(statusText);statusText.style.display='block';statusText.textContent='读取文件中...';
+        const btn=this;if(btn.disabled) return;
+        const inp=document.getElementById('locationExcelFile');if(!inp.files.length) return toast('请选择文件','error');
+        btn.disabled=true; btn.innerHTML='<i class="fas fa-spinner fa-spin"></i> 处理中...';
+        const statusEl = document.getElementById('locationUploadStatus');
+        statusEl.style.display='block'; statusEl.textContent='读取文件中...';
         readExcel(inp.files[0],async(err,rows)=>{
-            if(err){toast('解析失败','error');statusText.remove();btn.disabled=false;return;}
-            if(!rows||rows.length<2){toast('无数据行','error');statusText.remove();btn.disabled=false;return;}
+            if(err){toast('解析失败','error');statusEl.textContent='';btn.disabled=false;btn.innerHTML='<i class="fas fa-upload"></i> 导入储位';return;}
+            if(!rows||rows.length<2){toast('无数据行','error');statusEl.textContent='';btn.disabled=false;btn.innerHTML='<i class="fas fa-upload"></i> 导入储位';return;}
             const h=rows[0].map(h=>String(h).trim());
             const idxPart=h.findIndex(x=>x.includes('料号')||x.toLowerCase().includes('part')), idxLoc=h.findIndex(x=>x.includes('储位')||x.toLowerCase().includes('location')), idxResp=h.findIndex(x=>x.includes('担当')||x.toLowerCase().includes('responsible'));
-            if(idxPart===-1||idxLoc===-1){toast('缺少料号或储位列','error');statusText.remove();btn.disabled=false;return;}
-            const total=rows.length-1; let success=0,fail=0,skipped=0; statusText.textContent=`共 ${total} 条，已处理 0 条`;
+            if(idxPart===-1||idxLoc===-1){toast('缺少料号或储位列','error');statusEl.textContent='';btn.disabled=false;btn.innerHTML='<i class="fas fa-upload"></i> 导入储位';return;}
+            const total=rows.length-1; let success=0,fail=0,skipped=0;
             for(let i=1;i<rows.length;i++){
                 const part=String(rows[i][idxPart]).trim().toUpperCase(), location=String(rows[i][idxLoc]).trim(), responsible=idxResp!==-1?String(rows[i][idxResp]).trim():'';
                 if(!part||!location){skipped++;continue;}
                 try{ const {error}=await supabase.from('locations').upsert({part,location,responsible},{onConflict:'part'}); if(error){fail++;}else{const exist=locationData.find(d=>d.part===part);if(exist){exist.location=location;exist.responsible=responsible;}else locationData.push({part,location,responsible});success++;} }catch{fail++;}
-                statusText.textContent=`共 ${total} 条，已处理 ${i} 条，成功 ${success} 条`;
+                statusEl.textContent=`共 ${total} 条，已处理 ${i} 条，成功 ${success} 条`;
             }
-            statusText.textContent=`共 ${total} 条，成功 ${success} 条，失败 ${fail} 条，跳过 ${skipped} 条`;
+            statusEl.textContent=`共 ${total} 条，成功 ${success} 条，失败 ${fail} 条，跳过 ${skipped} 条`;
+            btn.disabled=false; btn.innerHTML='<i class="fas fa-upload"></i> 导入储位';
+            toast(`储位导入完成：成功 ${success} 条，失败 ${fail} 条`,fail>0?'error':'success');
+            inp.value='';
             setCachedLocations(locationData);
-            setTimeout(()=>{statusText.remove();toast(`储位导入完成：成功 ${success} 条，失败 ${fail} 条`,fail>0?'error':'success');inp.value='';btn.disabled=false;refreshAll();},800);
+            refreshAll();
         });
     });
+
+    // 盘点上传（修复：上传前清除当天旧计划）
     document.getElementById('uploadCountExcelBtn').addEventListener('click', async function() {
         if (!currentUser || !currentUser.id) { toast('请先登录', 'error'); return; }
+        const btn = this; if (btn.disabled) return;
         const uid = Number(currentUser.id);
-        const inp = document.getElementById('countExcelFile'); if (!inp.files.length) return toast('请选择文件','error');
+        const inp = document.getElementById('countExcelFile');
+        if (!inp.files.length) return toast('请选择文件', 'error');
+
+        btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 处理中...';
+        const statusEl = document.getElementById('countUploadStatus');
+        statusEl.style.display = 'block'; statusEl.textContent = '读取文件中...';
+
         readExcel(inp.files[0], async (err, rows) => {
-            if (err) { toast('解析失败','error'); return; }
-            if (!rows || rows.length < 2) { toast('无数据','error'); return; }
+            if (err) {
+                toast('解析失败', 'error');
+                statusEl.textContent = '';
+                btn.disabled = false; btn.innerHTML = '<i class="fas fa-upload"></i> 导入盘点';
+                return;
+            }
+            if (!rows || rows.length < 2) {
+                toast('无数据', 'error');
+                statusEl.textContent = '';
+                btn.disabled = false; btn.innerHTML = '<i class="fas fa-upload"></i> 导入盘点';
+                return;
+            }
+
             const h = rows[0].map(h => String(h).trim());
-            const idxId = h.findIndex(x => x.includes('料号')), idxLoc = h.findIndex(x => x.includes('储位'));
-            if (idxId === -1 || idxLoc === -1) return toast('缺少料号或储位列','error');
-            const today = new Date().toISOString().slice(0,10);
-            const nowTime = new Date().toTimeString().slice(0,8);
-            let success = 0, fail = 0;
+            const idxId = h.findIndex(x => x.includes('料号'));
+            const idxLoc = h.findIndex(x => x.includes('储位'));
+            if (idxId === -1 || idxLoc === -1) {
+                toast('缺少料号或储位列', 'error');
+                statusEl.textContent = '';
+                btn.disabled = false; btn.innerHTML = '<i class="fas fa-upload"></i> 导入盘点';
+                return;
+            }
+
+            const today = new Date().toISOString().slice(0, 10);
+            const nowTime = new Date().toTimeString().slice(0, 8);
+
+            // 删除今天该用户所有 qty=0 的计划，确保全新导入
+            statusEl.textContent = '清除旧计划...';
+            await supabase.from('scan_records').delete()
+                .eq('user_id', uid)
+                .eq('date', today)
+                .eq('qty', 0);
+
+            let success = 0, fail = 0, skip = 0;
+            const totalRows = rows.length - 1;
+
             for (let i = 1; i < rows.length; i++) {
                 const id = String(rows[i][idxId]).trim().toUpperCase();
                 const location = String(rows[i][idxLoc]).trim();
-                if (!id || !location) continue;
+                if (!id || !location) { skip++; continue; }
+
+                statusEl.textContent = `正在上传 ${i}/${totalRows}...`;
                 const { error } = await supabase.from('scan_records').insert({
                     user_id: uid,
                     date: today,
@@ -1642,7 +1713,10 @@ document.addEventListener('DOMContentLoaded', async () => {
                 });
                 error ? fail++ : success++;
             }
-            toast(`盘点计划导入完成：成功 ${success} 条，失败 ${fail} 条`, fail>0?'error':'success');
+
+            statusEl.textContent = `完成：成功 ${success} 条，失败 ${fail} 条，跳过 ${skip} 条`;
+            btn.disabled = false; btn.innerHTML = '<i class="fas fa-upload"></i> 导入盘点';
+            toast(`导入完成：成功 ${success} 条`, fail > 0 ? 'error' : 'success');
             if (countViewDate === today) importPlan();
         });
     });
@@ -1677,6 +1751,33 @@ document.addEventListener('DOMContentLoaded', async () => {
         localStorage.setItem('wms_shelf_ranges', JSON.stringify(shelfRanges));
         document.getElementById('shelfRangesModal').classList.remove('show'); toast('储位分类已更新', 'success');
     });
+
+    // 重置库存数据
+    document.getElementById('settingResetStock').addEventListener('click',()=>{
+        closeSettings();
+        showConfirm('确定要删除当前用户的所有库存数据吗？此操作不可恢复！','fa-boxes','#ef4444','btn-modal-danger',async()=>{
+            if(!currentUser||!currentUser.id) return;
+            const {error} = await supabase.from('materials').delete().eq('user_id', Number(currentUser.id));
+            if(error){ toast('重置失败: '+error.message, 'error'); return; }
+            materials=[];
+            toast('库存数据已重置','success');
+            refreshAll();
+            showPage('home');
+        });
+    });
+    // 重置盘点数据
+    document.getElementById('settingResetCount').addEventListener('click',()=>{
+        closeSettings();
+        showConfirm('确定要删除当前用户的所有盘点数据吗？此操作不可恢复！','fa-clipboard-list','#ef4444','btn-modal-danger',async()=>{
+            if(!currentUser||!currentUser.id) return;
+            const {error} = await supabase.from('scan_records').delete().eq('user_id', Number(currentUser.id));
+            if(error){ toast('重置失败: '+error.message, 'error'); return; }
+            countPlan=[];
+            toast('盘点数据已重置','success');
+            if(currentPage==='count') renderCount();
+        });
+    });
+
     document.getElementById('settingClearCache').addEventListener('click',async()=>{closeSettings();materials=[];records=[];userMessages=[];countPlan=[];locationData=[];hiddenAlerts.clear();localStorage.removeItem('wms_hidden_alerts');if(currentUser&&currentUser.id) await supabase.from('messages').delete().eq('user_id',Number(currentUser.id));localStorage.removeItem('wms_messages');localStorage.removeItem('wms_locations');toast('本地缓存已清空','info');refreshAll();showPage('home');});
     document.getElementById('settingReset').addEventListener('click',()=>{closeSettings();showConfirm('此操作将删除所有云端物料、出入库记录、储位数据和个人消息，不可恢复！','fa-exclamation-triangle','#f59e0b','btn-modal-warning',async()=>{try{await supabase.from('records').delete().neq('id',-1);await supabase.from('materials').delete().neq('id','');await supabase.from('locations').delete().neq('part','');if(currentUser&&currentUser.id) await supabase.from('messages').delete().eq('user_id',Number(currentUser.id));materials=[];records=[];userMessages=[];countPlan=[];locationData=[];hiddenAlerts.clear();localStorage.removeItem('wms_hidden_alerts');localStorage.removeItem('wms_messages');localStorage.removeItem('wms_locations');toast('所有数据已重置','success');refreshAll();showPage('home');}catch(error){toast('重置失败: '+error.message,'error');}});});
 
