@@ -7,11 +7,11 @@
     <meta name="apple-mobile-web-app-title" content="仓库管理">
     <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📦</text></svg>">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>仓库管理系统 v21.0</title>
+    <title>仓库管理系统 v22.1</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="https://unpkg.com/html5-qrcode"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
     <style>
         *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
         html,body{height:100%;width:100%;overflow:hidden;touch-action:manipulation}
@@ -96,10 +96,6 @@
         .stock-low{color:#ef4444;font-weight:600}
         .editable-stock{cursor:pointer;border-bottom:1px dashed #94a3b8}
         .editable-stock input{width:60px;padding:2px 6px;border:1px solid #3b82f6;border-radius:6px;text-align:center;font-size:13px;font-weight:600}
-        .scan-area{background:#f1f5f9;border-radius:20px;padding:40px 20px;text-align:center;border:2px dashed #cbd5e1;margin-bottom:20px}
-        .scan-area.active{border-color:#3b82f6;background:#eff6ff}
-        .scan-icon{font-size:56px;color:#94a3b8;margin-bottom:12px}
-        .scan-hint{font-size:14px;color:#64748b}
         .scan-result{background:#fff;border-radius:16px;padding:16px 20px;border:1px solid #e2e8f0;margin-top:12px;display:none}
         .scan-result.show{display:block;animation:fadeUp 0.3s ease}
         .result-item{display:flex;justify-content:space-between;padding:4px 0;font-size:14px;border-bottom:1px solid #f1f5f9}
@@ -115,7 +111,6 @@
         .qty-control input{width:70px;padding:4px 6px;border:1.5px solid #e2e8f0;border-radius:8px;text-align:center;font-size:14px;font-weight:600;outline:none;background:#fff}
         .material-form{background:#f8fafc;border-radius:16px;padding:16px;margin-bottom:16px;border:1px solid #f1f5f9}
         .form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-        .material-list .material-item{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:#fff;border-radius:12px;margin-bottom:6px;border:1px solid #f1f5f9}
         .my-profile{background:#f8fafc;border-radius:20px;padding:20px;text-align:center;border:1px solid #f1f5f9;margin-bottom:20px;background-size:cover;background-position:center}
         .my-profile .avatar{font-size:64px;color:#3b82f6;margin-bottom:8px;cursor:pointer}
         .my-profile .username{font-size:18px;font-weight:700;color:#0f172a}
@@ -191,13 +186,22 @@
         .manual-card .form-group{margin-bottom:12px}
         .manual-card .form-control{background:#fff;border-radius:10px;padding:12px 14px;font-size:15px}
         .manual-card .btn{margin-top:8px;font-size:15px;padding:12px}
-        /* 半屏扫码面板 */
         .scan-panel{position:fixed;top:0;left:0;width:100%;height:100%;background:#fff;z-index:200;transform:translateY(-100%);transition:transform 0.3s ease;display:flex;flex-direction:column}
         .scan-panel.show{transform:translateY(0)}
-        .scan-panel-header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid #e2e8f0}
-        .scan-panel-body{flex:1;display:flex;align-items:center;justify-content:center;background:#000}
-        .scan-panel-body div{width:100% !important}
-        .scan-panel-footer{padding:12px 16px;text-align:center}
+        .scan-panel-header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid #e2e8f0;background:#fff}
+        .scan-panel-body{flex:1;display:flex;align-items:center;justify-content:center;background:#000;position:relative;overflow:hidden}
+        .scan-panel-body video{width:100%;height:100%;object-fit:cover}
+        .scan-panel-body canvas{position:absolute;top:0;left:0;width:100%;height:100%}
+        .scan-panel-footer{padding:12px 16px;text-align:center;background:#fff}
+        .setting-item{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid #f1f5f9}
+        .setting-item:last-child{border-bottom:none}
+        .setting-label{font-size:14px;color:#475569}
+        .setting-value{font-size:14px;color:#1e293b;display:flex;align-items:center;gap:8px}
+        .setting-value input[type="range"]{width:100px}
+        .switch-track{width:44px;height:24px;background:#ccc;border-radius:12px;position:relative;cursor:pointer}
+        .switch-track.on{background:#3b82f6}
+        .switch-thumb{width:20px;height:20px;background:white;border-radius:50%;position:absolute;top:2px;left:2px;transition:0.2s}
+        .switch-track.on .switch-thumb{left:22px}
     </style>
 </head>
 <body>
@@ -208,20 +212,22 @@
         <div class="settings-header"><span>设置</span><i class="fas fa-times" id="settingsClose"></i></div>
         <div class="settings-body">
             <div class="threshold-option"><label>预警阈值</label><select id="thresholdSelect"><option value="2000">2000</option><option value="5000">5000</option><option value="10000">10000</option></select></div>
+            <div class="setting-item"><span class="setting-label">摄像头预览大小</span><div class="setting-value"><input type="range" id="cameraPreviewHeightRange" min="30" max="80" value="50" step="1"><span id="cameraPreviewHeightValue">50%</span></div></div>
+            <div class="setting-item"><span class="setting-label">扫码窗口大小</span><div class="setting-value"><input type="range" id="scanWindowSizeRange" min="20" max="80" value="45" step="1"><span id="scanWindowSizeValue">45%</span></div></div>
+            <div class="setting-item"><span class="setting-label">扫码冷却时间</span><select id="scanCooldownSelect"><option value="1">1秒</option><option value="2">2秒</option><option value="2.5" selected>2.5秒</option><option value="3">3秒</option></select></div>
+            <div class="setting-item"><span class="setting-label">自动打开摄像头</span><select id="autoOpenCameraSelect"><option value="manual">手动打开</option><option value="auto">自动打开</option></select></div>
+            <div class="setting-item"><span class="setting-label">提示音</span><div class="switch-track" id="soundSwitchTrack"><div class="switch-thumb"></div></div></div>
             <button id="settingClearCache" class="btn btn-outline btn-block">清空本地缓存</button>
             <button id="settingReset" class="btn btn-outline btn-block" style="color:#ef4444;">重置数据</button>
         </div>
     </div>
     <div class="page-container" id="pageContainer">
-        <!-- 登录页 -->
         <div id="page-login" class="page active">
             <div class="auth-wrap"><div class="auth-card"><h2><i class="fas fa-warehouse" style="color:#3b82f6;"></i> 仓库管理</h2><div class="form-group"><label>账号</label><input type="text" class="form-control" id="loginUsername" placeholder="请输入账号"></div><div class="form-group"><label>密码</label><input type="password" class="form-control" id="loginPassword" placeholder="请输入密码"></div><button class="btn btn-primary" id="loginBtn"><i class="fas fa-sign-in-alt"></i> 登录</button><div class="auth-link">还没有账号？<a id="goRegisterLink">立即注册</a></div></div></div>
         </div>
-        <!-- 注册页 -->
         <div id="page-register" class="page">
             <div class="auth-wrap"><div class="auth-card"><h2><i class="fas fa-user-plus" style="color:#22c55e;"></i> 注册新账号</h2><div class="form-group"><label>账号</label><input type="text" class="form-control" id="regUsername" placeholder="请输入账号"></div><div class="form-group"><label>密码</label><input type="password" class="form-control" id="regPassword" placeholder="请输入密码"></div><div class="form-group"><label>真实姓名</label><input type="text" class="form-control" id="regRealName" placeholder="请输入姓名"></div><button class="btn btn-success" id="registerBtn"><i class="fas fa-check"></i> 注册</button><div class="auth-link">已有账号？<a id="goLoginLink">返回登录</a></div></div></div>
         </div>
-        <!-- 首页 -->
         <div id="page-home" class="page">
             <div class="section-title">首页</div>
             <div class="alert-marquee" id="alertMarquee"><div class="marquee-track" id="marqueeTrack"></div></div>
@@ -235,7 +241,6 @@
             </div>
             <div class="daily-stats" id="dailyStats"><div class="stats-title"><i class="fas fa-calendar-day"></i> 今日数据</div><div class="stats-grid"><div class="stat-item"><div class="stat-value in" id="todayIn">0</div><div class="stat-label">入库总量</div></div><div class="stat-item"><div class="stat-value out" id="todayOut">0</div><div class="stat-label">出库总量</div></div><div class="stat-item"><div class="stat-value total" id="todayTotalStock">0</div><div class="stat-label">当前总库存</div></div><div class="stat-item"><div class="stat-value count" id="todayOps">0</div><div class="stat-label">今日操作笔数</div></div></div></div>
         </div>
-        <!-- 扫码页（手动查询） -->
         <div id="page-scan" class="page">
             <div class="section-title"><i class="fas fa-qrcode"></i> 扫码查询</div>
             <div class="form-group"><label>手动输入料号 / MPN</label><div style="display:flex;gap:8px;"><input type="text" class="form-control" id="scanInput" placeholder="例如: M001"><button class="btn btn-primary" id="scanBtn"><i class="fas fa-search"></i> 查询</button></div></div>
@@ -247,7 +252,6 @@
                 <div class="result-item"><span class="result-label">当前库存</span><span class="result-value" id="srStock">-</span></div>
             </div>
         </div>
-        <!-- 出库页（含半屏扫码面板） -->
         <div id="page-out" class="page">
             <div class="section-title"><i class="fas fa-sign-out-alt" style="color:#ef4444;"></i> 出库</div>
             <button class="btn btn-outline btn-block" id="outScanBtn"><i class="fas fa-qrcode"></i> 扫码</button>
@@ -260,11 +264,10 @@
             </form>
             <div class="scan-panel" id="outScanPanel">
                 <div class="scan-panel-header"><span>扫码出库</span><i class="fas fa-times" id="closeOutScan"></i></div>
-                <div class="scan-panel-body" id="outScanBody"></div>
+                <div class="scan-panel-body" id="outScanBody"><video id="outScanVideo" autoplay playsinline muted></video><canvas id="outScanCanvas"></canvas></div>
                 <div class="scan-panel-footer"><small class="text-muted">扫描成功后自动填入料号</small></div>
             </div>
         </div>
-        <!-- 入库页（含半屏扫码面板） -->
         <div id="page-in" class="page">
             <div class="section-title"><i class="fas fa-sign-in-alt" style="color:#22c55e;"></i> 入库</div>
             <button class="btn btn-outline btn-block" id="inScanBtn"><i class="fas fa-qrcode"></i> 扫码</button>
@@ -276,25 +279,22 @@
             </form>
             <div class="scan-panel" id="inScanPanel">
                 <div class="scan-panel-header"><span>扫码入库</span><i class="fas fa-times" id="closeInScan"></i></div>
-                <div class="scan-panel-body" id="inScanBody"></div>
+                <div class="scan-panel-body" id="inScanBody"><video id="inScanVideo" autoplay playsinline muted></video><canvas id="inScanCanvas"></canvas></div>
                 <div class="scan-panel-footer"><small class="text-muted">扫描成功后自动填入料号</small></div>
             </div>
         </div>
-        <!-- 盘点页 -->
         <div id="page-count" class="page">
             <div class="section-title"><i class="fas fa-clipboard-list" style="color:#f59e0b;"></i> 盘点</div>
             <p style="font-size:13px;color:#64748b;margin-bottom:16px;"><i class="fas fa-info-circle"></i> 仅显示已上传或手动添加的盘点数据，修改数量后点击「保存盘点」生效。</p>
             <div id="countList"></div>
             <button class="btn btn-warning btn-block" id="saveCountBtn" style="margin-top:12px;"><i class="fas fa-save"></i> 保存盘点</button>
         </div>
-        <!-- 库存页 -->
         <div id="page-stock" class="page">
             <div class="section-title"><i class="fas fa-boxes" style="color:#3b82f6;"></i> 库存</div>
             <div class="form-group" style="margin-bottom:12px;"><input type="text" class="form-control" id="stockSearch" placeholder="🔍 搜索料号 / MPN ..."></div>
             <div class="table-wrap"><table><thead><tr><th>料号</th><th>MPN</th><th>库存</th></tr></thead><tbody id="stockBody"></tbody></table></div>
             <div style="margin-top:12px;text-align:right;font-size:12px;color:#94a3b8;">共 <span id="stockCount">0</span> 项 · <small>点击库存数字可修改</small></div>
         </div>
-        <!-- 出入库清单页 -->
         <div id="page-report" class="page">
             <div class="section-title"><i class="fas fa-list" style="color:#ec4899;"></i> 出入库清单</div>
             <div class="tab-nav"><button class="tab-btn active" data-tab="tab-out">出库</button><button class="tab-btn" data-tab="tab-in">入库</button></div>
@@ -308,14 +308,12 @@
                 <div class="table-wrap" style="margin-top:12px;"><table><thead><tr><th>料号</th><th>MPN</th><th>入库总数</th></tr></thead><tbody id="inReportBody"><tr><td colspan="3" class="text-center text-muted">输入料号查询所有历史入库</td></tr></tbody></table></div>
             </div>
         </div>
-        <!-- 储位查找页 -->
         <div id="page-location" class="page">
             <div class="section-title"><i class="fas fa-map-pin" style="color:#0ea5e9;"></i> 储位查找</div>
             <div class="form-group"><label>输入料号后四位</label><div style="display:flex;gap:8px;"><input type="text" class="form-control" id="locationSearchInput" placeholder="例如: 0034"><button class="btn btn-info" id="locationSearchBtn"><i class="fas fa-search"></i> 查找</button></div></div>
             <button class="btn btn-outline btn-block" id="locationClearBtn" style="margin-bottom:16px;"><i class="fas fa-undo"></i> 清空结果</button>
             <div id="locationResult"><div class="table-wrap"><table><thead><tr><th>料号</th><th>储位</th><th>担当</th><th>操作</th></tr></thead><tbody id="locationResultBody"><tr><td colspan="4" class="text-center text-muted">输入后四位查找（储位数据库）</td></tr></tbody></table></div><div style="margin-top:8px;text-align:right;font-size:12px;color:#94a3b8;">找到 <span id="locationResultCount">0</span> 项</div></div>
         </div>
-        <!-- 数据导入页 -->
         <div id="page-data" class="page">
             <div class="section-title"><i class="fas fa-cloud-upload-alt" style="color:#3b82f6;"></i> 数据导入</div>
             <div class="upload-card"><div class="upload-header"><i class="fas fa-file-excel" style="color:#22c55e;"></i> 批量上传库存 Excel</div><div class="file-input-wrap"><input type="file" id="excelFile" accept=".xls,.xlsx" class="form-control"><button class="btn btn-primary btn-sm" id="uploadExcelBtn"><i class="fas fa-upload"></i> 导入</button></div><small class="text-muted">表格列：料号、储位、MPN、厂商、数量、担当</small></div>
@@ -362,16 +360,14 @@
                 </div>
             </div>
         </div>
-        <!-- 我的页面 -->
         <div id="page-mine" class="page">
             <div class="section-title"><i class="fas fa-user" style="color:#8b5cf6;"></i> 我的</div>
             <div class="my-profile" id="myProfileCard"><div class="avatar" id="avatarBtn"><i class="fas fa-user-circle" id="avatarIcon"></i></div><div class="username" id="profileName">仓库管理员</div><div class="user-role" id="profileRole">WMS 系统</div><div class="bg-actions" style="display:flex;gap:8px;justify-content:center;margin-top:8px;"><button class="btn btn-outline btn-sm" id="changeAvatarBtn"><i class="fas fa-camera"></i> 头像</button><button class="btn btn-outline btn-sm" id="changeBgBtn"><i class="fas fa-image"></i> 背景</button><button class="btn btn-outline btn-sm" id="resetBgBtn"><i class="fas fa-undo"></i> 重置</button></div></div>
             <div class="my-info-grid"><div class="my-info-item"><div class="num" id="myTotalMaterials">0</div><div class="label">料号总数</div></div><div class="my-info-item"><div class="num" id="myTotalStock">0</div><div class="label">总库存量</div></div><div class="my-info-item"><div class="num" id="myTotalRecords">0</div><div class="label">操作记录</div></div></div>
             <button class="btn btn-outline btn-block" style="margin-top:20px;" id="goCustomMsgBtn"><i class="fas fa-bullhorn"></i> 滚动预警设置</button>
-            <div style="margin-top:20px;background:#f8fafc;border-radius:16px;padding:16px;"><div style="font-weight:600;margin-bottom:8px;"><i class="fas fa-info-circle" style="color:#3b82f6;"></i> 系统信息</div><div style="display:flex;justify-content:space-between;font-size:13px;color:#475569;padding:4px 0;"><span>版本</span><span>v21.0</span></div><div style="display:flex;justify-content:space-between;font-size:13px;color:#475569;padding:4px 0;"><span>运行时间</span><span id="sysUptime">--</span></div><div style="display:flex;justify-content:space-between;font-size:13px;color:#475569;padding:4px 0;"><span>数据更新</span><span id="lastUpdateTime">--</span></div></div>
+            <div style="margin-top:20px;background:#f8fafc;border-radius:16px;padding:16px;"><div style="font-weight:600;margin-bottom:8px;"><i class="fas fa-info-circle" style="color:#3b82f6;"></i> 系统信息</div><div style="display:flex;justify-content:space-between;font-size:13px;color:#475569;padding:4px 0;"><span>版本</span><span>v22.1</span></div><div style="display:flex;justify-content:space-between;font-size:13px;color:#475569;padding:4px 0;"><span>运行时间</span><span id="sysUptime">--</span></div><div style="display:flex;justify-content:space-between;font-size:13px;color:#475569;padding:4px 0;"><span>数据更新</span><span id="lastUpdateTime">--</span></div></div>
             <button class="btn btn-outline btn-block" style="margin-top:16px;" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> 退出登录</button>
         </div>
-        <!-- 滚动预警子页面 -->
         <div id="page-custom-msg" class="page" style="padding-top:20px;">
             <div class="back-header"><button id="backFromMsgBtn"><i class="fas fa-arrow-left"></i></button><h2 style="font-size:18px;font-weight:700;">滚动预警设置</h2></div>
             <div style="display:flex;gap:8px;margin-bottom:16px;"><input type="text" class="form-control" id="subCustomMsgInput" placeholder="输入要显示的文字..."><button class="btn btn-primary btn-sm" id="subAddCustomMsgBtn"><i class="fas fa-plus"></i> 添加</button></div>
@@ -411,6 +407,15 @@ document.addEventListener('DOMContentLoaded', async () => {
         customMsg: $('#page-custom-msg')
     };
 
+    // 相机设置
+    let scanSettings = {
+        previewHeight: parseInt(localStorage.getItem('scan_preview_height') || '50'),
+        windowSize: parseInt(localStorage.getItem('scan_window_size') || '45'),
+        cooldown: parseFloat(localStorage.getItem('scan_cooldown') || '2.5'),
+        autoOpen: localStorage.getItem('scan_auto_open') === 'true',
+        sound: localStorage.getItem('scan_sound') !== 'false'
+    };
+
     // 确认弹窗
     let currentConfirmCallback = null;
     function showConfirm(title, icon, color, btnClass, onConfirm) {
@@ -430,26 +435,18 @@ document.addEventListener('DOMContentLoaded', async () => {
         currentConfirmCallback = null;
     });
 
-    // 云端预警配置加载/保存
+    // 云端预警配置
     async function loadAlertConfig() {
         if (!currentUser) { hiddenAlerts = new Set(JSON.parse(localStorage.getItem('wms_hidden_alerts')||'[]')); return; }
         const { data, error } = await supabase.from('messages').select('text').eq('user_id', currentUser.id).like('text', '__alert_config__%').maybeSingle();
         if (!error && data && data.text) {
-            try {
-                const config = JSON.parse(data.text.replace('__alert_config__', ''));
-                hiddenAlerts = new Set(config.hidden || []);
-            } catch { hiddenAlerts = new Set(); }
-        } else {
-            hiddenAlerts = new Set(JSON.parse(localStorage.getItem('wms_hidden_alerts')||'[]'));
-        }
+            try { const config = JSON.parse(data.text.replace('__alert_config__', '')); hiddenAlerts = new Set(config.hidden || []); } catch { hiddenAlerts = new Set(); }
+        } else { hiddenAlerts = new Set(JSON.parse(localStorage.getItem('wms_hidden_alerts')||'[]')); }
     }
     async function saveAlertConfig() {
         const config = { hidden: [...hiddenAlerts] };
         const configStr = '__alert_config__' + JSON.stringify(config);
-        if (!currentUser) {
-            localStorage.setItem('wms_hidden_alerts', JSON.stringify([...hiddenAlerts]));
-            return;
-        }
+        if (!currentUser) { localStorage.setItem('wms_hidden_alerts', JSON.stringify([...hiddenAlerts])); return; }
         await supabase.from('messages').delete().eq('user_id', currentUser.id).like('text', '__alert_config__%');
         await supabase.from('messages').insert({ text: configStr, user_id: currentUser.id });
         localStorage.setItem('wms_hidden_alerts', JSON.stringify([...hiddenAlerts]));
@@ -518,59 +515,83 @@ document.addEventListener('DOMContentLoaded', async () => {
         track.innerHTML = [...lowItems, ...customItems].join('') + [...lowItems, ...customItems].join('') || '<div class="marquee-item"><i class="fas fa-check-circle"></i> 库存充足</div>';
     }
 
-    // 半屏实时扫码（不停止）
-    let html5QrCode = null;
+    // ========== jsQR 扫码引擎 ==========
+    let scanStream = null, scanAnimId = null, scanScanning = false, lastScanData = '', cooldownUntil = 0;
+
+    function getCooldownMs() { return scanSettings.cooldown * 1000; }
+
     async function startSlideScanner(mode) {
         const panelId = mode === 'out' ? 'outScanPanel' : 'inScanPanel';
-        const bodyId = mode === 'out' ? 'outScanBody' : 'inScanBody';
+        const videoId = mode === 'out' ? 'outScanVideo' : 'inScanVideo';
+        const canvasId = mode === 'out' ? 'outScanCanvas' : 'inScanCanvas';
         const panel = $(`#${panelId}`);
-        const body = $(`#${bodyId}`);
-        body.innerHTML = '';
+        const video = document.getElementById(videoId);
+        const canvas = document.getElementById(canvasId);
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
+
         panel.classList.add('show');
-        if (html5QrCode) {
-            await html5QrCode.stop();
-            html5QrCode.clear();
-        }
-        html5QrCode = new Html5Qrcode(bodyId);
+        if (scanStream) { scanStream.getTracks().forEach(t => t.stop()); scanStream = null; }
+        if (scanAnimId) { cancelAnimationFrame(scanAnimId); scanAnimId = null; }
+        scanScanning = false;
+
         try {
-            await html5QrCode.start(
-                { facingMode: 'environment' },
-                { fps: 10, qrbox: { width: 250, height: 250 } },
-                (decodedText) => {
-                    const parts = decodedText.split('|');
-                    const id = parts[0]?.trim() || '';
-                    const input = document.getElementById(mode === 'out' ? 'outMaterialInput' : 'inMaterialInput');
-                    const hidden = document.getElementById(mode === 'out' ? 'outMaterialId' : 'inMaterialId');
-                    input.value = id;
-                    hidden.value = id;
-                    input.dispatchEvent(new Event('input'));
-                    // 保持摄像头继续
-                },
-                (errorMessage) => {}
-            );
-        } catch (err) {
-            toast('无法启动摄像头: ' + err.message, 'error');
-        }
+            scanStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment', width: { ideal: 640 }, height: { ideal: 480 } } });
+            video.srcObject = scanStream;
+            await video.play();
+            scanScanning = true;
+
+            function scanFrame() {
+                if (!scanScanning) return;
+                if (video.readyState >= 2) {
+                    let w = video.videoWidth, h = video.videoHeight;
+                    if (!w || !h) { scanAnimId = requestAnimationFrame(scanFrame); return; }
+                    const maxDim = 640;
+                    if (w > maxDim || h > maxDim) { const r = Math.min(maxDim / w, maxDim / h); w *= r; h *= r; }
+                    canvas.width = w; canvas.height = h;
+                    ctx.drawImage(video, 0, 0, w, h);
+                    const imgData = ctx.getImageData(0, 0, w, h);
+                    const code = jsQR(imgData.data, w, h, { inversionAttempts: 'dontInvert' });
+                    if (code && code.data) {
+                        const now = Date.now();
+                        if (code.data === lastScanData && now < cooldownUntil) { scanAnimId = requestAnimationFrame(scanFrame); return; }
+                        lastScanData = code.data;
+                        cooldownUntil = now + getCooldownMs();
+                        const parts = code.data.split('|');
+                        const id = parts[0]?.trim() || '';
+                        const input = document.getElementById(mode === 'out' ? 'outMaterialInput' : 'inMaterialInput');
+                        const hidden = document.getElementById(mode === 'out' ? 'outMaterialId' : 'inMaterialId');
+                        input.value = id; hidden.value = id;
+                        input.dispatchEvent(new Event('input'));
+                        if (scanSettings.sound) { try { const ac = new (window.AudioContext || window.webkitAudioContext)(); const o = ac.createOscillator(), g = ac.createGain(); o.type = 'sine'; o.frequency.value = 880; g.gain.value = 0.2; g.gain.exponentialRampToValueAtTime(0.0001, ac.currentTime + 0.2); o.connect(g); g.connect(ac.destination); o.start(); o.stop(ac.currentTime + 0.2); } catch(e){} }
+                    }
+                }
+                scanAnimId = requestAnimationFrame(scanFrame);
+            }
+            scanAnimId = requestAnimationFrame(scanFrame);
+        } catch (err) { toast('无法启动摄像头: ' + err.message, 'error'); stopSlideScanner(mode); }
     }
 
-    function stopScanner() {
-        if (html5QrCode) {
-            html5QrCode.stop().then(() => html5QrCode.clear()).catch(e => console.error(e));
-            html5QrCode = null;
+    function stopSlideScanner(mode) {
+        scanScanning = false;
+        if (scanAnimId) { cancelAnimationFrame(scanAnimId); scanAnimId = null; }
+        if (scanStream) { scanStream.getTracks().forEach(t => t.stop()); scanStream = null; }
+        if (mode) {
+            const panelId = mode === 'out' ? 'outScanPanel' : 'inScanPanel';
+            $(`#${panelId}`).classList.remove('show');
         }
+        lastScanData = ''; cooldownUntil = 0;
     }
 
-    // 扫码按钮事件
+    // 绑定扫码按钮
     $('#outScanBtn').addEventListener('click', () => startSlideScanner('out'));
-    $('#closeOutScan').addEventListener('click', () => { $('#outScanPanel').classList.remove('show'); stopScanner(); });
+    $('#closeOutScan').addEventListener('click', () => stopSlideScanner('out'));
     $('#inScanBtn').addEventListener('click', () => startSlideScanner('in'));
-    $('#closeInScan').addEventListener('click', () => { $('#inScanPanel').classList.remove('show'); stopScanner(); });
+    $('#closeInScan').addEventListener('click', () => stopSlideScanner('in'));
 
     let currentPage='home';
     function showPage(name) {
         if (!currentUser && name!=='login' && name!=='register') { showPage('login'); return; }
-        // 离开出入库页面时停止摄像头
-        if (currentPage === 'out' || currentPage === 'in') stopScanner();
+        if (currentPage === 'out' || currentPage === 'in') { stopSlideScanner(currentPage); }
         Object.values(pages).forEach(p=>p.classList.remove('active'));
         if(pages[name]) pages[name].classList.add('active');
         currentPage = name;
@@ -863,13 +884,46 @@ document.addEventListener('DOMContentLoaded', async () => {
         toast('已添加并更新库存', 'success'); renderCount(); refreshAll();
     });
 
-    // 设置面板
+    // 设置面板（含相机设置）
     const settingsBtn=$('#settingsBtn'),settingsOverlay=$('#settingsOverlay'),settingsPanel=$('#settingsPanel'),settingsClose=$('#settingsClose');
     function openSettings(){settingsOverlay.classList.add('show');settingsPanel.classList.add('show');}
     function closeSettings(){settingsOverlay.classList.remove('show');settingsPanel.classList.remove('show');}
     settingsBtn.addEventListener('click',openSettings); settingsClose.addEventListener('click',closeSettings); settingsOverlay.addEventListener('click',closeSettings);
     $('#thresholdSelect').value=LOW;
     $('#thresholdSelect').addEventListener('change',function(){LOW=parseInt(this.value);localStorage.setItem('wms_threshold',LOW);updateMarquee();toast(`预警阈值已设为 ${LOW}`,'success');});
+    $('#cameraPreviewHeightRange').addEventListener('input', function() {
+        scanSettings.previewHeight = parseInt(this.value);
+        localStorage.setItem('scan_preview_height', scanSettings.previewHeight);
+        $('#cameraPreviewHeightValue').textContent = scanSettings.previewHeight + '%';
+        document.documentElement.style.setProperty('--camera-preview-height', scanSettings.previewHeight + 'vh');
+    });
+    $('#scanWindowSizeRange').addEventListener('input', function() {
+        scanSettings.windowSize = parseInt(this.value);
+        localStorage.setItem('scan_window_size', scanSettings.windowSize);
+        $('#scanWindowSizeValue').textContent = scanSettings.windowSize + '%';
+        document.documentElement.style.setProperty('--scan-window-size', scanSettings.windowSize + '%');
+    });
+    $('#scanCooldownSelect').addEventListener('change', function() {
+        scanSettings.cooldown = parseFloat(this.value);
+        localStorage.setItem('scan_cooldown', scanSettings.cooldown);
+    });
+    $('#autoOpenCameraSelect').addEventListener('change', function() {
+        scanSettings.autoOpen = this.value === 'auto';
+        localStorage.setItem('scan_auto_open', scanSettings.autoOpen);
+    });
+    $('#soundSwitchTrack').addEventListener('click', function() {
+        scanSettings.sound = !scanSettings.sound;
+        this.classList.toggle('on', scanSettings.sound);
+        localStorage.setItem('scan_sound', scanSettings.sound);
+    });
+    $('#cameraPreviewHeightRange').value = scanSettings.previewHeight;
+    $('#cameraPreviewHeightValue').textContent = scanSettings.previewHeight + '%';
+    $('#scanWindowSizeRange').value = scanSettings.windowSize;
+    $('#scanWindowSizeValue').textContent = scanSettings.windowSize + '%';
+    $('#scanCooldownSelect').value = scanSettings.cooldown;
+    $('#autoOpenCameraSelect').value = scanSettings.autoOpen ? 'auto' : 'manual';
+    $('#soundSwitchTrack').classList.toggle('on', scanSettings.sound);
+
     $('#settingClearCache').addEventListener('click',async()=>{closeSettings();materials=[];records=[];userMessages=[];countItems=[];locationData=[];hiddenAlerts.clear();localStorage.removeItem('wms_hidden_alerts');if(currentUser) await supabase.from('messages').delete().eq('user_id',currentUser.id);localStorage.removeItem('wms_messages');localStorage.removeItem('wms_locations');toast('本地缓存已清空','info');refreshAll();showPage('home');});
     $('#settingReset').addEventListener('click',()=>{closeSettings();showConfirm('此操作将删除所有云端物料、出入库记录、储位数据和个人消息，不可恢复！','fa-exclamation-triangle','#f59e0b','btn-modal-warning',async()=>{try{await supabase.from('records').delete().neq('id',-1);await supabase.from('materials').delete().neq('id','');await supabase.from('locations').delete().neq('part','');if(currentUser) await supabase.from('messages').delete().eq('user_id',currentUser.id);materials=[];records=[];userMessages=[];countItems=[];locationData=[];hiddenAlerts.clear();localStorage.removeItem('wms_hidden_alerts');localStorage.removeItem('wms_messages');localStorage.removeItem('wms_locations');toast('所有数据已重置','success');refreshAll();showPage('home');}catch(error){toast('重置失败: '+error.message,'error');}});});
 
@@ -904,10 +958,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     $('#goLoginLink').onclick=e=>{e.preventDefault();showPage('login');};
 
     // 扫码查询（手动输入）
-    const scanInput=$('#scanInput'),scanResult=$('#scanResult'),scanArea=$('#scanArea');
-    function clearScan(){scanResult.classList.remove('show');scanArea.classList.remove('active');scanInput.value='';}
-    function displayScan(m){$('#srId').textContent=m.id;$('#srMpn').textContent=m.mpn||'-';$('#srManufacturer').textContent=m.manufacturer||'-';$('#srLocation').textContent=m.location||'未设置';$('#srStock').textContent=m.stock;scanResult.classList.add('show');scanArea.classList.add('active');}
-    function handleScan(q){q=q.trim().toUpperCase();if(!q) return toast('请输入料号','error');const f=materials.find(m=>m.id===q||m.mpn===q);f?(displayScan(f),toast(`扫码成功：${f.id}`,'success')):(toast('未找到','error'),clearScan());}
+    const scanInput=$('#scanInput'),scanResult=$('#scanResult');
+    function clearScan(){scanResult.classList.remove('show');scanInput.value='';}
+    function displayScan(m){$('#srId').textContent=m.id;$('#srMpn').textContent=m.mpn||'-';$('#srManufacturer').textContent=m.manufacturer||'-';$('#srLocation').textContent=m.location||'未设置';$('#srStock').textContent=m.stock;scanResult.classList.add('show');}
+    function handleScan(q){q=q.trim().toUpperCase();if(!q) return toast('请输入料号','error');const f=materials.find(m=>m.id===q||m.mpn===q);f?(displayScan(f),toast(`查询成功：${f.id}`,'success')):(toast('未找到','error'),clearScan());}
     $('#scanBtn').onclick=()=>handleScan(scanInput.value);
     scanInput.onkeydown=e=>{if(e.key==='Enter') handleScan(scanInput.value);};
 
