@@ -372,6 +372,7 @@
                 <button class="shelf-btn" data-shelf="3">架4</button>
                 <button class="shelf-btn" data-shelf="4">架5</button>
                 <button class="shelf-btn" data-shelf="5">架6</button>
+                <button class="shelf-btn" data-shelf="6">架7</button>
             </div>
             <div class="form-group"><label>料号 <span class="required">*</span></label><input type="text" class="form-control" id="manualCountPart" placeholder="请输入料号"></div>
             <div class="form-group" id="manualCountMpnGroup">
@@ -452,6 +453,7 @@
                 <button class="shelf-btn" data-shelf="3">架4</button>
                 <button class="shelf-btn" data-shelf="4">架5</button>
                 <button class="shelf-btn" data-shelf="5">架6</button>
+                <button class="shelf-btn" data-shelf="6">架7</button>
             </div>
             <div class="tab-nav">
                 <button class="tab-btn active" data-mode="detail">明细</button>
@@ -576,6 +578,7 @@
             <div class="modal-input-group"><label>架4</label><input type="text" class="shelf-name-input" data-shelf="3"></div>
             <div class="modal-input-group"><label>架5</label><input type="text" class="shelf-name-input" data-shelf="4"></div>
             <div class="modal-input-group"><label>架6</label><input type="text" class="shelf-name-input" data-shelf="5"></div>
+            <div class="modal-input-group"><label>架7</label><input type="text" class="shelf-name-input" data-shelf="6"></div>
         </div>
         <div class="modal-actions"><button class="btn-modal-cancel" id="shelfNamesCancel">取消</button><button class="btn-modal-danger" id="shelfNamesSave">保存</button></div>
     </div>
@@ -592,6 +595,7 @@
             <div class="modal-input-group"><label>架4</label><div class="range-inputs"><input type="text" class="shelf-range-start" data-shelf="3" placeholder="开始"><span>-</span><input type="text" class="shelf-range-end" data-shelf="3" placeholder="结束"></div></div>
             <div class="modal-input-group"><label>架5</label><div class="range-inputs"><input type="text" class="shelf-range-start" data-shelf="4" placeholder="开始"><span>-</span><input type="text" class="shelf-range-end" data-shelf="4" placeholder="结束"></div></div>
             <div class="modal-input-group"><label>架6</label><div class="range-inputs"><input type="text" class="shelf-range-start" data-shelf="5" placeholder="开始"><span>-</span><input type="text" class="shelf-range-end" data-shelf="5" placeholder="结束"></div></div>
+            <div class="modal-input-group"><label>架7</label><div class="range-inputs"><input type="text" class="shelf-range-start" data-shelf="6" placeholder="开始"><span>-</span><input type="text" class="shelf-range-end" data-shelf="6" placeholder="结束"></div></div>
         </div>
         <div class="modal-actions"><button class="btn-modal-cancel" id="shelfRangesCancel">取消</button><button class="btn-modal-danger" id="shelfRangesSave">保存</button></div>
     </div>
@@ -614,7 +618,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     let countViewMode = 'detail';
     let countViewDate = new Date().toISOString().slice(0, 10);
     let currentShelf = 0;
-    let shelfNames = ['架1','架2','架3','架4','架5','架6'];
+    // 默认7个货架
+    let shelfNames = ['架1','架2','架3','架4','架5','架6','架7'];
     let shelfRanges = [];
     let countFilterShelf = 'all';
     let manualPartList = [];
@@ -627,8 +632,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (savedNames) try { shelfNames = JSON.parse(savedNames); } catch(e){}
     const savedRanges = localStorage.getItem('wms_shelf_ranges');
     if (savedRanges) try { shelfRanges = JSON.parse(savedRanges); } catch(e){}
-    if (!shelfRanges.length || shelfRanges.length < 6) {
-        shelfRanges = Array(6).fill({start:'', end:''});
+    if (!shelfRanges.length || shelfRanges.length < 7) {
+        shelfRanges = Array(7).fill({start:'', end:''});
     }
 
     const startTime = new Date();
@@ -689,7 +694,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     function classifyLocation(loc) {
         if (!loc) return -1;
         loc = loc.toUpperCase().replace(/\s/g, '');
-        for (let i = 0; i < 6; i++) {
+        for (let i = 0; i < 7; i++) {
             const range = shelfRanges[i];
             if (!range || !range.start || !range.end) continue;
             const start = range.start.toUpperCase().replace(/\s/g, '');
@@ -801,7 +806,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     let currentPage='home';
     function showPage(name) {
         if (!currentUser && name!=='login' && name!=='register') { showPage('login'); return; }
-        // 离开扫码页面自动关闭摄像头
         if (currentPage === 'scan' && name !== 'scan') { stopCam(); }
         if (currentPage === 'out' || currentPage === 'in') { stopHalfScan(); }
         Object.values(pages).forEach(p=>p.classList.remove('active'));
@@ -824,7 +828,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         if(name==='mine'){updateMine();loadCustomStyles();loadProfileBg();}
         if(name==='customMsg') renderSubCustomMsgs();
         window.scrollTo({top:0,behavior:'smooth'});
-        // 出入库半屏表单下移
         if (name === 'out' && document.getElementById('outHalfScanPanel').classList.contains('show')) {
             document.getElementById('outFormContainer').classList.add('shift-down');
         }
@@ -1065,7 +1068,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                 manualPartList.push({ part: p.part, location: p.location || '' });
             }
         });
-        manualPartList.sort((a, b) => a.part.localeCompare(b.part));
+        // 按储位字典序排列
+        manualPartList.sort((a, b) => a.location.localeCompare(b.location) || a.part.localeCompare(b.part));
         if (manualPartList.length === 0) {
             partInput.readOnly = false;
             partInput.value = '';
@@ -1747,7 +1751,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('shelfRangesSave').addEventListener('click', () => {
         const starts = document.querySelectorAll('.shelf-range-start');
         const ends = document.querySelectorAll('.shelf-range-end');
-        for (let i = 0; i < 6; i++) shelfRanges[i] = { start: starts[i].value.trim().toUpperCase(), end: ends[i].value.trim().toUpperCase() };
+        for (let i = 0; i < 7; i++) shelfRanges[i] = { start: starts[i].value.trim().toUpperCase(), end: ends[i].value.trim().toUpperCase() };
         localStorage.setItem('wms_shelf_ranges', JSON.stringify(shelfRanges));
         document.getElementById('shelfRangesModal').classList.remove('show'); toast('储位分类已更新', 'success');
     });
