@@ -486,6 +486,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         customMsg: $('#page-custom-msg')
     };
 
+    // 扫码设置
     let scanSettings = {
         previewHeight: parseInt(localStorage.getItem('scan_preview_height') || '50'),
         windowSize: parseInt(localStorage.getItem('scan_window_size') || '45'),
@@ -497,6 +498,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     let scanStream = null, scanAnimId = null, scanning = false, lastScanData = '', cooldownUntil = 0;
     let torchState = false;
 
+    // 确认弹窗
     let currentConfirmCallback = null;
     function showConfirm(title, icon, color, btnClass, onConfirm) {
         currentConfirmCallback = onConfirm;
@@ -515,7 +517,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         currentConfirmCallback = null;
     });
 
-    // ========== 原有业务逻辑（与第一版完全一致） ==========
+    // ========== 核心函数（原第一版完整保留） ==========
     async function loadData() {
         const { data: mat } = await supabase.from('materials').select('*');
         materials = mat || [];
@@ -602,6 +604,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         const customItems = userMessages.filter(m => !hiddenAlerts.has(`MSG:${m.text}`)).map(m => `<div class="marquee-item"><i class="fas fa-bullhorn"></i> ${m.text}</div>`);
         track.innerHTML = [...lowItems, ...customItems].join('') + [...lowItems, ...customItems].join('') || '<div class="marquee-item"><i class="fas fa-check-circle"></i> 库存充足</div>';
     }
+
     let currentPage='home';
     function showPage(name) {
         if (!currentUser && name!=='login' && name!=='register') { showPage('login'); return; }
@@ -624,6 +627,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
     $('#bottomNav').onclick=e=>{const btn=e.target.closest('.nav-item');if(btn&&pages[btn.dataset.tab]) showPage(btn.dataset.tab);};
     $('#page-home').onclick=e=>{const card=e.target.closest('.home-card[data-page]');if(card&&pages[card.dataset.page]) showPage(card.dataset.page);};
+
     function updateDaily(){
         const today=records.filter(r=>isToday(r.date));
         let tin=0,tout=0; today.forEach(r=>{if(r.type==='in') tin+=r.quantity; else tout+=r.quantity;});
@@ -632,7 +636,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         $('#todayOps').textContent=today.length;
     }
 
-    // 扫码新功能
+    // ========== 新增扫码逻辑（移植自第二版，无语音） ==========
     function parseSmart(str) {
         const parts = str.trim().split(/[ ,\t|]+/);
         if (parts.length >= 2) {
@@ -730,11 +734,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
     function stopSlideScanner(mode) {
         if (mode === 'out' || mode === 'in') {
-            // 出库/入库专用扫码面板（保留原样）
             const panel = document.getElementById(mode==='out'?'outScanPanel':'inScanPanel');
             if (panel) panel.classList.remove('show');
         }
     }
+
     function initScanner() {
         document.getElementById('btnStart').onclick = () => scanning ? stopCam() : startCam();
         document.getElementById('btnUpload').onclick = () => document.getElementById('imgFile').click();
@@ -798,23 +802,343 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
     initScanner();
 
-    // 其余逻辑与第一版完全一致（出库、入库、库存、报表等）
-    // 以下为完整实现，确保整个系统功能齐全
-    // ... 省略部分请直接粘贴原第一版对应代码 ...
-    // 此处为节省篇幅，仅展示核心扫码部分，其余已在上文“原有业务逻辑”中包含。
-    // 实际使用请保证所有原版函数均已完整复制。
+    // ========== 其余原版所有函数（出库、入库、盘点、库存、报表、储位、数据、我的）完整保留 ==========
+    // 以下内容与第一版完全一致，确保整体功能完整性
+
+    function setupAutocompletes(){
+        ['out','in','reportIn'].forEach(type=>{
+            const input=document.getElementById(`${type}MaterialInput`);
+            const hidden=document.getElementById(`${type}MaterialId`);
+            const dropdown=document.getElementById(`${type}MaterialDropdown`);
+            if(!input||!hidden||!dropdown) return;
+            let currentFocus=-1;
+            input.addEventListener('input',function(){
+                const val=this.value.trim().toUpperCase(); closeAllLists(); hidden.value='';
+                if(type==='out'){document.getElementById('outMpn').innerHTML='<option value="">请先选择料号</option>';document.getElementById('outMpn').disabled=true;document.getElementById('outStockHint').textContent='';}
+                else if(type==='in'){document.getElementById('inMpn').innerHTML='<option value="">请先选择料号</option>';document.getElementById('inMpn').disabled=true;}
+                if(!val) return;
+                const matches=materials.filter(m=>m.id.slice(-4)===val);
+                if(matches.length===0) return;
+                dropdown.innerHTML='';
+                matches.forEach((m,index)=>{
+                    const div=document.createElement('div');
+                    div.innerHTML=`<strong>${m.id}</strong> - ${m.mpn||'无MPN'} (库存: ${m.stock})`;
+                    div.addEventListener('click',()=>{
+                        input.value=m.id; hidden.value=m.id; closeAllLists();
+                        if(type==='out') onMaterialSelected(m,'out');
+                        else if(type==='in') onMaterialSelected(m,'in');
+                    });
+                    dropdown.appendChild(div);
+                });
+                dropdown.style.display='block';
+            });
+            input.addEventListener('keydown',function(e){
+                let items=dropdown.getElementsByTagName('div');
+                if(e.key==='ArrowDown'){currentFocus++;addActive(items);}
+                else if(e.key==='ArrowUp'){currentFocus--;addActive(items);}
+                else if(e.key==='Enter'){e.preventDefault();if(currentFocus>-1&&items[currentFocus]) items[currentFocus].click();}
+            });
+            function addActive(items){if(!items.length) return; removeActive(items); if(currentFocus>=items.length) currentFocus=0; if(currentFocus<0) currentFocus=items.length-1; items[currentFocus].classList.add('autocomplete-active');}
+            function removeActive(items){for(let item of items) item.classList.remove('autocomplete-active');}
+            function closeAllLists(){dropdown.style.display='none';currentFocus=-1;}
+            document.addEventListener('click',function(e){if(e.target!==input) closeAllLists();});
+        });
+    }
+    function onMaterialSelected(mat, type){
+        const mpnOptions = materials.filter(m => m.id === mat.id).map(m => m.mpn);
+        const mpnSel = document.getElementById(type==='out'?'outMpn':'inMpn');
+        mpnSel.innerHTML = ''; mpnOptions.forEach(mpn => { const opt = document.createElement('option'); opt.value = mpn; opt.textContent = mpn; mpnSel.appendChild(opt); });
+        if (mpnOptions.length > 0) { mpnSel.disabled = false; mpnSel.value = mat.mpn; if (type === 'out') { const m = findMaterial(mat.id, mat.mpn); if (m) { document.getElementById('outStockHint').textContent = `当前库存: ${m.stock}`; document.getElementById('outQty').max = m.stock; } } }
+        else { mpnSel.disabled = true; }
+    }
+
+    // 出库
+    const outCangma = document.getElementById('outCangma'); const outSubmitBtn = document.getElementById('outSubmitBtn');
+    outCangma.addEventListener('change', function() { outSubmitBtn.disabled = !this.value; });
+    document.getElementById('outMpn').addEventListener('change',function(){const id=document.getElementById('outMaterialId').value;const m=findMaterial(id,this.value);if(m){document.getElementById('outStockHint').textContent=`当前库存: ${m.stock}`;document.getElementById('outQty').max=m.stock;}});
+    document.getElementById('outForm').addEventListener('submit', async function(e) {
+        e.preventDefault(); if (!outCangma.value) return toast('请选择仓码', 'error');
+        const id = document.getElementById('outMaterialId').value, mpn = document.getElementById('outMpn').value, cangma = outCangma.value, qty = parseInt(document.getElementById('outQty').value);
+        if(!id||!mpn||!qty||qty<1) return toast('请完善信息','error');
+        const m = findMaterial(id, mpn); if(!m) return toast('物料不存在','error'); if(m.stock < qty) return toast(`库存不足，当前库存: ${m.stock}`,'error');
+        m.stock -= qty; const record = { type:'out', material_id:id, mpn, quantity:qty, date: new Date().toISOString(), dest: mpn, note: cangma };
+        records.unshift(record); toast(`出库成功：${id} ${mpn} x ${qty}`, 'success');
+        document.getElementById('outMaterialInput').value = ''; document.getElementById('outMaterialId').value = '';
+        document.getElementById('outMpn').innerHTML = '<option value="">请先选择料号</option>'; document.getElementById('outMpn').disabled = true;
+        document.getElementById('outQty').value = ''; document.getElementById('outStockHint').textContent = '';
+        renderStock(); updateDaily(); updateMarquee();
+        saveRecordToCloud(record).catch(err => console.error(err)); saveMaterialsToCloud().catch(err => console.error(err));
+    });
+
+    // 入库
+    document.getElementById('inForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const id = document.getElementById('inMaterialId').value, mpn = document.getElementById('inMpn').value, qty = parseInt(document.getElementById('inQty').value);
+        if(!id||!mpn||!qty||qty<1) return toast('请完善信息','error');
+        const m = findMaterial(id, mpn); if(!m) return toast('物料不存在，请先在数据页添加','error');
+        m.stock += qty; const record = { type:'in', material_id:id, mpn, quantity:qty, date: new Date().toISOString(), source: mpn, note: '' };
+        records.unshift(record); toast(`入库成功：${id} ${mpn} x ${qty}`, 'success');
+        document.getElementById('inMaterialInput').value = ''; document.getElementById('inMaterialId').value = '';
+        document.getElementById('inMpn').innerHTML = '<option value="">请先选择料号</option>'; document.getElementById('inMpn').disabled = true;
+        document.getElementById('inQty').value = '';
+        renderStock(); updateDaily(); updateMarquee();
+        saveRecordToCloud(record).catch(err => console.error(err)); saveMaterialsToCloud().catch(err => console.error(err));
+    });
+
+    // 盘点
+    function renderCount(){
+        const c=$('#countList'); if(!countItems.length){ c.innerHTML='<div class="empty-state"><i class="fas fa-clipboard"></i><p>暂无盘点数据，请先通过数据页上传或手动添加</p></div>'; return; }
+        c.innerHTML=countItems.map(item=>`<div class="count-item ${item.newStock!==item.originalStock?'changed':''}"><div class="info"><div class="name">${item.id} (${item.location})</div><div class="spec">原库存: ${item.originalStock} · 新库存</div></div><div class="qty-control"><input type="number" class="count-input" data-id="${item.id}" data-location="${item.location}" value="${item.newStock}" min="0"></div></div>`).join('');
+        c.querySelectorAll('.count-input').forEach(inp=>inp.oninput=function(){const id=this.dataset.id, location=this.dataset.location; const item=countItems.find(i=>i.id===id && i.location===location); if(item) item.newStock=parseInt(this.value)||0; this.closest('.count-item').classList.toggle('changed', item.newStock!==item.originalStock);});
+    }
+    document.getElementById('saveCountBtn').onclick=async()=>{
+        if(!countItems.length) return toast('无盘点数据','info');
+        let changed=0;
+        for(const item of countItems){ const matched = materials.filter(m => m.id===item.id && m.location===item.location); for(const m of matched){ if(m.stock!==item.newStock){ m.stock=item.newStock; changed++; } } }
+        if(!changed) return toast('没有变化','info');
+        await saveMaterialsToCloud(); toast(`保存成功，更新了${changed}项`,'success');
+        countItems=[]; renderCount(); refreshAll();
+    };
+    // 库存搜索
+    let stockSearchTimer;
+    async function renderStock(filter=''){
+        const tbody=document.getElementById('stockBody'),countSpan=document.getElementById('stockCount');
+        tbody.innerHTML='<tr><td colspan="3" class="text-center text-muted">搜索中...</td></tr>'; countSpan.textContent='...';
+        const kw=filter.trim().toLowerCase(); let list=[],source='本地';
+        if(kw) list=materials.filter(m=>m.id.toLowerCase().includes(kw)||m.mpn.toLowerCase().includes(kw));
+        else list=[...materials];
+        if(list.length===0&&kw){ source='云端'; const {data,error}=await supabase.from('materials').select('*').or(`id.ilike.%${kw}%,mpn.ilike.%${kw}%`); if(!error){list=data||[]; list.forEach(d=>{if(!materials.find(m=>m.id===d.id&&m.mpn===d.mpn)) materials.push(d);});} }
+        const total=list.length; if(list.length>MAX_STOCK_DISPLAY) list=list.slice(0,MAX_STOCK_DISPLAY);
+        if(!list.length) tbody.innerHTML='<tr><td colspan="3" class="text-center text-muted">暂无数据</td></tr>';
+        else {
+            tbody.innerHTML=list.map(m=>{const key=m.id+'|'+m.mpn;return `<tr><td>${m.id}</td><td>${m.mpn||'-'}</td><td class="${m.stock<=LOW?'stock-low':''}"><span class="editable-stock" data-key="${key}">${m.stock}</span></td></tr>`;}).join('');
+            tbody.querySelectorAll('.editable-stock').forEach(span=>span.addEventListener('click',function(e){
+                if(this.querySelector('input')) return; const key=this.dataset.key; const cur=parseInt(this.textContent)||0;
+                const input=document.createElement('input'); input.type='number'; input.value=cur; input.min=0;
+                input.addEventListener('blur',async function(){const newVal=parseInt(this.value)||0;const [id,mpn]=key.split('|');
+                    await supabase.from('materials').update({stock:newVal}).eq('id',id).eq('mpn',mpn);
+                    const mat=materials.find(m=>m.id===id&&m.mpn===mpn);if(mat) mat.stock=newVal;
+                    toast(`库存已更新：${id} ${mpn} → ${newVal}`,'success');renderStock(document.getElementById('stockSearch').value);});
+                input.addEventListener('keydown',function(e){if(e.key==='Enter')this.blur();});
+                this.innerHTML='';this.appendChild(input);input.focus();
+            }));
+        }
+        countSpan.textContent=total>MAX_STOCK_DISPLAY?`${MAX_STOCK_DISPLAY}+ (${source})`:`${total} (${source})`;
+    }
+    document.getElementById('stockSearch').addEventListener('input',function(){clearTimeout(stockSearchTimer);stockSearchTimer=setTimeout(()=>renderStock(this.value),300);});
+
+    // 出入库清单
+    document.querySelectorAll('#page-report .tab-btn').forEach(btn=>{btn.addEventListener('click',function(){const tabName=this.dataset.tab;document.querySelectorAll('#page-report .tab-btn').forEach(b=>b.classList.remove('active'));this.classList.add('active');document.querySelectorAll('#page-report .report-tab-content').forEach(c=>c.classList.remove('active'));document.getElementById(tabName).classList.add('active');});});
+    function renderOutReport() {
+        const date = document.getElementById('reportOutDate').value; if (!date) return;
+        const cangma = document.getElementById('reportOutCangma').value;
+        const filtered = records.filter(r => r.type==='out' && r.date && r.date.startsWith(date) && (cangma==='' || r.note===cangma));
+        const summary = {}; filtered.forEach(r => { const key = `${r.material_id}|${r.mpn||''}`; if (!summary[key]) summary[key] = { material_id: r.material_id, mpn: r.mpn||'', quantity: 0 }; summary[key].quantity += r.quantity; });
+        const tbody = document.getElementById('outReportBody');
+        if (Object.keys(summary).length === 0) { tbody.innerHTML = '<tr><td colspan="3" class="text-center text-muted">无出库记录</td></tr>'; return; }
+        tbody.innerHTML = Object.values(summary).map(row => `<tr><td>${row.material_id}</td><td>${row.mpn||'-'}</td><td>${row.quantity}</td></tr>`).join('');
+    }
+    document.getElementById('reportOutDate').addEventListener('change', renderOutReport);
+    document.getElementById('reportOutCangma').addEventListener('change', renderOutReport);
+    document.getElementById('queryInBtn').addEventListener('click', () => {
+        const matId = document.getElementById('reportInMaterialId').value.trim();
+        let filtered = records.filter(r => r.type === 'in'); if (matId) filtered = filtered.filter(r => r.material_id === matId);
+        const summary = {}; filtered.forEach(r => { const key = `${r.material_id}|${r.mpn || ''}`; if (!summary[key]) summary[key] = { material_id: r.material_id, mpn: r.mpn || '', quantity: 0 }; summary[key].quantity += r.quantity; });
+        const tbody = document.getElementById('inReportBody');
+        if (Object.keys(summary).length === 0) { tbody.innerHTML = '<tr><td colspan="3" class="text-center text-muted">无入库记录</td></tr>'; return; }
+        tbody.innerHTML = Object.values(summary).map(row => `<tr><td>${row.material_id}</td><td>${row.mpn || '-'}</td><td>${row.quantity}</td></tr>`).join('');
+    });
+
+    // 储位查找
+    const locInput=$('#locationSearchInput'),locBody=$('#locationResultBody'),locCount=$('#locationResultCount');
+    function clearLocationResult(){locBody.innerHTML='<tr><td colspan="4" class="text-center text-muted">输入后四位查找（储位数据库）</td></tr>';locCount.textContent='0';locInput.value='';}
+    async function performLocationSearch(){
+        const val=locInput.value.trim().toUpperCase();if(!val) return toast('请输入后四位','info');
+        locBody.innerHTML='<tr><td colspan="4" class="text-center text-muted">搜索中...</td></tr>';locCount.textContent='...';
+        let res=locationData.filter(d=>d.part.slice(-4)===val);
+        if(res.length===0){ const {data,error}=await supabase.from('locations').select('part,location,responsible').ilike('part',`%${val}`); if(!error&&data){data.forEach(d=>{if(!locationData.find(item=>item.part===d.part)) locationData.push({part:d.part,location:d.location,responsible:d.responsible||''});});res=data.map(d=>({part:d.part,location:d.location,responsible:d.responsible||''}));} }
+        if(!res.length){locBody.innerHTML='<tr><td colspan="4" class="text-center text-muted">未找到匹配项</td></tr>';locCount.textContent='0';return;}
+        locBody.innerHTML=res.map(d=>`<tr id="loc-row-${d.part}"><td>${d.part}</td><td class="cell-loc"><span class="display-loc">${d.location||'-'}</span><input class="form-control edit-loc" value="${d.location||''}" style="display:none;width:80px;font-size:12px;padding:4px;"></td><td>${d.responsible||'-'}</td><td><button class="btn btn-sm btn-outline btn-edit-loc" data-part="${d.part}"><i class="fas fa-pen"></i></button><button class="btn btn-sm btn-success btn-save-loc" data-part="${d.part}" style="display:none;"><i class="fas fa-check"></i></button></td></tr>`).join('');
+        locCount.textContent=res.length;
+    }
+    $('#locationSearchBtn').onclick=performLocationSearch; locInput.onkeydown=e=>{if(e.key==='Enter') performLocationSearch();};
+    $('#locationClearBtn').onclick=clearLocationResult;
+    $('#locationResult').onclick=e=>{const btn=e.target.closest('button');if(!btn) return;const part=btn.dataset.part;if(!part) return;if(btn.classList.contains('btn-edit-loc')){const row=document.getElementById(`loc-row-${part}`);row.querySelector('.display-loc').style.display='none';row.querySelector('.edit-loc').style.display='inline-block';row.querySelector('.btn-edit-loc').style.display='none';row.querySelector('.btn-save-loc').style.display='inline-flex';row.querySelector('.edit-loc').focus();}else if(btn.classList.contains('btn-save-loc')){const row=document.getElementById(`loc-row-${part}`);const newLoc=row.querySelector('.edit-loc').value.trim();const d=locationData.find(d=>d.part===part);if(d){d.location=newLoc;saveLocationDataToCloud();toast('已更新','success');}row.querySelector('.display-loc').textContent=newLoc||'-';row.querySelector('.display-loc').style.display='inline';row.querySelector('.edit-loc').style.display='none';row.querySelector('.btn-edit-loc').style.display='inline-flex';row.querySelector('.btn-save-loc').style.display='none';}};
+
+    // 手动添加库存/储位
+    $('#saveManualBtn').onclick=async()=>{
+        const id=$('#manId').value.trim().toUpperCase(),mpn=$('#manMpn').value.trim(),manufacturer=$('#manManufacturer').value.trim(),location=$('#manLocation').value.trim(),stock=parseInt($('#manStock').value)||0,responsible=$('#manResponsible').value.trim();
+        if(!id) return toast('请输入料号','error'); if(!mpn) return toast('请输入MPN','error'); if(findMaterial(id,mpn)) return toast('该料号+MPN已存在','error');
+        materials.push({id,mpn,manufacturer,location,stock,responsible}); await saveMaterialsToCloud(); toast('添加成功','success');
+        ['manId','manLocation','manMpn','manManufacturer','manStock','manResponsible'].forEach(f=>$('#'+f).value=''); $('#manStock').value='0'; refreshAll();
+    };
+    $('#saveLocationManualBtn').onclick=async()=>{
+        const part=$('#locManId').value.trim().toUpperCase(),location=$('#locManLocation').value.trim(),responsible=$('#locManResponsible').value.trim();
+        if(!part) return toast('请输入料号','error'); if(!location) return toast('请输入储位','error'); if(locationData.find(d=>d.part===part)) return toast('该料号储位数据已存在','error');
+        locationData.push({part,location,responsible}); await saveLocationDataToCloud(); toast('储位数据添加成功','success');
+        $('#locManId').value=''; $('#locManLocation').value=''; $('#locManResponsible').value=''; refreshAll();
+    };
+
+    // Excel 处理
+    function readExcel(file,cb){const reader=new FileReader();reader.onload=e=>{try{const wb=XLSX.read(new Uint8Array(e.target.result),{type:'array'});cb(null,XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{header:1,defval:''}));}catch(err){cb(err);}};reader.readAsArrayBuffer(file);}
+    async function processExcelRows(rows,onProgress){
+        if(!rows||rows.length<2) throw new Error('无数据');
+        const h=rows[0].map(h=>String(h).trim());
+        const idxId=h.findIndex(x=>x.includes('料号')),idxLoc=h.findIndex(x=>x.includes('储位')),idxMpn=h.findIndex(x=>x.includes('MPN')),idxManu=h.findIndex(x=>x.includes('厂商')),idxStock=h.findIndex(x=>x.includes('数量')),idxResp=h.findIndex(x=>x.includes('担当')||x.includes('responsible'));
+        if(idxId===-1||idxMpn===-1) throw new Error('缺少料号或MPN列');
+        const total=rows.length-1; let processed=0,successCount=0,failCount=0;
+        for(let i=1;i<rows.length;i++){
+            const id=String(rows[i][idxId]).trim().toUpperCase(),mpn=String(rows[i][idxMpn]).trim();
+            if(!id||!mpn){processed++;if(onProgress) onProgress(processed,total,successCount,failCount);continue;}
+            const exist=findMaterial(id,mpn);
+            const location=idxLoc!==-1?String(rows[i][idxLoc]).trim():(exist?exist.location:''),manufacturer=idxManu!==-1?String(rows[i][idxManu]).trim():(exist?exist.manufacturer:''),stock=idxStock!==-1?parseInt(rows[i][idxStock])||0:(exist?exist.stock:0),responsible=idxResp!==-1?String(rows[i][idxResp]).trim():(exist?exist.responsible:'');
+            const record={id,mpn,manufacturer,location,stock,responsible};
+            if(exist){exist.location=location||exist.location;exist.manufacturer=manufacturer||exist.manufacturer;exist.stock=stock;exist.responsible=responsible||exist.responsible;}else materials.push(record);
+            const {error}=await supabase.from('materials').upsert(record); if(error){failCount++;}else{successCount++;}
+            processed++;if(onProgress) onProgress(processed,total,successCount,failCount);
+        }
+        await loadData(); return {successCount,failCount};
+    }
+    $('#uploadExcelBtn').onclick=async function(){
+        const btn=this;if(btn.disabled) return;const inp=$('#excelFile');if(!inp.files.length) return toast('请选择文件','error');
+        btn.disabled=true; const statusText=document.createElement('div');statusText.className='upload-status-text';inp.parentNode.appendChild(statusText);statusText.style.display='block';statusText.textContent='读取文件中...';
+        readExcel(inp.files[0],async(err,rows)=>{
+            if(err){toast('解析失败','error');statusText.remove();btn.disabled=false;return;}
+            const total=rows.length>0?rows.length-1:0;if(total===0){toast('无数据行','error');statusText.remove();btn.disabled=false;return;}
+            statusText.textContent=`共 ${total} 条，已处理 0 条`; let result={successCount:0,failCount:0};
+            try{result=await processExcelRows(rows,(processed,totalCnt,success,fail)=>{statusText.textContent=`共 ${totalCnt} 条，已处理 ${processed} 条，成功 ${success} 条`;});}
+            catch(e){toast(e.message,'error');statusText.remove();btn.disabled=false;return;}
+            statusText.textContent=`共 ${total} 条，成功 ${result.successCount} 条，失败 ${result.failCount} 条`;
+            setTimeout(()=>{statusText.remove();toast(`上传完成！成功 ${result.successCount} 条，失败 ${result.failCount} 条`,result.failCount>0?'error':'success');inp.value='';btn.disabled=false;refreshAll();},800);
+        });
+    };
+    $('#uploadLocationExcelBtn').onclick=async function(){
+        const btn=this;if(btn.disabled) return;const inp=$('#locationExcelFile');if(!inp.files.length) return toast('请选择文件','error');
+        btn.disabled=true; const statusText=document.createElement('div');statusText.className='upload-status-text';inp.parentNode.appendChild(statusText);statusText.style.display='block';statusText.textContent='读取文件中...';
+        readExcel(inp.files[0],async(err,rows)=>{
+            if(err){toast('解析失败','error');statusText.remove();btn.disabled=false;return;}
+            if(!rows||rows.length<2){toast('无数据行','error');statusText.remove();btn.disabled=false;return;}
+            const h=rows[0].map(h=>String(h).trim());
+            const idxPart=h.findIndex(x=>x.includes('料号')||x.toLowerCase().includes('part')),idxLoc=h.findIndex(x=>x.includes('储位')||x.toLowerCase().includes('location')),idxResp=h.findIndex(x=>x.includes('担当')||x.toLowerCase().includes('responsible'));
+            if(idxPart===-1||idxLoc===-1){toast('缺少料号或储位列','error');statusText.remove();btn.disabled=false;return;}
+            const total=rows.length-1; let success=0,fail=0,skipped=0; statusText.textContent=`共 ${total} 条，已处理 0 条`;
+            for(let i=1;i<rows.length;i++){
+                const part=String(rows[i][idxPart]).trim().toUpperCase(),location=String(rows[i][idxLoc]).trim(),responsible=idxResp!==-1?String(rows[i][idxResp]).trim():'';
+                if(!part||!location){skipped++;continue;}
+                try{ const {error}=await supabase.from('locations').upsert({part,location,responsible},{onConflict:'part'}); if(error){fail++;}else{const exist=locationData.find(d=>d.part===part);if(exist){exist.location=location;exist.responsible=responsible;}else locationData.push({part,location,responsible});success++;} }catch{fail++;}
+                statusText.textContent=`共 ${total} 条，已处理 ${i} 条，成功 ${success} 条`;
+            }
+            statusText.textContent=`共 ${total} 条，成功 ${success} 条，失败 ${fail} 条，跳过 ${skipped} 条`;
+            setCachedLocations(locationData);
+            setTimeout(()=>{statusText.remove();toast(`储位导入完成：成功 ${success} 条，失败 ${fail} 条`,fail>0?'error':'success');inp.value='';btn.disabled=false;refreshAll();},800);
+        });
+    };
+
+    // 折叠面板
+    document.querySelectorAll('.collapsible-header').forEach(header => { header.addEventListener('click', function() { this.classList.toggle('expanded'); this.nextElementSibling.classList.toggle('show'); }); });
+
+    // 盘点上传和手动添加（数据页，料号+储位）
+    document.getElementById('uploadCountExcelBtn').addEventListener('click', async function() {
+        const inp = document.getElementById('countExcelFile'); if (!inp.files.length) return toast('请选择文件','error');
+        readExcel(inp.files[0], async (err, rows) => {
+            if (err) { toast('解析失败','error'); return; }
+            if (!rows || rows.length < 2) { toast('无数据','error'); return; }
+            const h = rows[0].map(h => String(h).trim());
+            const idxId = h.findIndex(x => x.includes('料号')), idxLoc = h.findIndex(x => x.includes('储位')), idxQty = h.findIndex(x => x.includes('数量') || x.includes('盘点'));
+            if (idxId === -1 || idxLoc === -1 || idxQty === -1) return toast('缺少料号、储位或盘点数量列','error');
+            for (let i = 1; i < rows.length; i++) {
+                const id = String(rows[i][idxId]).trim().toUpperCase(), location = String(rows[i][idxLoc]).trim(), qty = parseInt(rows[i][idxQty]) || 0;
+                if (!id || !location) continue;
+                const matched = materials.filter(m => m.id === id && m.location === location); if (matched.length === 0) continue;
+                const existItem = countItems.find(item => item.id === id && item.location === location);
+                const originalTotal = matched.reduce((sum, m) => sum + m.stock, 0);
+                if (existItem) { existItem.newStock = qty; existItem.originalStock = originalTotal; }
+                else { countItems.push({ id, location, originalStock: originalTotal, newStock: qty }); }
+                matched.forEach(m => m.stock = qty);
+            }
+            await saveMaterialsToCloud(); toast('盘点数据已更新并同步云端', 'success'); renderCount(); refreshAll();
+        });
+    });
+    document.getElementById('addCountManBtn').addEventListener('click', function() {
+        const id = document.getElementById('countManId').value.trim().toUpperCase(), location = document.getElementById('countManLocation').value.trim(), qty = parseInt(document.getElementById('countManQty').value) || 0;
+        if (!id || !location) return toast('请输入料号和储位','error');
+        const matched = materials.filter(m => m.id === id && m.location === location); if (matched.length === 0) return toast('未找到匹配的物料','error');
+        const originalTotal = matched.reduce((sum, m) => sum + m.stock, 0);
+        const existItem = countItems.find(item => item.id === id && item.location === location);
+        if (existItem) { existItem.newStock = qty; existItem.originalStock = originalTotal; } else { countItems.push({ id, location, originalStock: originalTotal, newStock: qty }); }
+        matched.forEach(m => m.stock = qty); saveMaterialsToCloud().catch(err => console.error(err));
+        document.getElementById('countManId').value = ''; document.getElementById('countManLocation').value = ''; document.getElementById('countManQty').value = '1';
+        toast('已添加并更新库存', 'success'); renderCount(); refreshAll();
+    });
+
+    // 设置面板（含相机设置）
+    const settingsBtn=$('#settingsBtn'),settingsOverlay=$('#settingsOverlay'),settingsPanel=$('#settingsPanel'),settingsClose=$('#settingsClose');
+    function openSettings(){settingsOverlay.classList.add('show');settingsPanel.classList.add('show');}
+    function closeSettings(){settingsOverlay.classList.remove('show');settingsPanel.classList.remove('show');}
+    settingsBtn.addEventListener('click',openSettings); settingsClose.addEventListener('click',closeSettings); settingsOverlay.addEventListener('click',closeSettings);
+    $('#thresholdSelect').value=LOW;
+    $('#thresholdSelect').addEventListener('change',function(){LOW=parseInt(this.value);localStorage.setItem('wms_threshold',LOW);updateMarquee();toast(`预警阈值已设为 ${LOW}`,'success');});
+    $('#cameraPreviewHeightRange').addEventListener('input', function() {
+        scanSettings.previewHeight = parseInt(this.value);
+        localStorage.setItem('scan_preview_height', scanSettings.previewHeight);
+        $('#cameraPreviewHeightValue').textContent = scanSettings.previewHeight + '%';
+        document.documentElement.style.setProperty('--camera-preview-height', scanSettings.previewHeight + 'vh');
+    });
+    $('#scanWindowSizeRange').addEventListener('input', function() {
+        scanSettings.windowSize = parseInt(this.value);
+        localStorage.setItem('scan_window_size', scanSettings.windowSize);
+        $('#scanWindowSizeValue').textContent = scanSettings.windowSize + '%';
+        document.documentElement.style.setProperty('--scan-window-size', scanSettings.windowSize + '%');
+    });
+    $('#scanCooldownSelect').addEventListener('change', function() { scanSettings.cooldown = parseFloat(this.value); localStorage.setItem('scan_cooldown', scanSettings.cooldown); });
+    $('#autoOpenCameraSelect').addEventListener('change', function() { scanSettings.autoOpen = this.value === 'auto'; localStorage.setItem('scan_auto_open', scanSettings.autoOpen); });
+    $('#soundSwitchTrack').addEventListener('click', function() { scanSettings.sound = !scanSettings.sound; this.classList.toggle('on', scanSettings.sound); localStorage.setItem('scan_sound', scanSettings.sound); });
+    $('#settingClearCache').addEventListener('click',async()=>{closeSettings();materials=[];records=[];userMessages=[];countItems=[];locationData=[];hiddenAlerts.clear();localStorage.removeItem('wms_hidden_alerts');if(currentUser) await supabase.from('messages').delete().eq('user_id',currentUser.id);localStorage.removeItem('wms_messages');localStorage.removeItem('wms_locations');toast('本地缓存已清空','info');refreshAll();showPage('home');});
+    $('#settingReset').addEventListener('click',()=>{closeSettings();showConfirm('此操作将删除所有云端物料、出入库记录、储位数据和个人消息，不可恢复！','fa-exclamation-triangle','#f59e0b','btn-modal-warning',async()=>{try{await supabase.from('records').delete().neq('id',-1);await supabase.from('materials').delete().neq('id','');await supabase.from('locations').delete().neq('part','');if(currentUser) await supabase.from('messages').delete().eq('user_id',currentUser.id);materials=[];records=[];userMessages=[];countItems=[];locationData=[];hiddenAlerts.clear();localStorage.removeItem('wms_hidden_alerts');localStorage.removeItem('wms_messages');localStorage.removeItem('wms_locations');toast('所有数据已重置','success');refreshAll();showPage('home');}catch(error){toast('重置失败: '+error.message,'error');}});});
+
+    // 退出登录
+    $('#logoutBtn').onclick=()=>{showConfirm('确定要退出登录吗？','fa-sign-out-alt','#ef4444','btn-modal-danger',()=>{currentUser=null;localStorage.removeItem('wms_user');showPage('login');toast('已退出登录','info');});};
+
+    // 滚动预警设置页
+    function renderSubCustomMsgs(){
+        const c=$('#subCustomMsgList'); if(!c) return;
+        const summaryAlerts = getSummaryAlerts();
+        let html = '<div class="text-muted" style="font-size:16px;margin-bottom:8px;">低库存预警（勾选则显示）</div>';
+        html += summaryAlerts.map(a => { const key = `LOW:${a.id}`; const checked = !hiddenAlerts.has(key) ? 'checked' : ''; return `<label class="checkbox-label"><input type="checkbox" class="alert-check" data-key="${key}" ${checked}> ${a.id} 库存 ${a.total}</label>`; }).join('');
+        html += '<div class="text-muted" style="font-size:16px;margin:12px 0 8px;">自定义消息（勾选则显示）</div>';
+        html += userMessages.map((m, i) => { const key = `MSG:${m.text}`; const checked = !hiddenAlerts.has(key) ? 'checked' : ''; return `<label class="checkbox-label"><input type="checkbox" class="alert-check" data-key="${key}" ${checked}> ${m.text}</label>`; }).join('');
+        c.innerHTML = html || '<div class="text-muted">暂无预警或消息</div>';
+        c.querySelectorAll('.alert-check').forEach(cb => { cb.addEventListener('change', async function() { const key = this.dataset.key; if (this.checked) hiddenAlerts.delete(key); else hiddenAlerts.add(key); await saveAlertConfig(); updateMarquee(); }); });
+    }
+    $('#subAddCustomMsgBtn').onclick=async()=>{const txt=$('#subCustomMsgInput').value.trim();if(!txt) return toast('请输入内容','error');userMessages.push({text:txt});await syncMessagesToCloud();updateMarquee();renderSubCustomMsgs();$('#subCustomMsgInput').value='';};
+    $('#backFromMsgBtn').onclick=()=>showPage('mine'); $('#goCustomMsgBtn').onclick=()=>showPage('customMsg');
+
+    function updateMine(){$('#myTotalMaterials').textContent=materials.length;$('#myTotalStock').textContent=materials.reduce((s,m)=>s+m.stock,0);$('#myTotalRecords').textContent=records.length;const d=Math.floor((new Date()-startTime)/1000);$('#sysUptime').textContent=`${Math.floor(d/3600)}h ${Math.floor((d%3600)/60)}m`;$('#lastUpdateTime').textContent=new Date().toLocaleTimeString('zh-CN',{hour12:false});if(currentUser){$('#profileName').textContent=currentUser.real_name||currentUser.username;$('#profileRole').textContent=currentUser.is_admin?'管理员':'普通用户';}}
+    function loadCustomStyles(){const avatar=localStorage.getItem('wms_avatar');if(avatar){document.getElementById('avatarIcon').style.display='none';let img=document.getElementById('avatarImg');if(!img){img=document.createElement('img');img.id='avatarImg';img.style.width='64px';img.style.height='64px';img.style.borderRadius='50%';img.style.objectFit='cover';document.getElementById('avatarBtn').appendChild(img);}img.src=avatar;}else{document.getElementById('avatarIcon').style.display='block';const img=document.getElementById('avatarImg');if(img) img.remove();}}
+    function loadProfileBg(){const bg=localStorage.getItem('wms_profile_bg');const card=document.getElementById('myProfileCard');if(card) card.style.backgroundImage=bg?`url(${bg})`:'';}
+    document.getElementById('changeAvatarBtn').addEventListener('click',()=>{const input=document.createElement('input');input.type='file';input.accept='image/*';input.onchange=(e)=>{const file=e.target.files[0];if(!file) return;if(file.size>5*1024*1024) return toast('头像不能超过5MB','error');const reader=new FileReader();reader.onload=(ev)=>{localStorage.setItem('wms_avatar',ev.target.result);loadCustomStyles();toast('头像已更新','success');};reader.readAsDataURL(file);};input.click();});
+    document.getElementById('changeBgBtn').addEventListener('click',()=>{const input=document.createElement('input');input.type='file';input.accept='image/*';input.onchange=(e)=>{const file=e.target.files[0];if(!file) return;if(file.size>5*1024*1024) return toast('背景不能超过5MB','error');const reader=new FileReader();reader.onload=(ev)=>{localStorage.setItem('wms_profile_bg',ev.target.result);loadProfileBg();toast('背景已更新','success');};reader.readAsDataURL(file);};input.click();});
+    document.getElementById('resetBgBtn').addEventListener('click',()=>{localStorage.removeItem('wms_avatar');localStorage.removeItem('wms_profile_bg');loadCustomStyles();loadProfileBg();toast('已重置','info');});
+
+    // 登录/注册
+    $('#loginBtn').onclick=async()=>{const u=$('#loginUsername').value.trim(),p=$('#loginPassword').value;if(!u||!p) return toast('请输入账号密码','error');const {data,error}=await supabase.rpc('login_user',{p_username:u,p_password:p});if(error){toast('登录失败: '+error.message,'error');return;}if(!data||!data.length){toast('登录失败','error');return;}const r=data[0];if(r.success){currentUser={id:r.id,username:r.username,real_name:r.real_name,is_admin:r.is_admin};localStorage.setItem('wms_user',JSON.stringify(currentUser));toast('登录成功','success');await loadData();setupAutocompletes();showPage('home');updateMine();updateMarquee();}else toast(r.message||'账号或密码错误','error');};
+    $('#registerBtn').onclick=async()=>{const u=$('#regUsername').value.trim(),p=$('#regPassword').value,n=$('#regRealName').value.trim();if(!u||!p) return toast('请输入账号密码','error');if(!n) return toast('请输入姓名','error');const {data,error}=await supabase.rpc('register_user',{p_username:u,p_password:p,p_real_name:n});if(error){toast('注册失败: '+error.message,'error');return;}if(!data||!data.length){toast('注册失败','error');return;}const r=data[0];if(r.success){toast('注册成功，请登录','success');showPage('login');$('#regUsername').value='';$('#regPassword').value='';$('#regRealName').value='';}else toast(r.message||'注册失败','error');};
+    $('#goRegisterLink').onclick=e=>{e.preventDefault();showPage('register');};
+    $('#goLoginLink').onclick=e=>{e.preventDefault();showPage('login');};
+
+    // 首页滚动点击暂停/继续
+    const marquee = $('#alertMarquee');
+    marquee.addEventListener('click', function() { this.classList.toggle('paused'); });
+
+    // 自动刷新
+    async function refreshAll() { await saveMaterialsToCloud(); await saveLocationDataToCloud(); renderStock(); updateDaily(); updateMarquee(); if(currentPage==='count') renderCount(); if(currentPage==='customMsg') renderSubCustomMsgs(); if(currentPage==='mine') updateMine(); setupAutocompletes(); }
 
     // 启动
     await loadData();
-    if (currentUser) {
-        showPage('home');
-        renderStock();
-        updateDaily();
-        updateMarquee();
-        updateMine();
-        loadCustomStyles();
-        loadProfileBg();
-    } else showPage('login');
+    setupAutocompletes();
+    if(currentUser){showPage('home');renderStock();updateDaily();updateMarquee();updateMine();loadCustomStyles();loadProfileBg();}
+    else showPage('login');
+    document.onkeydown=e=>{if(e.key==='Escape'&&currentPage!=='home'&&currentUser) showPage('home');};
 });
 </script>
 </body>
