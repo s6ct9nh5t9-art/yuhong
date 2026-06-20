@@ -199,13 +199,15 @@
         .scan-panel-body canvas{position:absolute;top:0;left:0;width:100%;height:100%}
         .scan-panel-footer{padding:12px 16px;text-align:center;background:#fff}
         /* 半屏扫码面板 */
-        .scan-half-panel{position:fixed;top:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;height:50vh;background:#fff;z-index:200;border-radius:0 0 20px 20px;box-shadow:0 10px 25px rgba(0,0,0,0.2);transition:transform 0.35s ease;display:flex;flex-direction:column;overflow:hidden;transform:translateY(-100%);}
-        .scan-half-panel.show{transform:translateY(0);}
+        .scan-half-panel{position:fixed;top:0;left:50%;transform:translate(-50%, -100%);width:100%;max-width:480px;height:50vh;background:#fff;z-index:200;border-radius:0 0 20px 20px;box-shadow:0 10px 25px rgba(0,0,0,0.2);transition:transform 0.35s ease;display:flex;flex-direction:column;overflow:hidden;}
+        .scan-half-panel.show{transform:translate(-50%, 0);}
         .scan-half-header{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;border-bottom:1px solid #e2e8f0;background:#fff;}
         .scan-half-body{flex:1;position:relative;background:#000;overflow:hidden;}
         .scan-half-body video{width:100%;height:100%;object-fit:cover;}
         .scan-half-body canvas{position:absolute;top:0;left:0;width:100%;height:100%;}
         .scan-half-footer{display:flex;justify-content:center;padding:10px;background:#fff;}
+        /* 新增：当半屏扫码显示时，表单下移 */
+        .shift-down{margin-top:50vh;}
         .setting-item{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid #f1f5f9}
         .setting-item:last-child{border-bottom:none}
         .setting-label{font-size:14px;color:#475569}
@@ -260,7 +262,7 @@
         .range-inputs{display:flex;align-items:center;gap:6px;}
         .range-inputs span{margin:0 2px;color:#64748b;}
         .range-inputs input{flex:1;}
-</style>
+    </style>
 </head>
 
 <body>
@@ -384,14 +386,22 @@
         </div>
         <div id="page-out" class="page">
             <div class="section-title"><i class="fas fa-sign-out-alt" style="color:#ef4444;"></i> 出库</div>
-            <button class="btn btn-outline btn-block" id="outScanBtn"><i class="fas fa-qrcode"></i> 扫码</button>
-            <form id="outForm" style="margin-top:12px;">
-                <div class="form-group"><label>料号 <span class="required">*</span></label><div class="autocomplete-wrapper"><input type="text" class="form-control" id="outMaterialInput" placeholder="输入料号后四位搜索" autocomplete="off"><input type="hidden" id="outMaterialId"><div class="autocomplete-dropdown" id="outMaterialDropdown"></div></div></div>
-                <div class="form-group"><label>MPN <span class="required">*</span></label><select class="form-control" id="outMpn" disabled><option value="">请先选择料号</option></select></div>
-                <div class="form-group"><label>数量 <span class="required">*</span></label><input type="number" class="form-control" id="outQty" placeholder="请输入数量" min="1" required><small style="color:#94a3b8;" id="outStockHint"></small></div>
-                <div class="form-group"><label>仓码 <span class="required">*</span></label><select class="form-control" id="outCangma"><option value="">请选择</option><option value="B8SA">B8SA</option><option value="B909">B909</option><option value="B907">B907</option></select></div>
-                <button type="submit" class="btn btn-danger btn-block" id="outSubmitBtn" disabled><i class="fas fa-arrow-right"></i> 确认出库</button>
-            </form>
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+                <button class="btn btn-outline" id="outScanBtn"><i class="fas fa-qrcode"></i> 扫码</button>
+                <div style="display:flex;align-items:center;gap:4px;">
+                    <span style="font-size:0.8rem;">连续扫码</span>
+                    <div class="switch-track" id="outContinuousSwitch"><div class="switch-thumb"></div></div>
+                </div>
+            </div>
+            <div id="outFormContainer">
+                <form id="outForm" style="margin-top:12px;">
+                    <div class="form-group"><label>料号 <span class="required">*</span></label><div class="autocomplete-wrapper"><input type="text" class="form-control" id="outMaterialInput" placeholder="输入料号后四位搜索" autocomplete="off"><input type="hidden" id="outMaterialId"><div class="autocomplete-dropdown" id="outMaterialDropdown"></div></div></div>
+                    <div class="form-group"><label>MPN <span class="required">*</span></label><select class="form-control" id="outMpn" disabled><option value="">请先选择料号</option></select></div>
+                    <div class="form-group"><label>数量 <span class="required">*</span></label><input type="number" class="form-control" id="outQty" placeholder="请输入数量" min="1" required><small style="color:#94a3b8;" id="outStockHint"></small></div>
+                    <div class="form-group"><label>仓码 <span class="required">*</span></label><select class="form-control" id="outCangma"><option value="">请选择</option><option value="B8SA">B8SA</option><option value="B909">B909</option><option value="B907">B907</option></select></div>
+                    <button type="submit" class="btn btn-danger btn-block" id="outSubmitBtn" disabled><i class="fas fa-arrow-right"></i> 确认出库</button>
+                </form>
+            </div>
             <div class="scan-half-panel" id="outHalfScanPanel">
                 <div class="scan-half-header"><span>扫码出库</span><i class="fas fa-times" id="closeOutHalfScan"></i></div>
                 <div class="scan-half-body"><video id="outHalfScanVideo" autoplay playsinline muted></video><canvas id="outHalfScanCanvas"></canvas></div>
@@ -400,13 +410,21 @@
         </div>
         <div id="page-in" class="page">
             <div class="section-title"><i class="fas fa-sign-in-alt" style="color:#22c55e;"></i> 入库</div>
-            <button class="btn btn-outline btn-block" id="inScanBtn"><i class="fas fa-qrcode"></i> 扫码</button>
-            <form id="inForm" style="margin-top:12px;">
-                <div class="form-group"><label>料号 <span class="required">*</span></label><div class="autocomplete-wrapper"><input type="text" class="form-control" id="inMaterialInput" placeholder="输入料号后四位搜索" autocomplete="off"><input type="hidden" id="inMaterialId"><div class="autocomplete-dropdown" id="inMaterialDropdown"></div></div></div>
-                <div class="form-group"><label>MPN <span class="required">*</span></label><select class="form-control" id="inMpn" disabled><option value="">请先选择料号</option></select></div>
-                <div class="form-group"><label>数量 <span class="required">*</span></label><input type="number" class="form-control" id="inQty" placeholder="请输入数量" min="1" required></div>
-                <button type="submit" class="btn btn-success btn-block"><i class="fas fa-arrow-left"></i> 确认入库</button>
-            </form>
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+                <button class="btn btn-outline" id="inScanBtn"><i class="fas fa-qrcode"></i> 扫码</button>
+                <div style="display:flex;align-items:center;gap:4px;">
+                    <span style="font-size:0.8rem;">连续扫码</span>
+                    <div class="switch-track" id="inContinuousSwitch"><div class="switch-thumb"></div></div>
+                </div>
+            </div>
+            <div id="inFormContainer">
+                <form id="inForm" style="margin-top:12px;">
+                    <div class="form-group"><label>料号 <span class="required">*</span></label><div class="autocomplete-wrapper"><input type="text" class="form-control" id="inMaterialInput" placeholder="输入料号后四位搜索" autocomplete="off"><input type="hidden" id="inMaterialId"><div class="autocomplete-dropdown" id="inMaterialDropdown"></div></div></div>
+                    <div class="form-group"><label>MPN <span class="required">*</span></label><select class="form-control" id="inMpn" disabled><option value="">请先选择料号</option></select></div>
+                    <div class="form-group"><label>数量 <span class="required">*</span></label><input type="number" class="form-control" id="inQty" placeholder="请输入数量" min="1" required></div>
+                    <button type="submit" class="btn btn-success btn-block"><i class="fas fa-arrow-left"></i> 确认入库</button>
+                </form>
+            </div>
             <div class="scan-half-panel" id="inHalfScanPanel">
                 <div class="scan-half-header"><span>扫码入库</span><i class="fas fa-times" id="closeInHalfScan"></i></div>
                 <div class="scan-half-body"><video id="inHalfScanVideo" autoplay playsinline muted></video><canvas id="inHalfScanCanvas"></canvas></div>
@@ -514,7 +532,7 @@
             <div class="my-profile" id="myProfileCard"><div class="avatar" id="avatarBtn"><i class="fas fa-user-circle" id="avatarIcon"></i></div><div class="username" id="profileName">仓库管理员</div><div class="user-role" id="profileRole">WMS 系统</div><div class="bg-actions" style="display:flex;gap:8px;justify-content:center;margin-top:8px;"><button class="btn btn-outline btn-sm" id="changeAvatarBtn"><i class="fas fa-camera"></i> 头像</button><button class="btn btn-outline btn-sm" id="changeBgBtn"><i class="fas fa-image"></i> 背景</button><button class="btn btn-outline btn-sm" id="resetBgBtn"><i class="fas fa-undo"></i> 重置</button></div></div>
             <div class="my-info-grid"><div class="my-info-item"><div class="num" id="myTotalMaterials">0</div><div class="label">料号总数</div></div><div class="my-info-item"><div class="num" id="myTotalStock">0</div><div class="label">总库存量</div></div><div class="my-info-item"><div class="num" id="myTotalRecords">0</div><div class="label">操作记录</div></div></div>
             <button class="btn btn-outline btn-block" style="margin-top:20px;" id="goCustomMsgBtn"><i class="fas fa-bullhorn"></i> 滚动预警设置</button>
-            <div style="margin-top:20px;background:#f8fafc;border-radius:16px;padding:16px;"><div style="font-weight:600;margin-bottom:8px;"><i class="fas fa-info-circle" style="color:#3b82f6;"></i> 系统信息</div><div style="display:flex;justify-content:space-between;font-size:13px;color:#475569;padding:4px 0;"><span>版本</span><span>v23.2 (开发者:于洪章)</span></div><div style="display:flex;justify-content:space-between;font-size:13px;color:#475569;padding:4px 0;"><span>运行时间</span><span id="sysUptime">--</span></div><div style="display:flex;justify-content:space-between;font-size:13px;color:#475569;padding:4px 0;"><span>数据更新</span><span id="lastUpdateTime">2026-06-20</span></div></div>
+            <div style="margin-top:20px;background:#f8fafc;border-radius:16px;padding:16px;"><div style="font-weight:600;margin-bottom:8px;"><i class="fas fa-info-circle" style="color:#3b82f6;"></i> 系统信息</div><div style="display:flex;justify-content:space-between;font-size:13px;color:#475569;padding:4px 0;"><span>版本</span><span>v23.2</span></div><div style="display:flex;justify-content:space-between;font-size:13px;color:#475569;padding:4px 0;"><span>开发者</span><span>于洪章</span></div><div style="display:flex;justify-content:space-between;font-size:13px;color:#475569;padding:4px 0;"><span>运行时间</span><span id="sysUptime">--</span></div><div style="display:flex;justify-content:space-between;font-size:13px;color:#475569;padding:4px 0;"><span>版本更新</span><span id="lastUpdateTime">2026-06-20</span></div></div>
             <button class="btn btn-outline btn-block" style="margin-top:16px;" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> 退出登录</button>
         </div>
         <div id="page-custom-msg" class="page" style="padding-top:20px;">
@@ -599,6 +617,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     let countFilterShelf = 'all';
     let manualPartList = [];
     let manualPartIndex = 0;
+
+    // 连续扫码状态
+    let outContinuous = false;
+    let inContinuous = false;
 
     const savedNames = localStorage.getItem('wms_shelf_names');
     if (savedNames) try { shelfNames = JSON.parse(savedNames); } catch(e){}
@@ -778,6 +800,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     let currentPage='home';
     function showPage(name) {
         if (!currentUser && name!=='login' && name!=='register') { showPage('login'); return; }
+        // 离开扫码页面时自动关闭摄像头（修改点1）
+        if (currentPage === 'scan' && name !== 'scan') { stopCam(); }
         if (currentPage === 'out' || currentPage === 'in') { stopHalfScan(); }
         Object.values(pages).forEach(p=>p.classList.remove('active'));
         if(pages[name]) pages[name].classList.add('active');
@@ -799,6 +823,13 @@ document.addEventListener('DOMContentLoaded', async () => {
         if(name==='mine'){updateMine();loadCustomStyles();loadProfileBg();}
         if(name==='customMsg') renderSubCustomMsgs();
         window.scrollTo({top:0,behavior:'smooth'});
+        // 出入库页面如果半屏面板已打开，表单下移（修改点2）
+        if (name === 'out' && document.getElementById('outHalfScanPanel').classList.contains('show')) {
+            document.getElementById('outFormContainer').classList.add('shift-down');
+        }
+        if (name === 'in' && document.getElementById('inHalfScanPanel').classList.contains('show')) {
+            document.getElementById('inFormContainer').classList.add('shift-down');
+        }
     }
     $('#bottomNav').onclick=e=>{const btn=e.target.closest('.nav-item');if(btn&&pages[btn.dataset.tab]) showPage(btn.dataset.tab);};
     $('#page-home').onclick=e=>{const card=e.target.closest('.home-card[data-page]');if(card&&pages[card.dataset.page]) showPage(card.dataset.page);};
@@ -921,14 +952,19 @@ document.addEventListener('DOMContentLoaded', async () => {
         document.getElementById('btnStart').className = 'btn btn-primary';
         document.getElementById('btnTorch').disabled = true;
     }
-    // 半屏扫码
+    // 半屏扫码（支持连续模式）
     async function startHalfScan(mode) {
         if (halfScanStream) await stopHalfScan();
         halfScanMode = mode;
-        const panel = document.getElementById(mode === 'out' ? 'outHalfScanPanel' : 'inHalfScanPanel');
-        const video = document.getElementById(mode === 'out' ? 'outHalfScanVideo' : 'inHalfScanVideo');
-        const canvas = document.getElementById(mode === 'out' ? 'outHalfScanCanvas' : 'inHalfScanCanvas');
+        const panelId = mode === 'out' ? 'outHalfScanPanel' : 'inHalfScanPanel';
+        const videoId = mode === 'out' ? 'outHalfScanVideo' : 'inHalfScanVideo';
+        const canvasId = mode === 'out' ? 'outHalfScanCanvas' : 'inHalfScanCanvas';
+        const containerId = mode === 'out' ? 'outFormContainer' : 'inFormContainer';
+        const panel = document.getElementById(panelId);
+        const video = document.getElementById(videoId);
+        const canvas = document.getElementById(canvasId);
         panel.classList.add('show');
+        document.getElementById(containerId).classList.add('shift-down'); // 表单下移
         try {
             halfScanStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment', width: { ideal: 640 }, height: { ideal: 480 }, focusMode: { ideal: 'continuous' } } });
             video.srcObject = halfScanStream;
@@ -946,7 +982,9 @@ document.addEventListener('DOMContentLoaded', async () => {
                         const code = jsQR(imgData.data, w, h, { inversionAttempts: 'dontInvert' });
                         if (code && code.data) {
                             handleHalfScanResult(code.data, mode);
-                            stopHalfScan();
+                            const isContinuous = mode === 'out' ? outContinuous : inContinuous;
+                            if (!isContinuous) stopHalfScan(); // 非连续模式扫到就关
+                            // 连续模式保持摄像头，不关闭
                             return;
                         }
                     }
@@ -960,8 +998,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         halfScanning = false;
         if (halfScanAnimId) { cancelAnimationFrame(halfScanAnimId); halfScanAnimId = null; }
         if (halfScanStream) { halfScanStream.getTracks().forEach(t => t.stop()); halfScanStream = null; }
-        document.getElementById('outHalfScanPanel')?.classList.remove('show');
-        document.getElementById('inHalfScanPanel')?.classList.remove('show');
+        const outPanel = document.getElementById('outHalfScanPanel');
+        const inPanel = document.getElementById('inHalfScanPanel');
+        outPanel?.classList.remove('show');
+        inPanel?.classList.remove('show');
+        document.getElementById('outFormContainer')?.classList.remove('shift-down');
+        document.getElementById('inFormContainer')?.classList.remove('shift-down');
     }
     function handleHalfScanResult(data, mode) {
         const parsed = parseSmart(data);
@@ -979,6 +1021,18 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
         toast(`已识别料号: ${part}`, 'success');
     }
+
+    // 连续扫码开关处理
+    document.getElementById('outContinuousSwitch').addEventListener('click', function() {
+        outContinuous = !outContinuous;
+        this.classList.toggle('on', outContinuous);
+        toast(outContinuous ? '出库连续扫码已开启' : '出库单次扫码', 'info');
+    });
+    document.getElementById('inContinuousSwitch').addEventListener('click', function() {
+        inContinuous = !inContinuous;
+        this.classList.toggle('on', inContinuous);
+        toast(inContinuous ? '入库连续扫码已开启' : '入库单次扫码', 'info');
+    });
 
     // 手动盘点自动顺序盘点
     function loadManualPartList(shelfIdx) {
@@ -1153,10 +1207,12 @@ document.addEventListener('DOMContentLoaded', async () => {
             });
         });
 
+        // 出入库扫码按钮
         document.getElementById('outScanBtn').onclick = () => startHalfScan('out');
         document.getElementById('inScanBtn').onclick = () => startHalfScan('in');
         document.getElementById('closeOutHalfScan').onclick = stopHalfScan;
         document.getElementById('closeInHalfScan').onclick = stopHalfScan;
+        // 半屏内的按钮可根据需要保留，但连续扫码时摄像头不通过按钮关闭，改为开关控制
         document.getElementById('outHalfScanBtn').onclick = () => halfScanning ? stopHalfScan() : startHalfScan('out');
         document.getElementById('inHalfScanBtn').onclick = () => halfScanning ? stopHalfScan() : startHalfScan('in');
     }
@@ -1226,6 +1282,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         document.getElementById('outQty').value = ''; document.getElementById('outStockHint').textContent = '';
         renderStock(); updateDaily(); updateMarquee();
         saveRecordToCloud(record).catch(err => console.error(err)); saveMaterialsToCloud().catch(err => console.error(err));
+        // 如果非连续扫码，确认后关闭半屏面板
+        if (!outContinuous) { stopHalfScan(); }
+        // 连续扫码时面板保持，摄像头继续运行，不清空（料号需手动清空）
     });
     document.getElementById('inForm').addEventListener('submit', async function(e) {
         if (!currentUser || !currentUser.id) return;
@@ -1240,6 +1299,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         document.getElementById('inQty').value = '';
         renderStock(); updateDaily(); updateMarquee();
         saveRecordToCloud(record).catch(err => console.error(err)); saveMaterialsToCloud().catch(err => console.error(err));
+        if (!inContinuous) { stopHalfScan(); }
     }); // ========== 盘点计划导入 ==========
     async function importPlan() {
         if (!currentUser || !currentUser.id) return;
@@ -1281,15 +1341,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('exportCountBtn').addEventListener('click', exportCountData);
     document.getElementById('clearTodayBtn').addEventListener('click', () => {
         if (!currentUser || !currentUser.id) return;
-        showConfirm('确定要清空当日所有盘点数据吗？此操作不可恢复。', 'fa-trash-alt', '#ef4444', 'btn-modal-danger', async () => {
+        showConfirm('确定要清空当日实际盘点数据（数量>0）吗？盘点计划将被保留。', 'fa-trash-alt', '#ef4444', 'btn-modal-danger', async () => {
             const date = countViewDate;
-            const { error } = await supabase.from('scan_records').delete().eq('user_id', Number(currentUser.id)).eq('date', date);
+            const { error } = await supabase.from('scan_records').delete().eq('user_id', Number(currentUser.id)).eq('date', date).gt('qty', 0);
             if (error) { toast('清空失败: ' + error.message, 'error'); return; }
-            countPlan = [];
-            countPlanDate = date;
-            updatePlanUI();
+            toast('当日实际盘点数据已清空，计划保留', 'success');
             renderCount();
-            toast('当日盘点数据已清空', 'success');
         });
     });
 
@@ -1418,7 +1475,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         else if(btn.classList.contains('btn-save-loc')){const row=document.getElementById(`loc-row-${part}`);const newLoc=row.querySelector('.edit-loc').value.trim();const d=locationData.find(d=>d.part===part);if(d){d.location=newLoc;saveLocationDataToCloud();toast('已更新','success');}row.querySelector('.display-loc').textContent=newLoc||'-';row.querySelector('.display-loc').style.display='inline';row.querySelector('.edit-loc').style.display='none';row.querySelector('.btn-edit-loc').style.display='inline-flex';row.querySelector('.btn-save-loc').style.display='none';}
     });
 
-    // ========== 手动添加（最终修复版 - 强制 user_id 为整数） ==========
+    // ========== 手动添加 ==========
     function bindManualButtons() {
         const saveManualBtn = document.getElementById('saveManualBtn');
         const saveLocationManualBtn = document.getElementById('saveLocationManualBtn');
