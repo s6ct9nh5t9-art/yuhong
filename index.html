@@ -178,7 +178,7 @@
         .threshold-option{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid #f1f5f9}
         .threshold-option label{font-size:14px;color:#475569}
         .threshold-option select{width:100px;padding:6px 8px;border-radius:8px;border:1px solid #e2e8f0;background:#f8fafc;font-size:14px;outline:none}
-        .date-sm{width:130px !important;display:inline-block}
+        .date-sm{width:130px !important;display:inline-block;padding:10px 14px;font-size:14px}
         .collapsible-header{display:flex;align-items:center;gap:8px;cursor:pointer;font-weight:600;font-size:14px;color:#0f172a;margin-bottom:12px}
         .collapsible-header i.fa-chevron-down{transition:transform 0.3s}
         .collapsible-header.expanded i.fa-chevron-down{transform:rotate(180deg)}
@@ -444,12 +444,14 @@
             <div class="count-search-row">
                 <input type="date" class="form-control date-sm" id="countDateInput">
                 <input type="text" class="form-control" id="countSearchInput" placeholder="搜索料号后四位..." style="flex:1;">
-                <button class="btn btn-outline btn-sm export-btn" id="exportCountBtn"><i class="fas fa-download"></i></button>
                 <button class="btn btn-danger btn-sm" id="clearTodayBtn"><i class="fas fa-trash-alt"></i> 清空今日</button>
             </div>
             <div class="plan-row" id="planRow">
                 <span class="plan-info" id="planInfo">未导入计划</span>
-                <button class="btn btn-info btn-sm" id="importPlanBtn"><i class="fas fa-download"></i> 导入今日盘点计划</button>
+                <div style="display:flex; gap:8px;">
+                    <button class="btn btn-info btn-sm" id="importPlanBtn"><i class="fas fa-download"></i> 导入计划</button>
+                    <button class="btn btn-outline btn-sm" id="goCountListBtn"><i class="fas fa-list"></i> 清单</button>
+                </div>
             </div>
             <div class="shelf-row" id="countShelfRow">
                 <button class="shelf-btn active" data-shelf="all">全部</button>
@@ -463,11 +465,28 @@
             </div>
             <div class="tab-nav">
                 <button class="tab-btn" data-mode="plan">计划</button>
-                <button class="tab-btn" data-mode="detail">明细</button>
+                <button class="tab-btn active" data-mode="detail">明细</button>
                 <button class="tab-btn" data-mode="part">料号汇总</button>
                 <button class="tab-btn" data-mode="mpn">MPN 汇总</button>
             </div>
             <div id="countList"></div>
+        </div>
+        <div id="page-count-list" class="page">
+            <div class="back-header">
+                <button id="backFromCountList"><i class="fas fa-arrow-left"></i></button>
+                <h2 style="font-size:18px;font-weight:700; flex:1;">盘点清单</h2>
+                <button class="btn btn-outline btn-sm" id="exportCountListBtn"><i class="fas fa-download"></i> 导出</button>
+            </div>
+            <div class="form-row" style="margin-bottom:12px;">
+                <div class="form-group"><label>日期</label><input type="date" class="form-control date-sm" id="countListDateInput"></div>
+                <div class="form-group"><label>&nbsp;</label><button class="btn btn-primary btn-block" id="refreshCountListBtn"><i class="fas fa-sync-alt"></i> 刷新</button></div>
+            </div>
+            <div class="table-wrap">
+                <table>
+                    <thead><tr><th>料号</th><th>盘点数量</th><th>系统数量</th><th>差异</th></tr></thead>
+                    <tbody id="countListBody"><tr><td colspan="4" class="text-center text-muted">点击刷新查看数据</td></tr></tbody>
+                </table>
+            </div>
         </div>
         <div id="page-stock" class="page">
             <div class="section-title"><i class="fas fa-boxes" style="color:#3b82f6;"></i> 库存</div>
@@ -620,7 +639,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     let countPlanDate = '';
     let locationData = [];
     let hiddenAlerts = new Set();
-    let countViewMode = 'plan';
+    let countViewMode = 'detail';
     let countViewDate = new Date().toISOString().slice(0, 10);
     let currentShelf = 0;
     let shelfNames = ['架1','架2','架3','架4','架5','架6','架7'];
@@ -628,8 +647,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     let countFilterShelf = 'all';
     let manualPartList = [];
     let manualPartIndex = 0;
-    let manualShelfProgress = {};   // 记录每个货架的盘点进度
-
+    let manualShelfProgress = {};
     let outContinuous = false;
     let inContinuous = false;
 
@@ -648,7 +666,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         home: $('#page-home'), scan: $('#page-scan'), out: $('#page-out'), in: $('#page-in'),
         count: $('#page-count'), stock: $('#page-stock'), report: $('#page-report'),
         location: $('#page-location'), data: $('#page-data'), mine: $('#page-mine'),
-        customMsg: $('#page-custom-msg'), manualCount: $('#page-manual-count')
+        customMsg: $('#page-custom-msg'), manualCount: $('#page-manual-count'),
+        countList: $('#page-count-list')
     };
 
     let scanSettings = {
@@ -662,6 +681,58 @@ document.addEventListener('DOMContentLoaded', async () => {
     let scanStream = null, scanAnimId = null, scanning = false, lastScanData = '', cooldownUntil = 0;
     let torchState = false;
     let halfScanStream = null, halfScanAnimId = null, halfScanning = false, halfScanMode = null;
+
+    // ========== 设置功能修复 ==========
+    const cameraPreviewHeightRange = document.getElementById('cameraPreviewHeightRange');
+    const cameraPreviewHeightValue = document.getElementById('cameraPreviewHeightValue');
+    if (cameraPreviewHeightRange) {
+        cameraPreviewHeightRange.value = scanSettings.previewHeight;
+        cameraPreviewHeightValue.textContent = scanSettings.previewHeight + '%';
+        cameraPreviewHeightRange.addEventListener('input', () => {
+            const val = parseInt(cameraPreviewHeightRange.value);
+            document.documentElement.style.setProperty('--camera-preview-height', val + 'vh');
+            cameraPreviewHeightValue.textContent = val + '%';
+            scanSettings.previewHeight = val;
+            localStorage.setItem('scan_preview_height', val);
+        });
+    }
+
+    const scanWindowSizeRange = document.getElementById('scanWindowSizeRange');
+    const scanWindowSizeValue = document.getElementById('scanWindowSizeValue');
+    if (scanWindowSizeRange) {
+        scanWindowSizeRange.value = scanSettings.windowSize;
+        scanWindowSizeValue.textContent = scanSettings.windowSize + '%';
+        scanWindowSizeRange.addEventListener('input', () => {
+            const val = parseInt(scanWindowSizeRange.value);
+            document.documentElement.style.setProperty('--scan-window-size', val + '%');
+            scanWindowSizeValue.textContent = val + '%';
+            scanSettings.windowSize = val;
+            localStorage.setItem('scan_window_size', val);
+        });
+    }
+
+    const scanCooldownSelect = document.getElementById('scanCooldownSelect');
+    if (scanCooldownSelect) {
+        Array.from(scanCooldownSelect.options).forEach(option => {
+            if (parseFloat(option.value) === scanSettings.cooldown) option.selected = true;
+        });
+        scanCooldownSelect.addEventListener('change', () => {
+            scanSettings.cooldown = parseFloat(scanCooldownSelect.value);
+            localStorage.setItem('scan_cooldown', scanSettings.cooldown);
+        });
+    }
+
+    const autoOpenCameraSelect = document.getElementById('autoOpenCameraSelect');
+    if (autoOpenCameraSelect) {
+        autoOpenCameraSelect.value = scanSettings.autoOpen ? 'auto' : 'manual';
+        autoOpenCameraSelect.addEventListener('change', () => {
+            scanSettings.autoOpen = autoOpenCameraSelect.value === 'auto';
+            localStorage.setItem('scan_auto_open', scanSettings.autoOpen);
+        });
+    }
+
+    document.documentElement.style.setProperty('--camera-preview-height', scanSettings.previewHeight + 'vh');
+    document.documentElement.style.setProperty('--scan-window-size', scanSettings.windowSize + '%');
 
     let currentConfirmCallback = null;
     function showConfirm(title, icon, color, btnClass, onConfirm) {
@@ -816,13 +887,20 @@ document.addEventListener('DOMContentLoaded', async () => {
         Object.values(pages).forEach(p=>p.classList.remove('active'));
         if(pages[name]) pages[name].classList.add('active');
         currentPage = name;
-        $('#bottomNav').style.display=(name==='customMsg'||name==='manualCount'||!currentUser||name==='login'||name==='register')?'none':'flex';
+        $('#bottomNav').style.display=(name==='customMsg'||name==='manualCount'||name==='countList'||!currentUser||name==='login'||name==='register')?'none':'flex';
         document.querySelectorAll('.bottom-nav .nav-item').forEach(n=>n.classList.toggle('active',n.dataset.tab===name));
         if (name==='mine') { $('#settingsBtn').classList.add('visible'); } else { $('#settingsBtn').classList.remove('visible'); }
         if (name==='out') { document.getElementById('outCangma').value = ''; document.getElementById('outSubmitBtn').disabled = true; }
         if(name==='home'){updateDaily();updateMarquee();}
         if(name==='stock') renderStock();
-        if(name==='count') { document.getElementById('countDateInput').value = countViewDate; renderCount(); updatePlanUI(); }
+        if(name==='count') {
+            document.getElementById('countDateInput').value = countViewDate;
+            document.querySelectorAll('#page-count .tab-btn').forEach(b => b.classList.remove('active'));
+            const detailTab = document.querySelector('#page-count .tab-btn[data-mode="detail"]');
+            if (detailTab) detailTab.classList.add('active');
+            renderCount();
+            updatePlanUI();
+        }
         if(name==='report') { document.querySelector('.tab-btn.active')?.click(); }
         if(name==='location') clearLocationResult();
         if(name==='manualCount') {
@@ -832,12 +910,19 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
         if(name==='mine'){updateMine();loadCustomStyles();loadProfileBg();}
         if(name==='customMsg') renderSubCustomMsgs();
+        if(name==='countList') {
+            document.getElementById('countListDateInput').value = countViewDate;
+            renderCountList();
+        }
         window.scrollTo({top:0,behavior:'smooth'});
         if (name === 'out' && document.getElementById('outHalfScanPanel').classList.contains('show')) {
             document.getElementById('outFormContainer').classList.add('shift-down');
         }
         if (name === 'in' && document.getElementById('inHalfScanPanel').classList.contains('show')) {
             document.getElementById('inFormContainer').classList.add('shift-down');
+        }
+        if (name === 'scan' && scanSettings.autoOpen && !scanning) {
+            startCam();
         }
     }
     $('#bottomNav').onclick=e=>{const btn=e.target.closest('.nav-item');if(btn&&pages[btn.dataset.tab]) showPage(btn.dataset.tab);};
@@ -1083,7 +1168,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             delete manualShelfProgress[shelfIdx];
             return;
         }
-        // ---------- 恢复进度 ----------
         if (manualShelfProgress.hasOwnProperty(shelfIdx) && manualShelfProgress[shelfIdx] < manualPartList.length) {
             manualPartIndex = manualShelfProgress[shelfIdx];
         } else {
@@ -1092,7 +1176,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                 delete manualShelfProgress[shelfIdx];
             }
         }
-        // ----------------------------
         fillNextPart();
     }
 
@@ -1109,7 +1192,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             return;
         }
         if (manualPartIndex >= manualPartList.length) {
-            // 清除该货架的进度
             delete manualShelfProgress[currentShelf];
             toast('🎉 该货架所有料号已盘点完毕！', 'success');
             manualPartList = [];
@@ -1122,7 +1204,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         const item = manualPartList[manualPartIndex];
         partInput.value = item.part;
         partInput.readOnly = true;
-        // 获取该料号所有MPN列表
         const mpns = materials.filter(m => m.id === item.part).map(m => m.mpn).filter(Boolean);
         dropdown.innerHTML = '';
         if (mpns.length > 0) {
@@ -1139,7 +1220,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         } else {
             mpnInput.value = '';
         }
-        mpnInput.readOnly = true; // 只读，通过下拉选择
+        mpnInput.readOnly = true;
         progress.textContent = `第 ${manualPartIndex + 1}/${manualPartList.length} 个`;
     }
 
@@ -1171,13 +1252,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         toast(`✅ 已保存 ${part} x ${qty} (${mpn||'无MPN'})`, 'success');
         if (manualPartList.length > 0) {
             manualPartIndex++;
-            // 保存当前货架的进度
             manualShelfProgress[currentShelf] = manualPartIndex;
             if (manualPartIndex < manualPartList.length) {
                 fillNextPart();
                 document.getElementById('manualCountQty').value = '1';
             } else {
-                // 该货架全部完成，fillNextPart 内部会清除进度
                 toast('🎉 该货架所有料号已盘点完毕！', 'success');
                 manualPartList = [];
                 document.getElementById('manualCountPart').readOnly = false;
@@ -1210,15 +1289,12 @@ document.addEventListener('DOMContentLoaded', async () => {
             else toast('未识别到二维码', 'error');
             e.target.value = '';
         };
-        // 修复补光灯
         document.getElementById('btnTorch').onclick = async () => {
             if (!scanStream) return toast('请先启动摄像头', 'info');
             const track = scanStream.getVideoTracks()[0];
             if (!track) return toast('无法获取视频轨道', 'error');
             const capabilities = track.getCapabilities ? track.getCapabilities() : null;
-            if (!capabilities || !capabilities.torch) {
-                return toast('设备不支持补光灯', 'error');
-            }
+            if (!capabilities || !capabilities.torch) return toast('设备不支持补光灯', 'error');
             try {
                 torchState = !torchState;
                 await track.applyConstraints({ advanced: [{ torch: torchState }] });
@@ -1243,11 +1319,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         document.getElementById('backFromManualCount').onclick = () => showPage('scan');
         document.getElementById('saveManualCountBtn').onclick = saveManualCount;
 
-        document.getElementById('manualMpnSwitch').addEventListener('click', function() {
-            this.classList.toggle('on');
-        });
+        document.getElementById('manualMpnSwitch').addEventListener('click', function() { this.classList.toggle('on'); });
 
-        // 自定义MPN下拉菜单事件
         const mpnInput = document.getElementById('manualCountMpn');
         const mpnDropdown = document.getElementById('manualMpnDropdown');
         mpnInput.addEventListener('click', (e) => {
@@ -1255,9 +1328,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (mpnDropdown.children.length > 0) mpnDropdown.style.display = 'block';
         });
         document.addEventListener('click', (e) => {
-            if (!mpnInput.contains(e.target) && !mpnDropdown.contains(e.target)) {
-                mpnDropdown.style.display = 'none';
-            }
+            if (!mpnInput.contains(e.target) && !mpnDropdown.contains(e.target)) mpnDropdown.style.display = 'none';
         });
 
         document.querySelectorAll('#manualShelfRow .shelf-btn').forEach(btn => {
@@ -1275,9 +1346,99 @@ document.addEventListener('DOMContentLoaded', async () => {
         document.getElementById('closeInHalfScan').onclick = stopHalfScan;
         document.getElementById('outHalfScanBtn').onclick = () => halfScanning ? stopHalfScan() : startHalfScan('out');
         document.getElementById('inHalfScanBtn').onclick = () => halfScanning ? stopHalfScan() : startHalfScan('in');
+
+        document.getElementById('goCountListBtn').addEventListener('click', () => showPage('countList'));
+        document.getElementById('backFromCountList').addEventListener('click', () => showPage('count'));
+        document.getElementById('refreshCountListBtn').addEventListener('click', () => {
+            countViewDate = document.getElementById('countListDateInput').value;
+            renderCountList();
+        });
+        document.getElementById('exportCountListBtn').addEventListener('click', exportCountList);
     }
     initScanner();
 
+    async function renderCountList() {
+        const tbody = document.getElementById('countListBody');
+        if (!currentUser || !currentUser.id) {
+            tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted">请先登录</td></tr>';
+            return;
+        }
+        const date = document.getElementById('countListDateInput').value;
+        tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted">加载中...</td></tr>';
+        try {
+            const { data, error } = await supabase.from('scan_records')
+                .select('part, qty')
+                .eq('user_id', Number(currentUser.id))
+                .eq('date', date)
+                .gt('qty', 0);
+            if (error) throw error;
+            const countMap = {};
+            (data || []).forEach(r => {
+                countMap[r.part] = (countMap[r.part] || 0) + r.qty;
+            });
+            const parts = Object.keys(countMap);
+            if (parts.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted">当天无盘点数据</td></tr>';
+                return;
+            }
+            const rows = parts.map(part => {
+                const sysQty = materials.filter(m => m.id === part).reduce((s, m) => s + m.stock, 0);
+                const countQty = countMap[part];
+                const diff = countQty - sysQty;
+                return { part, countQty, sysQty, diff };
+            });
+            tbody.innerHTML = rows.map(r => `<tr>
+                <td>${r.part}</td>
+                <td>${r.countQty}</td>
+                <td>${r.sysQty}</td>
+                <td style="color:${r.diff === 0 ? '#22c55e' : r.diff > 0 ? '#ef4444' : '#f59e0b'}">${r.diff}</td>
+            </tr>`).join('');
+        } catch (e) {
+            tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted">加载失败</td></tr>';
+            console.error(e);
+        }
+    }
+
+    function exportCountList() {
+        const tbody = document.getElementById('countListBody');
+        const rows = tbody.querySelectorAll('tr');
+        if (rows.length === 0 || rows[0].querySelector('.text-muted')) {
+            toast('无数据可导出', 'error');
+            return;
+        }
+        const sheetData = [['料号', '盘点数量', '系统数量', '差异']];
+        rows.forEach(row => {
+            const cells = row.querySelectorAll('td');
+            if (cells.length >= 4) {
+                sheetData.push([
+                    cells[0].textContent.trim(),
+                    cells[1].textContent.trim(),
+                    cells[2].textContent.trim(),
+                    cells[3].textContent.trim()
+                ]);
+            }
+        });
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(sheetData), '盘点清单');
+        const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+        const blob = new Blob([wbout], { type: 'application/octet-stream' });
+        const fileName = `盘点清单_${document.getElementById('countListDateInput').value}.xlsx`;
+        const modal = document.getElementById('exportChoiceModal');
+        modal.style.display = 'flex';
+        document.getElementById('exportShareBtn').onclick = async () => {
+            modal.style.display = 'none';
+            const file = new File([blob], fileName, { type: 'application/octet-stream' });
+            if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+                try { await navigator.share({ title: fileName, files: [file] }); toast('分享成功', 'success'); } 
+                catch (e) { if (e.name !== 'AbortError') download(); }
+            } else download();
+        };
+        document.getElementById('exportDownloadBtn').onclick = () => { modal.style.display = 'none'; download(); };
+        document.getElementById('exportCancelBtn').onclick = () => { modal.style.display = 'none'; };
+        function download() { const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = fileName; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url); toast('文件已下载', 'success'); }
+    }
+
+    // ========== 以下保留所有原有功能 ==========
     function setupAutocompletes(){
         ['out','in','reportIn'].forEach(type=>{
             const input=document.getElementById(`${type}MaterialInput`);
@@ -1366,7 +1527,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (error) { toast('导入失败: ' + error.message, 'error'); return; }
         countPlan = (data || []).map(d => ({ part: d.part, mpn: d.mpn || '', location: d.location || '' }));
         countPlanDate = date;
-        manualShelfProgress = {};   // 清空所有货架的盘点进度
+        manualShelfProgress = {};
         updatePlanUI();
         updateShelfUI();
         toast(`已导入 ${countPlan.length} 条盘点计划`, 'success');
@@ -1397,7 +1558,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             renderCount();
         });
     });
-    document.getElementById('exportCountBtn').addEventListener('click', exportCountData);
     document.getElementById('clearTodayBtn').addEventListener('click', () => {
         if (!currentUser || !currentUser.id) return;
         showConfirm('确定要清空当日实际盘点数据（数量>0）吗？盘点计划将被保留。', 'fa-trash-alt', '#ef4444', 'btn-modal-danger', async () => {
@@ -1421,7 +1581,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             const shelfIdx = parseInt(countFilterShelf);
             if (!isNaN(shelfIdx)) items = items.filter(r => classifyLocation(r.location) === shelfIdx);
         }
-
         if (countViewMode === 'plan') {
             const planItems = items.filter(r => r.qty === 0);
             if (planItems.length === 0) {
@@ -1451,32 +1610,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
             c.innerHTML = detailItems.map(r => `<div class="count-item"><div class="info"><div class="name">${r.part} ${r.mpn ? '('+r.mpn+')' : ''}</div><div class="spec">${r.time || ''}</div></div><div class="qty-control">${r.qty}</div></div>`).join('');
         }
-    }
-
-    async function exportCountData() {
-        if (!currentUser || !currentUser.id) return;
-        const date = countViewDate;
-        const { data, error } = await supabase.from('scan_records').select('*').eq('user_id', Number(currentUser.id)).eq('date', date).order('time');
-        if (error || !data || data.length === 0) { toast('无数据可导出', 'error'); return; }
-        const sheetData = [['料号', 'MPN', '数量', '时间']];
-        data.forEach(r => sheetData.push([r.part, r.mpn || '', r.qty, r.time]));
-        const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(sheetData), '盘点');
-        const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
-        const blob = new Blob([wbout], { type: 'application/octet-stream' });
-        const fileName = `盘点_${date}.xlsx`;
-        const modal = document.getElementById('exportChoiceModal');
-        modal.style.display = 'flex';
-        document.getElementById('exportShareBtn').onclick = async () => {
-            modal.style.display = 'none';
-            const file = new File([blob], fileName, { type: 'application/octet-stream' });
-            if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
-                try { await navigator.share({ title: fileName, files: [file] }); toast('分享成功', 'success'); } 
-                catch (e) { if (e.name !== 'AbortError') download(); }
-            } else download();
-        };
-        document.getElementById('exportDownloadBtn').onclick = () => { modal.style.display = 'none'; download(); };
-        document.getElementById('exportCancelBtn').onclick = () => { modal.style.display = 'none'; };
-        function download() { const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = fileName; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url); toast('文件已下载', 'success'); }
     }
 
     let stockSearchTimer;
@@ -1548,6 +1681,115 @@ document.addEventListener('DOMContentLoaded', async () => {
         if(btn.classList.contains('btn-edit-loc')){const row=document.getElementById(`loc-row-${part}`);row.querySelector('.display-loc').style.display='none';row.querySelector('.edit-loc').style.display='inline-block';row.querySelector('.btn-edit-loc').style.display='none';row.querySelector('.btn-save-loc').style.display='inline-flex';row.querySelector('.edit-loc').focus();}
         else if(btn.classList.contains('btn-save-loc')){const row=document.getElementById(`loc-row-${part}`);const newLoc=row.querySelector('.edit-loc').value.trim();const d=locationData.find(d=>d.part===part);if(d){d.location=newLoc;saveLocationDataToCloud();toast('已更新','success');}row.querySelector('.display-loc').textContent=newLoc||'-';row.querySelector('.display-loc').style.display='inline';row.querySelector('.edit-loc').style.display='none';row.querySelector('.btn-edit-loc').style.display='inline-flex';row.querySelector('.btn-save-loc').style.display='none';}
     });
+
+    // ========== 设置面板、数据导入、我的页面等原有功能 ==========
+    const settingsBtn=$('#settingsBtn'),settingsOverlay=$('#settingsOverlay'),settingsPanel=$('#settingsPanel'),settingsClose=$('#settingsClose');
+    function openSettings(){settingsOverlay.classList.add('show');settingsPanel.classList.add('show');}
+    function closeSettings(){settingsOverlay.classList.remove('show');settingsPanel.classList.remove('show');}
+    settingsBtn.addEventListener('click',openSettings); settingsClose.addEventListener('click',closeSettings); settingsOverlay.addEventListener('click',closeSettings);
+    document.getElementById('thresholdSelect').value=LOW;
+    document.getElementById('thresholdSelect').addEventListener('change',function(){LOW=parseInt(this.value);localStorage.setItem('wms_threshold',LOW);updateMarquee();toast(`预警阈值已设为 ${LOW}`,'success');});
+    document.getElementById('editShelfNamesBtn').addEventListener('click', () => {
+        document.querySelectorAll('.shelf-name-input').forEach(inp => { const idx = parseInt(inp.dataset.shelf); inp.value = shelfNames[idx] || ''; });
+        document.getElementById('shelfNamesModal').classList.add('show');
+    });
+    document.getElementById('shelfNamesCancel').addEventListener('click', () => document.getElementById('shelfNamesModal').classList.remove('show'));
+    document.getElementById('shelfNamesSave').addEventListener('click', () => {
+        document.querySelectorAll('.shelf-name-input').forEach(inp => { const idx = parseInt(inp.dataset.shelf); shelfNames[idx] = inp.value.trim() || ('架'+(idx+1)); });
+        localStorage.setItem('wms_shelf_names', JSON.stringify(shelfNames)); updateShelfUI();
+        document.getElementById('shelfNamesModal').classList.remove('show'); toast('货架名称已更新', 'success');
+    });
+    document.getElementById('editShelfRangesBtn').addEventListener('click', () => {
+        document.querySelectorAll('.shelf-range-start').forEach(inp => { const idx = parseInt(inp.dataset.shelf); inp.value = (shelfRanges[idx] && shelfRanges[idx].start) ? shelfRanges[idx].start : ''; });
+        document.querySelectorAll('.shelf-range-end').forEach(inp => { const idx = parseInt(inp.dataset.shelf); inp.value = (shelfRanges[idx] && shelfRanges[idx].end) ? shelfRanges[idx].end : ''; });
+        document.getElementById('shelfRangesModal').classList.add('show');
+    });
+    document.getElementById('shelfRangesCancel').addEventListener('click', () => document.getElementById('shelfRangesModal').classList.remove('show'));
+    document.getElementById('shelfRangesSave').addEventListener('click', () => {
+        const starts = document.querySelectorAll('.shelf-range-start');
+        const ends = document.querySelectorAll('.shelf-range-end');
+        for (let i = 0; i < 7; i++) shelfRanges[i] = { start: starts[i].value.trim().toUpperCase(), end: ends[i].value.trim().toUpperCase() };
+        localStorage.setItem('wms_shelf_ranges', JSON.stringify(shelfRanges));
+        document.getElementById('shelfRangesModal').classList.remove('show'); toast('储位分类已更新', 'success');
+    });
+
+    document.getElementById('settingResetStock').addEventListener('click',()=>{
+        closeSettings();
+        showConfirm('确定要删除当前用户的所有库存数据吗？此操作不可恢复！','fa-boxes','#ef4444','btn-modal-danger',async()=>{
+            if(!currentUser||!currentUser.id) return;
+            const {error} = await supabase.from('materials').delete().eq('user_id', Number(currentUser.id));
+            if(error){ toast('重置失败: '+error.message, 'error'); return; }
+            materials=[];
+            toast('库存数据已重置','success');
+            refreshAll();
+            showPage('home');
+        });
+    });
+    document.getElementById('settingResetCount').addEventListener('click',()=>{
+        closeSettings();
+        showConfirm('确定要删除当前用户的所有盘点数据吗？此操作不可恢复！','fa-clipboard-list','#ef4444','btn-modal-danger',async()=>{
+            if(!currentUser||!currentUser.id) return;
+            const {error} = await supabase.from('scan_records').delete().eq('user_id', Number(currentUser.id));
+            if(error){ toast('重置失败: '+error.message, 'error'); return; }
+            countPlan=[];
+            toast('盘点数据已重置','success');
+            if(currentPage==='count') renderCount();
+        });
+    });
+
+    document.getElementById('settingClearCache').addEventListener('click',async()=>{closeSettings();materials=[];records=[];userMessages=[];countPlan=[];locationData=[];hiddenAlerts.clear();localStorage.removeItem('wms_hidden_alerts');if(currentUser&&currentUser.id) await supabase.from('messages').delete().eq('user_id',Number(currentUser.id));localStorage.removeItem('wms_messages');localStorage.removeItem('wms_locations');toast('本地缓存已清空','info');refreshAll();showPage('home');});
+    document.getElementById('settingReset').addEventListener('click',()=>{closeSettings();showConfirm('此操作将删除所有云端物料、出入库记录、储位数据和个人消息，不可恢复！','fa-exclamation-triangle','#f59e0b','btn-modal-warning',async()=>{try{await supabase.from('records').delete().neq('id',-1);await supabase.from('materials').delete().neq('id','');await supabase.from('locations').delete().neq('part','');if(currentUser&&currentUser.id) await supabase.from('messages').delete().eq('user_id',Number(currentUser.id));materials=[];records=[];userMessages=[];countPlan=[];locationData=[];hiddenAlerts.clear();localStorage.removeItem('wms_hidden_alerts');localStorage.removeItem('wms_messages');localStorage.removeItem('wms_locations');toast('所有数据已重置','success');refreshAll();showPage('home');}catch(error){toast('重置失败: '+error.message,'error');}});});
+
+    const soundSwitch = document.getElementById('soundSwitchTrack');
+    if (soundSwitch) {
+        if (scanSettings.sound) soundSwitch.classList.add('on');
+        else soundSwitch.classList.remove('on');
+        soundSwitch.addEventListener('click', () => {
+            scanSettings.sound = !scanSettings.sound;
+            soundSwitch.classList.toggle('on', scanSettings.sound);
+            localStorage.setItem('scan_sound', scanSettings.sound);
+            toast(scanSettings.sound ? '提示音已开启' : '提示音已关闭', 'info');
+        });
+    }
+
+    document.getElementById('logoutBtn').addEventListener('click',()=>{showConfirm('确定要退出登录吗？','fa-sign-out-alt','#ef4444','btn-modal-danger',()=>{currentUser=null;localStorage.removeItem('wms_user');showPage('login');toast('已退出登录','info');});});
+
+    function renderSubCustomMsgs(){
+        const c=$('#subCustomMsgList'); if(!c) return;
+        const summaryAlerts = getSummaryAlerts();
+        let html = '<div class="text-muted" style="font-size:16px;margin-bottom:8px;">低库存预警（勾选则显示）</div>';
+        html += summaryAlerts.map(a => { const key = `LOW:${a.id}`; const checked = !hiddenAlerts.has(key) ? 'checked' : ''; return `<label class="checkbox-label"><input type="checkbox" class="alert-check" data-key="${key}" ${checked}> ${a.id} 库存 ${a.total}</label>`; }).join('');
+        html += '<div class="text-muted" style="font-size:16px;margin:12px 0 8px;">自定义消息（勾选则显示）</div>';
+        html += userMessages.map((m, i) => { const key = `MSG:${m.text}`; const checked = !hiddenAlerts.has(key) ? 'checked' : ''; return `<label class="checkbox-label"><input type="checkbox" class="alert-check" data-key="${key}" ${checked}> ${m.text}</label>`; }).join('');
+        c.innerHTML = html || '<div class="text-muted">暂无预警或消息</div>';
+        c.querySelectorAll('.alert-check').forEach(cb => { cb.addEventListener('change', async function() { const key = this.dataset.key; if (this.checked) hiddenAlerts.delete(key); else hiddenAlerts.add(key); await saveAlertConfig(); updateMarquee(); }); });
+    }
+    document.getElementById('subAddCustomMsgBtn').addEventListener('click',async()=>{const txt=$('#subCustomMsgInput').value.trim();if(!txt) return toast('请输入内容','error');userMessages.push({text:txt});await syncMessagesToCloud();updateMarquee();renderSubCustomMsgs();$('#subCustomMsgInput').value='';});
+    document.getElementById('backFromMsgBtn').addEventListener('click',()=>showPage('mine'));
+    document.getElementById('goCustomMsgBtn').addEventListener('click',()=>showPage('customMsg'));
+
+    function updateMine(){
+        $('#myTotalMaterials').textContent=materials.length;
+        $('#myTotalStock').textContent=materials.reduce((s,m)=>s+m.stock,0);
+        $('#myTotalRecords').textContent=records.length;
+        const d=Math.floor((new Date()-startTime)/1000);
+        $('#sysUptime').textContent=`${Math.floor(d/3600)}h ${Math.floor((d%3600)/60)}m`;
+        $('#lastUpdateTime').textContent='2026-06-20';
+        if(currentUser){$('#profileName').textContent=currentUser.real_name||currentUser.username;$('#profileRole').textContent=currentUser.is_admin?'管理员':'普通用户';}
+    }
+    function loadCustomStyles(){const avatar=localStorage.getItem('wms_avatar');if(avatar){document.getElementById('avatarIcon').style.display='none';let img=document.getElementById('avatarImg');if(!img){img=document.createElement('img');img.id='avatarImg';img.style.width='64px';img.style.height='64px';img.style.borderRadius='50%';img.style.objectFit='cover';document.getElementById('avatarBtn').appendChild(img);}img.src=avatar;}else{document.getElementById('avatarIcon').style.display='block';const img=document.getElementById('avatarImg');if(img) img.remove();}}
+    function loadProfileBg(){const bg=localStorage.getItem('wms_profile_bg');const card=document.getElementById('myProfileCard');if(card) card.style.backgroundImage=bg?`url(${bg})`:'';}
+    document.getElementById('changeAvatarBtn').addEventListener('click',()=>{const input=document.createElement('input');input.type='file';input.accept='image/*';input.onchange=(e)=>{const file=e.target.files[0];if(!file) return;if(file.size>5*1024*1024) return toast('头像不能超过5MB','error');const reader=new FileReader();reader.onload=(ev)=>{localStorage.setItem('wms_avatar',ev.target.result);loadCustomStyles();toast('头像已更新','success');};reader.readAsDataURL(file);};input.click();});
+    document.getElementById('changeBgBtn').addEventListener('click',()=>{const input=document.createElement('input');input.type='file';input.accept='image/*';input.onchange=(e)=>{const file=e.target.files[0];if(!file) return;if(file.size>5*1024*1024) return toast('背景不能超过5MB','error');const reader=new FileReader();reader.onload=(ev)=>{localStorage.setItem('wms_profile_bg',ev.target.result);loadProfileBg();toast('背景已更新','success');};reader.readAsDataURL(file);};input.click();});
+    document.getElementById('resetBgBtn').addEventListener('click',()=>{localStorage.removeItem('wms_avatar');localStorage.removeItem('wms_profile_bg');loadCustomStyles();loadProfileBg();toast('已重置','info');});
+
+    document.getElementById('loginBtn').addEventListener('click',async()=>{const u=$('#loginUsername').value.trim(),p=$('#loginPassword').value;if(!u||!p) return toast('请输入账号密码','error');const {data,error}=await supabase.rpc('login_user',{p_username:u,p_password:p});if(error){toast('登录失败: '+error.message,'error');return;}if(!data||!data.length){toast('登录失败','error');return;}const r=data[0];if(r.success){currentUser={id:r.id,username:r.username,real_name:r.real_name,is_admin:r.is_admin};localStorage.setItem('wms_user',JSON.stringify(currentUser));toast('登录成功','success');await loadData();setupAutocompletes();showPage('home');updateMine();updateMarquee();}else toast(r.message||'账号或密码错误','error');});
+    document.getElementById('registerBtn').addEventListener('click',async()=>{const u=$('#regUsername').value.trim(),p=$('#regPassword').value,n=$('#regRealName').value.trim();if(!u||!p) return toast('请输入账号密码','error');if(!n) return toast('请输入姓名','error');const {data,error}=await supabase.rpc('register_user',{p_username:u,p_password:p,p_real_name:n});if(error){toast('注册失败: '+error.message,'error');return;}if(!data||!data.length){toast('注册失败','error');return;}const r=data[0];if(r.success){toast('注册成功，请登录','success');showPage('login');$('#regUsername').value='';$('#regPassword').value='';$('#regRealName').value='';}else toast(r.message||'注册失败','error');});
+    document.getElementById('goRegisterLink').addEventListener('click',e=>{e.preventDefault();showPage('register');});
+    document.getElementById('goLoginLink').addEventListener('click',e=>{e.preventDefault();showPage('login');});
+
+    const marquee = $('#alertMarquee');
+    marquee.addEventListener('click', function() { this.classList.toggle('paused'); });
 
     function setLoading(el, loading) {
         if (loading) {
@@ -1792,114 +2034,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     });
 
-    const settingsBtn=$('#settingsBtn'),settingsOverlay=$('#settingsOverlay'),settingsPanel=$('#settingsPanel'),settingsClose=$('#settingsClose');
-    function openSettings(){settingsOverlay.classList.add('show');settingsPanel.classList.add('show');}
-    function closeSettings(){settingsOverlay.classList.remove('show');settingsPanel.classList.remove('show');}
-    settingsBtn.addEventListener('click',openSettings); settingsClose.addEventListener('click',closeSettings); settingsOverlay.addEventListener('click',closeSettings);
-    document.getElementById('thresholdSelect').value=LOW;
-    document.getElementById('thresholdSelect').addEventListener('change',function(){LOW=parseInt(this.value);localStorage.setItem('wms_threshold',LOW);updateMarquee();toast(`预警阈值已设为 ${LOW}`,'success');});
-    document.getElementById('editShelfNamesBtn').addEventListener('click', () => {
-        document.querySelectorAll('.shelf-name-input').forEach(inp => { const idx = parseInt(inp.dataset.shelf); inp.value = shelfNames[idx] || ''; });
-        document.getElementById('shelfNamesModal').classList.add('show');
-    });
-    document.getElementById('shelfNamesCancel').addEventListener('click', () => document.getElementById('shelfNamesModal').classList.remove('show'));
-    document.getElementById('shelfNamesSave').addEventListener('click', () => {
-        document.querySelectorAll('.shelf-name-input').forEach(inp => { const idx = parseInt(inp.dataset.shelf); shelfNames[idx] = inp.value.trim() || ('架'+(idx+1)); });
-        localStorage.setItem('wms_shelf_names', JSON.stringify(shelfNames)); updateShelfUI();
-        document.getElementById('shelfNamesModal').classList.remove('show'); toast('货架名称已更新', 'success');
-    });
-    document.getElementById('editShelfRangesBtn').addEventListener('click', () => {
-        document.querySelectorAll('.shelf-range-start').forEach(inp => { const idx = parseInt(inp.dataset.shelf); inp.value = (shelfRanges[idx] && shelfRanges[idx].start) ? shelfRanges[idx].start : ''; });
-        document.querySelectorAll('.shelf-range-end').forEach(inp => { const idx = parseInt(inp.dataset.shelf); inp.value = (shelfRanges[idx] && shelfRanges[idx].end) ? shelfRanges[idx].end : ''; });
-        document.getElementById('shelfRangesModal').classList.add('show');
-    });
-    document.getElementById('shelfRangesCancel').addEventListener('click', () => document.getElementById('shelfRangesModal').classList.remove('show'));
-    document.getElementById('shelfRangesSave').addEventListener('click', () => {
-        const starts = document.querySelectorAll('.shelf-range-start');
-        const ends = document.querySelectorAll('.shelf-range-end');
-        for (let i = 0; i < 7; i++) shelfRanges[i] = { start: starts[i].value.trim().toUpperCase(), end: ends[i].value.trim().toUpperCase() };
-        localStorage.setItem('wms_shelf_ranges', JSON.stringify(shelfRanges));
-        document.getElementById('shelfRangesModal').classList.remove('show'); toast('储位分类已更新', 'success');
-    });
-
-    document.getElementById('settingResetStock').addEventListener('click',()=>{
-        closeSettings();
-        showConfirm('确定要删除当前用户的所有库存数据吗？此操作不可恢复！','fa-boxes','#ef4444','btn-modal-danger',async()=>{
-            if(!currentUser||!currentUser.id) return;
-            const {error} = await supabase.from('materials').delete().eq('user_id', Number(currentUser.id));
-            if(error){ toast('重置失败: '+error.message, 'error'); return; }
-            materials=[];
-            toast('库存数据已重置','success');
-            refreshAll();
-            showPage('home');
-        });
-    });
-    document.getElementById('settingResetCount').addEventListener('click',()=>{
-        closeSettings();
-        showConfirm('确定要删除当前用户的所有盘点数据吗？此操作不可恢复！','fa-clipboard-list','#ef4444','btn-modal-danger',async()=>{
-            if(!currentUser||!currentUser.id) return;
-            const {error} = await supabase.from('scan_records').delete().eq('user_id', Number(currentUser.id));
-            if(error){ toast('重置失败: '+error.message, 'error'); return; }
-            countPlan=[];
-            toast('盘点数据已重置','success');
-            if(currentPage==='count') renderCount();
-        });
-    });
-
-    document.getElementById('settingClearCache').addEventListener('click',async()=>{closeSettings();materials=[];records=[];userMessages=[];countPlan=[];locationData=[];hiddenAlerts.clear();localStorage.removeItem('wms_hidden_alerts');if(currentUser&&currentUser.id) await supabase.from('messages').delete().eq('user_id',Number(currentUser.id));localStorage.removeItem('wms_messages');localStorage.removeItem('wms_locations');toast('本地缓存已清空','info');refreshAll();showPage('home');});
-    document.getElementById('settingReset').addEventListener('click',()=>{closeSettings();showConfirm('此操作将删除所有云端物料、出入库记录、储位数据和个人消息，不可恢复！','fa-exclamation-triangle','#f59e0b','btn-modal-warning',async()=>{try{await supabase.from('records').delete().neq('id',-1);await supabase.from('materials').delete().neq('id','');await supabase.from('locations').delete().neq('part','');if(currentUser&&currentUser.id) await supabase.from('messages').delete().eq('user_id',Number(currentUser.id));materials=[];records=[];userMessages=[];countPlan=[];locationData=[];hiddenAlerts.clear();localStorage.removeItem('wms_hidden_alerts');localStorage.removeItem('wms_messages');localStorage.removeItem('wms_locations');toast('所有数据已重置','success');refreshAll();showPage('home');}catch(error){toast('重置失败: '+error.message,'error');}});});
-
-    const soundSwitch = document.getElementById('soundSwitchTrack');
-    if (soundSwitch) {
-        if (scanSettings.sound) soundSwitch.classList.add('on');
-        else soundSwitch.classList.remove('on');
-        soundSwitch.addEventListener('click', () => {
-            scanSettings.sound = !scanSettings.sound;
-            soundSwitch.classList.toggle('on', scanSettings.sound);
-            localStorage.setItem('scan_sound', scanSettings.sound);
-            toast(scanSettings.sound ? '提示音已开启' : '提示音已关闭', 'info');
-        });
-    }
-
-    document.getElementById('logoutBtn').addEventListener('click',()=>{showConfirm('确定要退出登录吗？','fa-sign-out-alt','#ef4444','btn-modal-danger',()=>{currentUser=null;localStorage.removeItem('wms_user');showPage('login');toast('已退出登录','info');});});
-
-    function renderSubCustomMsgs(){
-        const c=$('#subCustomMsgList'); if(!c) return;
-        const summaryAlerts = getSummaryAlerts();
-        let html = '<div class="text-muted" style="font-size:16px;margin-bottom:8px;">低库存预警（勾选则显示）</div>';
-        html += summaryAlerts.map(a => { const key = `LOW:${a.id}`; const checked = !hiddenAlerts.has(key) ? 'checked' : ''; return `<label class="checkbox-label"><input type="checkbox" class="alert-check" data-key="${key}" ${checked}> ${a.id} 库存 ${a.total}</label>`; }).join('');
-        html += '<div class="text-muted" style="font-size:16px;margin:12px 0 8px;">自定义消息（勾选则显示）</div>';
-        html += userMessages.map((m, i) => { const key = `MSG:${m.text}`; const checked = !hiddenAlerts.has(key) ? 'checked' : ''; return `<label class="checkbox-label"><input type="checkbox" class="alert-check" data-key="${key}" ${checked}> ${m.text}</label>`; }).join('');
-        c.innerHTML = html || '<div class="text-muted">暂无预警或消息</div>';
-        c.querySelectorAll('.alert-check').forEach(cb => { cb.addEventListener('change', async function() { const key = this.dataset.key; if (this.checked) hiddenAlerts.delete(key); else hiddenAlerts.add(key); await saveAlertConfig(); updateMarquee(); }); });
-    }
-    document.getElementById('subAddCustomMsgBtn').addEventListener('click',async()=>{const txt=$('#subCustomMsgInput').value.trim();if(!txt) return toast('请输入内容','error');userMessages.push({text:txt});await syncMessagesToCloud();updateMarquee();renderSubCustomMsgs();$('#subCustomMsgInput').value='';});
-    document.getElementById('backFromMsgBtn').addEventListener('click',()=>showPage('mine'));
-    document.getElementById('goCustomMsgBtn').addEventListener('click',()=>showPage('customMsg'));
-
-    function updateMine(){
-        $('#myTotalMaterials').textContent=materials.length;
-        $('#myTotalStock').textContent=materials.reduce((s,m)=>s+m.stock,0);
-        $('#myTotalRecords').textContent=records.length;
-        const d=Math.floor((new Date()-startTime)/1000);
-        $('#sysUptime').textContent=`${Math.floor(d/3600)}h ${Math.floor((d%3600)/60)}m`;
-        $('#lastUpdateTime').textContent='2026-06-20';
-        if(currentUser){$('#profileName').textContent=currentUser.real_name||currentUser.username;$('#profileRole').textContent=currentUser.is_admin?'管理员':'普通用户';}
-    }
-    function loadCustomStyles(){const avatar=localStorage.getItem('wms_avatar');if(avatar){document.getElementById('avatarIcon').style.display='none';let img=document.getElementById('avatarImg');if(!img){img=document.createElement('img');img.id='avatarImg';img.style.width='64px';img.style.height='64px';img.style.borderRadius='50%';img.style.objectFit='cover';document.getElementById('avatarBtn').appendChild(img);}img.src=avatar;}else{document.getElementById('avatarIcon').style.display='block';const img=document.getElementById('avatarImg');if(img) img.remove();}}
-    function loadProfileBg(){const bg=localStorage.getItem('wms_profile_bg');const card=document.getElementById('myProfileCard');if(card) card.style.backgroundImage=bg?`url(${bg})`:'';}
-    document.getElementById('changeAvatarBtn').addEventListener('click',()=>{const input=document.createElement('input');input.type='file';input.accept='image/*';input.onchange=(e)=>{const file=e.target.files[0];if(!file) return;if(file.size>5*1024*1024) return toast('头像不能超过5MB','error');const reader=new FileReader();reader.onload=(ev)=>{localStorage.setItem('wms_avatar',ev.target.result);loadCustomStyles();toast('头像已更新','success');};reader.readAsDataURL(file);};input.click();});
-    document.getElementById('changeBgBtn').addEventListener('click',()=>{const input=document.createElement('input');input.type='file';input.accept='image/*';input.onchange=(e)=>{const file=e.target.files[0];if(!file) return;if(file.size>5*1024*1024) return toast('背景不能超过5MB','error');const reader=new FileReader();reader.onload=(ev)=>{localStorage.setItem('wms_profile_bg',ev.target.result);loadProfileBg();toast('背景已更新','success');};reader.readAsDataURL(file);};input.click();});
-    document.getElementById('resetBgBtn').addEventListener('click',()=>{localStorage.removeItem('wms_avatar');localStorage.removeItem('wms_profile_bg');loadCustomStyles();loadProfileBg();toast('已重置','info');});
-
-    document.getElementById('loginBtn').addEventListener('click',async()=>{const u=$('#loginUsername').value.trim(),p=$('#loginPassword').value;if(!u||!p) return toast('请输入账号密码','error');const {data,error}=await supabase.rpc('login_user',{p_username:u,p_password:p});if(error){toast('登录失败: '+error.message,'error');return;}if(!data||!data.length){toast('登录失败','error');return;}const r=data[0];if(r.success){currentUser={id:r.id,username:r.username,real_name:r.real_name,is_admin:r.is_admin};localStorage.setItem('wms_user',JSON.stringify(currentUser));toast('登录成功','success');await loadData();setupAutocompletes();showPage('home');updateMine();updateMarquee();}else toast(r.message||'账号或密码错误','error');});
-    document.getElementById('registerBtn').addEventListener('click',async()=>{const u=$('#regUsername').value.trim(),p=$('#regPassword').value,n=$('#regRealName').value.trim();if(!u||!p) return toast('请输入账号密码','error');if(!n) return toast('请输入姓名','error');const {data,error}=await supabase.rpc('register_user',{p_username:u,p_password:p,p_real_name:n});if(error){toast('注册失败: '+error.message,'error');return;}if(!data||!data.length){toast('注册失败','error');return;}const r=data[0];if(r.success){toast('注册成功，请登录','success');showPage('login');$('#regUsername').value='';$('#regPassword').value='';$('#regRealName').value='';}else toast(r.message||'注册失败','error');});
-    document.getElementById('goRegisterLink').addEventListener('click',e=>{e.preventDefault();showPage('register');});
-    document.getElementById('goLoginLink').addEventListener('click',e=>{e.preventDefault();showPage('login');});
-
-    const marquee = $('#alertMarquee');
-    marquee.addEventListener('click', function() { this.classList.toggle('paused'); });
-
+    // 启动
     await loadData();
     setupAutocompletes();
     bindManualButtons();
