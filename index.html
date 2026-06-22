@@ -266,7 +266,6 @@
         .mpn-dropdown div:hover,.mpn-dropdown div.mpn-active{background:#eff6ff;}
     </style>
 </head>
-
 <body>
 <div id="app">
     <div id="settingsBtn" class="settings-btn"><i class="fas fa-cog"></i></div>
@@ -364,8 +363,7 @@
                     </div>
                 </div>
             </div>
-        </div>
-        <div id="page-manual-count" class="page">
+        </div> <div id="page-manual-count" class="page">
             <div class="back-header"><button id="backFromManualCount"><i class="fas fa-arrow-left"></i></button><h2 style="font-size:18px;font-weight:700;">手动盘点 <span id="manualShelfLabel" style="color:#3b82f6;"></span></h2></div>
             <span id="manualProgress" style="font-size:14px;color:#64748b;display:block;margin-bottom:12px;"></span>
             <div class="shelf-row" id="manualShelfRow">
@@ -377,7 +375,20 @@
                 <button class="shelf-btn" data-shelf="5">架6</button>
                 <button class="shelf-btn" data-shelf="6">架7</button>
             </div>
-            <div class="form-group"><label>料号 <span class="required">*</span></label><input type="text" class="form-control" id="manualCountPart" placeholder="请输入料号"></div>
+            <div class="form-group" style="display:flex;gap:8px;align-items:center;">
+                <label style="white-space:nowrap;">起始料号</label>
+                <select class="form-control" id="manualJumpSelect" style="flex:1;">
+                    <option value="">顺序盘点</option>
+                </select>
+                <button class="btn btn-outline btn-sm" id="manualJumpBtn">跳转</button>
+            </div>
+            <div class="form-group">
+                <label>料号 <span class="required">*</span></label>
+                <div style="display:flex;gap:8px;align-items:center;">
+                    <input type="text" class="form-control" id="manualCountPart" style="flex:1;" placeholder="请输入料号">
+                    <button class="btn btn-outline" id="skipManualBtn" style="white-space:nowrap;"><i class="fas fa-forward"></i> 跳过</button>
+                </div>
+            </div>
             <div class="form-group" id="manualCountMpnGroup">
                 <label>MPN</label>
                 <div class="mpn-dropdown-wrapper">
@@ -390,7 +401,9 @@
                 </div>
             </div>
             <div class="form-group"><label>数量 <span class="required">*</span></label><input type="number" class="form-control" id="manualCountQty" value="1" min="1"></div>
-            <button class="btn btn-primary btn-block" id="saveManualCountBtn"><i class="fas fa-save"></i> 保存盘点</button>
+            <div style="margin-top:8px;">
+                <button class="btn btn-primary btn-block" id="saveManualCountBtn"><i class="fas fa-save"></i> 保存盘点</button>
+            </div>
         </div>
         <div id="page-out" class="page">
             <div class="section-title"><i class="fas fa-sign-out-alt" style="color:#ef4444;"></i> 出库</div>
@@ -430,7 +443,7 @@
                     <div class="form-group"><label>料号 <span class="required">*</span></label><div class="autocomplete-wrapper"><input type="text" class="form-control" id="inMaterialInput" placeholder="输入料号后四位搜索" autocomplete="off"><input type="hidden" id="inMaterialId"><div class="autocomplete-dropdown" id="inMaterialDropdown"></div></div></div>
                     <div class="form-group"><label>MPN <span class="required">*</span></label><select class="form-control" id="inMpn" disabled><option value="">请先选择料号</option></select></div>
                     <div class="form-group"><label>数量 <span class="required">*</span></label><input type="number" class="form-control" id="inQty" placeholder="请输入数量" min="1" required></div>
-                    <button type="submit" class="btn btn-success btn-block"><i class="fas fa-arrow-left"></i> 确认入库</button>
+                    <button type="submit" class="btn btn-success btn-block" id="inSubmitBtn"><i class="fas fa-arrow-left"></i> 确认入库</button>
                 </form>
             </div>
             <div class="scan-half-panel" id="inHalfScanPanel">
@@ -444,7 +457,7 @@
             <div class="count-search-row">
                 <input type="date" class="form-control date-sm" id="countDateInput">
                 <input type="text" class="form-control" id="countSearchInput" placeholder="搜索料号后四位..." style="flex:1;">
-                <button class="btn btn-danger btn-sm" id="clearTodayBtn"><i class="fas fa-trash-alt"></i> 清空今日</button>
+                <button class="btn btn-warning btn-sm" id="clearTodayBtn"><i class="fas fa-trash-alt"></i> 清空今日</button>
             </div>
             <div class="plan-row" id="planRow">
                 <span class="plan-info" id="planInfo">未导入计划</span>
@@ -568,6 +581,7 @@
         <div id="page-custom-msg" class="page" style="padding-top:20px;">
             <div class="back-header"><button id="backFromMsgBtn"><i class="fas fa-arrow-left"></i></button><h2 style="font-size:18px;font-weight:700;">滚动预警设置</h2></div>
             <div style="display:flex;gap:8px;margin-bottom:16px;"><input type="text" class="form-control" id="subCustomMsgInput" placeholder="输入要显示的文字..."><button class="btn btn-primary btn-sm" id="subAddCustomMsgBtn"><i class="fas fa-plus"></i> 添加</button></div>
+            <label style="display:flex;align-items:center;gap:8px;margin-bottom:12px;"><input type="checkbox" id="globalMsgCheck"> 全局公告（所有用户可见）</label>
             <div id="subCustomMsgList"></div>
         </div>
     </div>
@@ -623,9 +637,10 @@
         </div>
         <div class="modal-actions"><button class="btn-modal-cancel" id="shelfRangesCancel">取消</button><button class="btn-modal-danger" id="shelfRangesSave">保存</button></div>
     </div>
-</div>
+</div> <script>
+const APP_VERSION = '23.2';
+const LAST_UPDATE_DATE = '2026-06-20';
 
-<script>
 document.addEventListener('DOMContentLoaded', async () => {
     const SUPABASE_URL = 'https://nrnncqeopxwbhbfecgpa.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5ybm5jcWVvcHh3YmhiZmVjZ3BhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA4NDAyMzQsImV4cCI6MjA5NjQxNjIzNH0.II_DML0biZ_6OMRi9GZY7TEI3y8IKbyOvUwgX7GhB8s';
@@ -655,8 +670,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (savedNames) try { shelfNames = JSON.parse(savedNames); } catch(e){}
     const savedRanges = localStorage.getItem('wms_shelf_ranges');
     if (savedRanges) try { shelfRanges = JSON.parse(savedRanges); } catch(e){}
-    if (!shelfRanges.length || shelfRanges.length < 7) {
+    if (!Array.isArray(shelfRanges) || shelfRanges.length < 7) {
         shelfRanges = Array(7).fill({start:'', end:''});
+    } else {
+        shelfRanges = shelfRanges.map(r => ({ start: r?.start || '', end: r?.end || '' }));
     }
 
     const startTime = new Date();
@@ -678,9 +695,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         sound: localStorage.getItem('scan_sound') !== 'false',
         autoSave: localStorage.getItem('scan_auto_save') === 'true'
     };
-    let scanStream = null, scanAnimId = null, scanning = false, lastScanData = '', cooldownUntil = 0;
+    let scanStream = null, scanAnimId = null, scanning = false, lastScanData = null, cooldownUntil = 0;
     let torchState = false;
     let halfScanStream = null, halfScanAnimId = null, halfScanning = false, halfScanMode = null;
+
+    // 自动刷新定时器
+    let autoRefreshTimer = null;
 
     // ========== 设置功能修复 ==========
     const cameraPreviewHeightRange = document.getElementById('cameraPreviewHeightRange');
@@ -688,6 +708,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (cameraPreviewHeightRange) {
         cameraPreviewHeightRange.value = scanSettings.previewHeight;
         cameraPreviewHeightValue.textContent = scanSettings.previewHeight + '%';
+        document.documentElement.style.setProperty('--camera-preview-height', scanSettings.previewHeight + 'vh');
         cameraPreviewHeightRange.addEventListener('input', () => {
             const val = parseInt(cameraPreviewHeightRange.value);
             document.documentElement.style.setProperty('--camera-preview-height', val + 'vh');
@@ -702,6 +723,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (scanWindowSizeRange) {
         scanWindowSizeRange.value = scanSettings.windowSize;
         scanWindowSizeValue.textContent = scanSettings.windowSize + '%';
+        document.documentElement.style.setProperty('--scan-window-size', scanSettings.windowSize + '%');
         scanWindowSizeRange.addEventListener('input', () => {
             const val = parseInt(scanWindowSizeRange.value);
             document.documentElement.style.setProperty('--scan-window-size', val + '%');
@@ -713,9 +735,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     const scanCooldownSelect = document.getElementById('scanCooldownSelect');
     if (scanCooldownSelect) {
-        Array.from(scanCooldownSelect.options).forEach(option => {
-            if (parseFloat(option.value) === scanSettings.cooldown) option.selected = true;
-        });
+        scanCooldownSelect.value = String(scanSettings.cooldown);
         scanCooldownSelect.addEventListener('change', () => {
             scanSettings.cooldown = parseFloat(scanCooldownSelect.value);
             localStorage.setItem('scan_cooldown', scanSettings.cooldown);
@@ -791,9 +811,13 @@ document.addEventListener('DOMContentLoaded', async () => {
         const config = { hidden: [...hiddenAlerts] };
         const configStr = '__alert_config__' + JSON.stringify(config);
         if (!currentUser) { localStorage.setItem('wms_hidden_alerts', JSON.stringify([...hiddenAlerts])); return; }
-        await supabase.from('messages').delete().eq('user_id', currentUser.id).like('text', '__alert_config__%');
-        await supabase.from('messages').insert({ text: configStr, user_id: currentUser.id });
-        localStorage.setItem('wms_hidden_alerts', JSON.stringify([...hiddenAlerts]));
+        try {
+            await supabase.from('messages').delete().eq('user_id', currentUser.id).like('text', '__alert_config__%');
+            await supabase.from('messages').insert({ text: configStr, user_id: currentUser.id });
+            localStorage.setItem('wms_hidden_alerts', JSON.stringify([...hiddenAlerts]));
+        } catch (e) {
+            toast('配置同步失败，请重试', 'error');
+        }
     }
     function getCachedLocations() { try { return JSON.parse(localStorage.getItem('wms_locations')); } catch { return null; } }
     function setCachedLocations(data) { localStorage.setItem('wms_locations', JSON.stringify({ updated_at: new Date().toISOString(), data: data.map(d => ({ part: d.part, location: d.location, responsible: d.responsible || '' })) })); }
@@ -809,6 +833,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (currentUser) {
             const { data: msgData } = await supabase.from('messages').select('text').eq('user_id', currentUser.id).not('text', 'like', '__alert_config__%');
             userMessages = (msgData || []).map(r => ({ text: r.text }));
+            const { data: globalMsgs } = await supabase.from('messages').select('text').is('user_id', null);
+            if (globalMsgs) {
+                globalMsgs.forEach(m => { if (!userMessages.find(u => u.text === m.text)) userMessages.push({ text: m.text }); });
+            }
         } else userMessages = JSON.parse(localStorage.getItem('wms_messages') || '[]');
         await loadAlertConfig();
         const cached = getCachedLocations();
@@ -829,13 +857,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
     async function saveMaterialsToCloud() {
         if (!currentUser) return;
-        for (const m of materials) {
-            const { error } = await supabase.from('materials').upsert(
-                { ...m, user_id: currentUser.id },
-                { onConflict: 'user_id, id, mpn' }
-            );
-            if (error) { toast(`保存失败: ${error.message}`, 'error'); throw error; }
-        }
+        await supabase.from('materials').upsert(
+            materials.map(m => ({ ...m, user_id: currentUser.id })),
+            { onConflict: 'user_id, id, mpn' }
+        );
     }
     async function saveRecordToCloud(r) {
         if (!currentUser) return;
@@ -890,9 +915,16 @@ document.addEventListener('DOMContentLoaded', async () => {
         $('#bottomNav').style.display=(name==='customMsg'||name==='manualCount'||name==='countList'||!currentUser||name==='login'||name==='register')?'none':'flex';
         document.querySelectorAll('.bottom-nav .nav-item').forEach(n=>n.classList.toggle('active',n.dataset.tab===name));
         if (name==='mine') { $('#settingsBtn').classList.add('visible'); } else { $('#settingsBtn').classList.remove('visible'); }
-        if (name==='out') { document.getElementById('outCangma').value = ''; document.getElementById('outSubmitBtn').disabled = true; }
+        if (name==='out') {
+            document.getElementById('outCangma').value = 'B8SA';
+            document.getElementById('outSubmitBtn').disabled = false;
+        }
+        if(name==='stock') {
+            // 每次进入库存页清空搜索框
+            document.getElementById('stockSearch').value = '';
+            renderStock();
+        }
         if(name==='home'){updateDaily();updateMarquee();}
-        if(name==='stock') renderStock();
         if(name==='count') {
             document.getElementById('countDateInput').value = countViewDate;
             document.querySelectorAll('#page-count .tab-btn').forEach(b => b.classList.remove('active'));
@@ -989,7 +1021,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
     function handleScan(data) {
         const now = Date.now();
-        if (data === lastScanData && now < cooldownUntil) return;
+        if (lastScanData !== null && data === lastScanData && now < cooldownUntil) return;
         lastScanData = data;
         cooldownUntil = now + (scanSettings.cooldown * 1000);
         document.getElementById('resultContent').innerText = data;
@@ -1129,12 +1161,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     function loadManualPartList(shelfIdx) {
         const partInput = document.getElementById('manualCountPart');
         const progress = document.getElementById('manualProgress');
+        const jumpSelect = document.getElementById('manualJumpSelect');
         if (!countPlan || countPlan.length === 0 || countPlanDate !== countViewDate) {
             manualPartList = [];
             partInput.readOnly = false;
             partInput.value = '';
             progress.textContent = '未导入计划，请手动输入';
             delete manualShelfProgress[shelfIdx];
+            jumpSelect.innerHTML = '<option value="">无计划</option>';
             return;
         }
         const range = shelfRanges[shelfIdx];
@@ -1144,6 +1178,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             partInput.value = '';
             progress.textContent = '该货架未设置储位范围';
             delete manualShelfProgress[shelfIdx];
+            jumpSelect.innerHTML = '<option value="">无范围</option>';
             return;
         }
         const start = range.start.toUpperCase().replace(/\s/g, '');
@@ -1161,6 +1196,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
         });
         manualPartList.sort((a, b) => a.location.localeCompare(b.location) || a.part.localeCompare(b.part));
+        jumpSelect.innerHTML = '<option value="">顺序盘点</option>' + manualPartList.map((item, i) => `<option value="${i}">${item.part} (${item.location})</option>`).join('');
         if (manualPartList.length === 0) {
             partInput.readOnly = false;
             partInput.value = '';
@@ -1222,54 +1258,61 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
         mpnInput.readOnly = true;
         progress.textContent = `第 ${manualPartIndex + 1}/${manualPartList.length} 个`;
-    }
-
-    async function saveManualCount() {
+    } async function saveManualCount() {
         if (!currentUser || !currentUser.id) { toast('请先登录', 'error'); return; }
-        const part = document.getElementById('manualCountPart').value.trim().toUpperCase();
-        const qty = parseInt(document.getElementById('manualCountQty').value) || 1;
-        const mpnSwitchOn = document.getElementById('manualMpnSwitch').classList.contains('on');
-        const mpn = mpnSwitchOn ? document.getElementById('manualCountMpn').value.trim() : '';
-        if (!part) { toast('请输入料号', 'error'); return; }
-        const today = new Date().toISOString().slice(0,10);
-        const nowTime = new Date().toTimeString().slice(0,8);
-        let location = '';
-        if (manualPartList.length > 0 && manualPartIndex < manualPartList.length) {
-            location = manualPartList[manualPartIndex].location || (shelfNames[currentShelf] || ('架'+(currentShelf+1)));
-        } else {
-            location = shelfNames[currentShelf] || ('架'+(currentShelf+1));
-        }
-        const { error } = await supabase.from('scan_records').insert({
-            user_id: Number(currentUser.id),
-            date: today,
-            time: nowTime,
-            part: part,
-            qty,
-            mpn,
-            location: location
-        });
-        if (error) { toast('保存失败: ' + error.message, 'error'); console.error(error); return; }
-        toast(`✅ 已保存 ${part} x ${qty} (${mpn||'无MPN'})`, 'success');
-        if (manualPartList.length > 0) {
-            manualPartIndex++;
-            manualShelfProgress[currentShelf] = manualPartIndex;
-            if (manualPartIndex < manualPartList.length) {
-                fillNextPart();
-                document.getElementById('manualCountQty').value = '1';
+        const btn = document.getElementById('saveManualCountBtn');
+        if (btn.disabled) return;
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 保存中...';
+        try {
+            const part = document.getElementById('manualCountPart').value.trim().toUpperCase();
+            const qty = parseInt(document.getElementById('manualCountQty').value) || 1;
+            const mpnSwitchOn = document.getElementById('manualMpnSwitch').classList.contains('on');
+            const mpn = mpnSwitchOn ? document.getElementById('manualCountMpn').value.trim() : '';
+            if (!part) { toast('请输入料号', 'error'); return; }
+            const today = new Date().toISOString().slice(0,10);
+            const nowTime = new Date().toTimeString().slice(0,8);
+            let location = '';
+            if (manualPartList.length > 0 && manualPartIndex < manualPartList.length) {
+                location = manualPartList[manualPartIndex].location || (shelfNames[currentShelf] || ('架'+(currentShelf+1)));
             } else {
-                toast('🎉 该货架所有料号已盘点完毕！', 'success');
-                manualPartList = [];
-                document.getElementById('manualCountPart').readOnly = false;
-                document.getElementById('manualCountPart').value = '';
-                document.getElementById('manualProgress').textContent = '已完成';
-                document.getElementById('manualCountQty').value = '1';
+                location = shelfNames[currentShelf] || ('架'+(currentShelf+1));
             }
-        } else {
-            document.getElementById('manualCountPart').value = '';
-            document.getElementById('manualCountQty').value = '1';
-            document.getElementById('manualCountMpn').value = '';
+            const { error } = await supabase.from('scan_records').insert({
+                user_id: Number(currentUser.id),
+                date: today,
+                time: nowTime,
+                part: part,
+                qty,
+                mpn,
+                location: location
+            });
+            if (error) { toast('保存失败: ' + error.message, 'error'); console.error(error); return; }
+            toast(`✅ 已保存 ${part} x ${qty} (${mpn||'无MPN'})`, 'success');
+            // 清空数量并聚焦
+            document.getElementById('manualCountQty').value = '';
+            document.getElementById('manualCountQty').focus();
+            if (manualPartList.length > 0) {
+                manualPartIndex++;
+                manualShelfProgress[currentShelf] = manualPartIndex;
+                if (manualPartIndex < manualPartList.length) {
+                    fillNextPart();
+                } else {
+                    toast('🎉 该货架所有料号已盘点完毕！', 'success');
+                    manualPartList = [];
+                    document.getElementById('manualCountPart').readOnly = false;
+                    document.getElementById('manualCountPart').value = '';
+                    document.getElementById('manualProgress').textContent = '已完成';
+                }
+            } else {
+                document.getElementById('manualCountPart').value = '';
+                document.getElementById('manualCountMpn').value = '';
+            }
+            if (countViewDate === today) importPlan();
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-save"></i> 保存盘点';
         }
-        if (countViewDate === today) importPlan();
     }
 
     function initScanner() {
@@ -1311,13 +1354,39 @@ document.addEventListener('DOMContentLoaded', async () => {
             localStorage.setItem('scan_auto_save', scanSettings.autoSave);
             toast(scanSettings.autoSave ? '自动保存已开启' : '手动保存模式', 'info');
         };
+        document.getElementById('autoSaveSwitchTrack').classList.toggle('on', scanSettings.autoSave);
         document.getElementById('btnConfirmSave').onclick = async () => { await performSave(); document.getElementById('resultCard').style.display = 'none'; };
         document.getElementById('btnCancelSave').onclick = () => { document.getElementById('scanPartNumber').value = ''; document.getElementById('scanQuantity').value = '1'; document.getElementById('scanMpn').value = ''; document.getElementById('resultCard').style.display = 'none'; };
         document.getElementById('btnCopy').onclick = () => { const t = document.getElementById('resultContent').innerText; if (t) navigator.clipboard.writeText(t).then(() => toast('已复制', 'info')).catch(() => toast('复制失败', 'error')); };
-        document.getElementById('btnClearResult').onclick = () => { document.getElementById('resultCard').style.display = 'none'; document.getElementById('resultContent').innerText = ''; lastScanData = ''; };
+        document.getElementById('btnClearResult').onclick = () => { document.getElementById('resultCard').style.display = 'none'; document.getElementById('resultContent').innerText = ''; lastScanData = null; };
         document.getElementById('btnManualCount').onclick = () => showPage('manualCount');
         document.getElementById('backFromManualCount').onclick = () => showPage('scan');
         document.getElementById('saveManualCountBtn').onclick = saveManualCount;
+        document.getElementById('skipManualBtn').onclick = () => {
+            if (manualPartList.length > 0 && manualPartIndex < manualPartList.length) {
+                manualPartIndex++;
+                manualShelfProgress[currentShelf] = manualPartIndex;
+                if (manualPartIndex < manualPartList.length) {
+                    fillNextPart();
+                    document.getElementById('manualCountQty').value = '';
+                    document.getElementById('manualCountQty').focus();
+                } else {
+                    toast('🎉 该货架所有料号已盘点完毕！', 'success');
+                    manualPartList = [];
+                    document.getElementById('manualCountPart').readOnly = false;
+                    document.getElementById('manualCountPart').value = '';
+                    document.getElementById('manualProgress').textContent = '已完成';
+                }
+            }
+        };
+        document.getElementById('manualJumpBtn').onclick = () => {
+            const select = document.getElementById('manualJumpSelect');
+            const idx = parseInt(select.value);
+            if (isNaN(idx) || idx < 0 || idx >= manualPartList.length) return;
+            manualPartIndex = idx;
+            manualShelfProgress[currentShelf] = idx;
+            fillNextPart();
+        };
 
         document.getElementById('manualMpnSwitch').addEventListener('click', function() { this.classList.toggle('on'); });
 
@@ -1438,7 +1507,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         function download() { const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = fileName; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url); toast('文件已下载', 'success'); }
     }
 
-    // ========== 以下保留所有原有功能 ==========
     function setupAutocompletes(){
         ['out','in','reportIn'].forEach(type=>{
             const input=document.getElementById(`${type}MaterialInput`);
@@ -1491,35 +1559,72 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('outMpn').addEventListener('change',function(){const id=document.getElementById('outMaterialId').value;const m=findMaterial(id,this.value);if(m){document.getElementById('outStockHint').textContent=`当前库存: ${m.stock}`;document.getElementById('outQty').max=m.stock;}});
     document.getElementById('outForm').addEventListener('submit', async function(e) {
         if (!currentUser || !currentUser.id) return;
-        e.preventDefault(); if (!outCangma.value) return toast('请选择仓码', 'error');
-        const id = document.getElementById('outMaterialId').value, mpn = document.getElementById('outMpn').value, cangma = outCangma.value, qty = parseInt(document.getElementById('outQty').value);
-        if(!id||!mpn||!qty||qty<1) return toast('请完善信息','error');
-        const m = findMaterial(id, mpn); if(!m) return toast('物料不存在','error'); if(m.stock < qty) return toast(`库存不足，当前库存: ${m.stock}`,'error');
-        m.stock -= qty; const record = { type:'out', materialId:id, mpn, quantity:qty, date: new Date().toISOString(), dest: mpn, note: cangma };
-        records.unshift(record); toast(`出库成功：${id} ${mpn} x ${qty}`, 'success');
-        document.getElementById('outMaterialInput').value = ''; document.getElementById('outMaterialId').value = '';
-        document.getElementById('outMpn').innerHTML = '<option value="">请先选择料号</option>'; document.getElementById('outMpn').disabled = true;
-        document.getElementById('outQty').value = ''; document.getElementById('outStockHint').textContent = '';
-        renderStock(); updateDaily(); updateMarquee();
-        saveRecordToCloud(record).catch(err => console.error(err)); saveMaterialsToCloud().catch(err => console.error(err));
-        if (!outContinuous) { stopHalfScan(); }
+        e.preventDefault();
+        const outSubmitBtn = document.getElementById('outSubmitBtn');
+        if (outSubmitBtn.disabled) return;
+        outSubmitBtn.disabled = true;
+        const id = document.getElementById('outMaterialId').value;
+        const mpn = document.getElementById('outMpn').value;
+        const cangma = document.getElementById('outCangma').value;
+        const qty = parseInt(document.getElementById('outQty').value);
+        if(!id||!mpn||!qty||qty<1) { outSubmitBtn.disabled = false; return toast('请完善信息','error'); }
+        const m = findMaterial(id, mpn);
+        if(!m) { outSubmitBtn.disabled = false; return toast('物料不存在','error'); }
+        if(m.stock < qty) { outSubmitBtn.disabled = false; return toast(`库存不足，当前库存: ${m.stock}`,'error'); }
+        const oldStock = m.stock;
+        m.stock -= qty;
+        const record = { type:'out', materialId:id, mpn, quantity:qty, date: new Date().toISOString(), dest: mpn, note: cangma };
+        try {
+            await saveRecordToCloud(record);
+            await saveMaterialsToCloud();
+            records.unshift(record);
+            toast(`出库成功：${id} ${mpn} x ${qty}`, 'success');
+            document.getElementById('outMaterialInput').value = ''; document.getElementById('outMaterialId').value = '';
+            document.getElementById('outMpn').innerHTML = '<option value="">请先选择料号</option>'; document.getElementById('outMpn').disabled = true;
+            document.getElementById('outQty').value = ''; document.getElementById('outStockHint').textContent = '';
+            renderStock(); updateDaily(); updateMarquee();
+            if (!outContinuous) stopHalfScan();
+        } catch(e) {
+            m.stock = oldStock;
+            toast('出库失败，库存已恢复: '+e.message, 'error');
+        } finally {
+            outSubmitBtn.disabled = false;
+            refreshAll();
+        }
     });
     document.getElementById('inForm').addEventListener('submit', async function(e) {
         if (!currentUser || !currentUser.id) return;
         e.preventDefault();
-        const id = document.getElementById('inMaterialId').value, mpn = document.getElementById('inMpn').value, qty = parseInt(document.getElementById('inQty').value);
-        if(!id||!mpn||!qty||qty<1) return toast('请完善信息','error');
-        const m = findMaterial(id, mpn); if(!m) return toast('物料不存在，请先在数据页添加','error');
-        m.stock += qty; const record = { type:'in', materialId:id, mpn, quantity:qty, date: new Date().toISOString(), source: mpn, note: '' };
-        records.unshift(record); toast(`入库成功：${id} ${mpn} x ${qty}`, 'success');
-        document.getElementById('inMaterialInput').value = ''; document.getElementById('inMaterialId').value = '';
-        document.getElementById('inMpn').innerHTML = '<option value="">请先选择料号</option>'; document.getElementById('inMpn').disabled = true;
-        document.getElementById('inQty').value = '';
-        renderStock(); updateDaily(); updateMarquee();
-        saveRecordToCloud(record).catch(err => console.error(err)); saveMaterialsToCloud().catch(err => console.error(err));
-        if (!inContinuous) { stopHalfScan(); }
+        const inSubmitBtn = document.getElementById('inSubmitBtn');
+        if (inSubmitBtn.disabled) return;
+        inSubmitBtn.disabled = true;
+        const id = document.getElementById('inMaterialId').value;
+        const mpn = document.getElementById('inMpn').value;
+        const qty = parseInt(document.getElementById('inQty').value);
+        if(!id||!mpn||!qty||qty<1) { inSubmitBtn.disabled = false; return toast('请完善信息','error'); }
+        const m = findMaterial(id, mpn);
+        if(!m) { inSubmitBtn.disabled = false; return toast('物料不存在，请先在数据页添加','error'); }
+        const oldStock = m.stock;
+        m.stock += qty;
+        const record = { type:'in', materialId:id, mpn, quantity:qty, date: new Date().toISOString(), source: mpn, note: '' };
+        try {
+            await saveRecordToCloud(record);
+            await saveMaterialsToCloud();
+            records.unshift(record);
+            toast(`入库成功：${id} ${mpn} x ${qty}`, 'success');
+            document.getElementById('inMaterialInput').value = ''; document.getElementById('inMaterialId').value = '';
+            document.getElementById('inMpn').innerHTML = '<option value="">请先选择料号</option>'; document.getElementById('inMpn').disabled = true;
+            document.getElementById('inQty').value = '';
+            renderStock(); updateDaily(); updateMarquee();
+            if (!inContinuous) stopHalfScan();
+        } catch(e) {
+            m.stock = oldStock;
+            toast('入库失败，库存已恢复: '+e.message, 'error');
+        } finally {
+            inSubmitBtn.disabled = false;
+            refreshAll();
+        }
     });
-
     async function importPlan() {
         if (!currentUser || !currentUser.id) return;
         const date = countViewDate;
@@ -1560,7 +1665,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
     document.getElementById('clearTodayBtn').addEventListener('click', () => {
         if (!currentUser || !currentUser.id) return;
-        showConfirm('确定要清空当日实际盘点数据（数量>0）吗？盘点计划将被保留。', 'fa-trash-alt', '#ef4444', 'btn-modal-danger', async () => {
+        showConfirm('确定要清空当日实际盘点数据（数量>0）吗？盘点计划将被保留。', 'fa-trash-alt', '#ef4444', 'btn-modal-warning', async () => {
             const date = countViewDate;
             const { error } = await supabase.from('scan_records').delete().eq('user_id', Number(currentUser.id)).eq('date', date).gt('qty', 0);
             if (error) { toast('清空失败: ' + error.message, 'error'); return; }
@@ -1752,7 +1857,13 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     }
 
-    document.getElementById('logoutBtn').addEventListener('click',()=>{showConfirm('确定要退出登录吗？','fa-sign-out-alt','#ef4444','btn-modal-danger',()=>{currentUser=null;localStorage.removeItem('wms_user');showPage('login');toast('已退出登录','info');});});
+    document.getElementById('logoutBtn').addEventListener('click',()=>{
+        showConfirm('确定要退出登录吗？','fa-sign-out-alt','#ef4444','btn-modal-danger',()=>{
+            // 清除自动刷新定时器
+            if (autoRefreshTimer) { clearInterval(autoRefreshTimer); autoRefreshTimer = null; }
+            currentUser=null;localStorage.removeItem('wms_user');showPage('login');toast('已退出登录','info');
+        });
+    });
 
     function renderSubCustomMsgs(){
         const c=$('#subCustomMsgList'); if(!c) return;
@@ -1764,7 +1875,25 @@ document.addEventListener('DOMContentLoaded', async () => {
         c.innerHTML = html || '<div class="text-muted">暂无预警或消息</div>';
         c.querySelectorAll('.alert-check').forEach(cb => { cb.addEventListener('change', async function() { const key = this.dataset.key; if (this.checked) hiddenAlerts.delete(key); else hiddenAlerts.add(key); await saveAlertConfig(); updateMarquee(); }); });
     }
-    document.getElementById('subAddCustomMsgBtn').addEventListener('click',async()=>{const txt=$('#subCustomMsgInput').value.trim();if(!txt) return toast('请输入内容','error');userMessages.push({text:txt});await syncMessagesToCloud();updateMarquee();renderSubCustomMsgs();$('#subCustomMsgInput').value='';});
+    const globalMsgCheck = document.getElementById('globalMsgCheck');
+    document.getElementById('subAddCustomMsgBtn').addEventListener('click', async () => {
+        const txt = document.getElementById('subCustomMsgInput').value.trim();
+        if (!txt) return toast('请输入内容', 'error');
+        const isGlobal = globalMsgCheck.checked;
+        if (isGlobal && currentUser) {
+            await supabase.from('messages').insert({ text: txt, user_id: null });
+        } else if (currentUser) {
+            userMessages.push({ text: txt });
+            await syncMessagesToCloud();
+        } else {
+            userMessages.push({ text: txt });
+            localStorage.setItem('wms_messages', JSON.stringify(userMessages));
+        }
+        updateMarquee();
+        renderSubCustomMsgs();
+        document.getElementById('subCustomMsgInput').value = '';
+        globalMsgCheck.checked = false;
+    });
     document.getElementById('backFromMsgBtn').addEventListener('click',()=>showPage('mine'));
     document.getElementById('goCustomMsgBtn').addEventListener('click',()=>showPage('customMsg'));
 
@@ -1774,13 +1903,13 @@ document.addEventListener('DOMContentLoaded', async () => {
         $('#myTotalRecords').textContent=records.length;
         const d=Math.floor((new Date()-startTime)/1000);
         $('#sysUptime').textContent=`${Math.floor(d/3600)}h ${Math.floor((d%3600)/60)}m`;
-        $('#lastUpdateTime').textContent='2026-06-20';
+        $('#lastUpdateTime').textContent=LAST_UPDATE_DATE;
         if(currentUser){$('#profileName').textContent=currentUser.real_name||currentUser.username;$('#profileRole').textContent=currentUser.is_admin?'管理员':'普通用户';}
     }
     function loadCustomStyles(){const avatar=localStorage.getItem('wms_avatar');if(avatar){document.getElementById('avatarIcon').style.display='none';let img=document.getElementById('avatarImg');if(!img){img=document.createElement('img');img.id='avatarImg';img.style.width='64px';img.style.height='64px';img.style.borderRadius='50%';img.style.objectFit='cover';document.getElementById('avatarBtn').appendChild(img);}img.src=avatar;}else{document.getElementById('avatarIcon').style.display='block';const img=document.getElementById('avatarImg');if(img) img.remove();}}
     function loadProfileBg(){const bg=localStorage.getItem('wms_profile_bg');const card=document.getElementById('myProfileCard');if(card) card.style.backgroundImage=bg?`url(${bg})`:'';}
-    document.getElementById('changeAvatarBtn').addEventListener('click',()=>{const input=document.createElement('input');input.type='file';input.accept='image/*';input.onchange=(e)=>{const file=e.target.files[0];if(!file) return;if(file.size>5*1024*1024) return toast('头像不能超过5MB','error');const reader=new FileReader();reader.onload=(ev)=>{localStorage.setItem('wms_avatar',ev.target.result);loadCustomStyles();toast('头像已更新','success');};reader.readAsDataURL(file);};input.click();});
-    document.getElementById('changeBgBtn').addEventListener('click',()=>{const input=document.createElement('input');input.type='file';input.accept='image/*';input.onchange=(e)=>{const file=e.target.files[0];if(!file) return;if(file.size>5*1024*1024) return toast('背景不能超过5MB','error');const reader=new FileReader();reader.onload=(ev)=>{localStorage.setItem('wms_profile_bg',ev.target.result);loadProfileBg();toast('背景已更新','success');};reader.readAsDataURL(file);};input.click();});
+    document.getElementById('changeAvatarBtn').addEventListener('click',()=>{const input=document.createElement('input');input.type='file';input.accept='image/*';input.onchange=(e)=>{const file=e.target.files[0];if(!file) return;if(!file.type.startsWith('image/')) return toast('请选择图片文件','error');if(file.size>5*1024*1024) return toast('头像不能超过5MB','error');const reader=new FileReader();reader.onload=(ev)=>{localStorage.setItem('wms_avatar',ev.target.result);loadCustomStyles();toast('头像已更新','success');};reader.readAsDataURL(file);};input.click();});
+    document.getElementById('changeBgBtn').addEventListener('click',()=>{const input=document.createElement('input');input.type='file';input.accept='image/*';input.onchange=(e)=>{const file=e.target.files[0];if(!file) return;if(!file.type.startsWith('image/')) return toast('请选择图片文件','error');if(file.size>5*1024*1024) return toast('背景不能超过5MB','error');const reader=new FileReader();reader.onload=(ev)=>{localStorage.setItem('wms_profile_bg',ev.target.result);loadProfileBg();toast('背景已更新','success');};reader.readAsDataURL(file);};input.click();});
     document.getElementById('resetBgBtn').addEventListener('click',()=>{localStorage.removeItem('wms_avatar');localStorage.removeItem('wms_profile_bg');loadCustomStyles();loadProfileBg();toast('已重置','info');});
 
     document.getElementById('loginBtn').addEventListener('click',async()=>{const u=$('#loginUsername').value.trim(),p=$('#loginPassword').value;if(!u||!p) return toast('请输入账号密码','error');const {data,error}=await supabase.rpc('login_user',{p_username:u,p_password:p});if(error){toast('登录失败: '+error.message,'error');return;}if(!data||!data.length){toast('登录失败','error');return;}const r=data[0];if(r.success){currentUser={id:r.id,username:r.username,real_name:r.real_name,is_admin:r.is_admin};localStorage.setItem('wms_user',JSON.stringify(currentUser));toast('登录成功','success');await loadData();setupAutocompletes();showPage('home');updateMine();updateMarquee();}else toast(r.message||'账号或密码错误','error');});
@@ -2034,11 +2163,37 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     });
 
+    // 启动自动刷新定时器（每5分钟）
+    function startAutoRefresh() {
+        if (autoRefreshTimer) clearInterval(autoRefreshTimer);
+        autoRefreshTimer = setInterval(async () => {
+            if (!currentUser) return;
+            await loadData();
+            renderStock(document.getElementById('stockSearch')?.value || '');
+            updateDaily();
+            updateMarquee();
+            if (currentPage === 'count') renderCount();
+            if (currentPage === 'mine') updateMine();
+            setupAutocompletes();
+        }, 5 * 60 * 1000);
+    }
+
+    // 登录后启动定时器，退出时在logoutBtn回调中已清除
     // 启动
     await loadData();
     setupAutocompletes();
     bindManualButtons();
-    if(currentUser){showPage('home');renderStock();updateDaily();updateMarquee();updateMine();loadCustomStyles();loadProfileBg();updateShelfUI();}
+    if(currentUser){
+        showPage('home');
+        renderStock();
+        updateDaily();
+        updateMarquee();
+        updateMine();
+        loadCustomStyles();
+        loadProfileBg();
+        updateShelfUI();
+        startAutoRefresh(); // 登录后开始自动刷新
+    }
     else showPage('login');
     document.onkeydown=e=>{if(e.key==='Escape'&&currentPage!=='home'&&currentUser) showPage('home');};
 });
