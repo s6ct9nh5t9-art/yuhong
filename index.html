@@ -432,8 +432,7 @@
                     </div>
                 </div>
             </div>
-        </div>
-        <div id="page-manual-count" class="page">
+        </div>        <div id="page-manual-count" class="page">
             <div class="back-header"><button id="backFromManualCount"><i class="fas fa-arrow-left"></i></button><h2 style="font-size:18px;font-weight:700;">手动盘点 <span id="manualShelfLabel" style="color:#3b82f6;"></span></h2></div>
             <span id="manualProgress" style="font-size:14px;color:#64748b;display:block;margin-bottom:12px;"></span>
             <div class="shelf-row" id="manualShelfRow">
@@ -443,7 +442,7 @@
             <div class="form-group" style="display:flex;gap:8px;align-items:center;">
                 <label style="white-space:nowrap;">起始料号</label>
                 <select class="form-control" id="manualJumpSelect" style="flex:1;"><option value="">顺序盘点</option></select>
-                <button class="btn btn-outline btn-sm" id="manualJumpBtn">跳转</button>
+                <button class="btn btn-outline btn-sm" id="manualPrevBtn"><i class="fas fa-step-backward"></i> 上一步</button>
             </div>
             <div class="form-group"><label>料号 <span class="required">*</span></label><div style="display:flex;gap:8px;align-items:center;"><input type="text" class="form-control" id="manualCountPart" style="flex:1;" placeholder="请输入料号"><button class="btn btn-outline" id="skipManualBtn" style="white-space:nowrap;"><i class="fas fa-forward"></i> 跳过</button></div></div>
             <div class="form-group" id="manualCountMpnGroup"><label>MPN</label><div class="mpn-dropdown-wrapper"><input type="text" class="form-control" id="manualCountMpn" placeholder="选择 MPN" readonly><div class="mpn-dropdown" id="manualMpnDropdown"></div></div><div style="display:flex;align-items:center;gap:8px;margin-top:6px;"><div class="switch-track" id="manualMpnSwitch"><div class="switch-thumb"></div></div><span style="font-size:12px;color:#94a3b8;">关闭时 MPN 不保存</span></div></div>
@@ -491,8 +490,7 @@
                 </form>
             </div>
             <div class="scan-half-panel" id="inHalfScanPanel"><div class="scan-half-header"><span>扫码入库</span><i class="fas fa-times" id="closeInHalfScan"></i></div><div class="scan-half-body"><video id="inHalfScanVideo" autoplay playsinline muted></video><canvas id="inHalfScanCanvas"></canvas></div><div class="scan-half-footer"><button class="btn btn-primary btn-sm" id="inHalfScanBtn"><i class="fas fa-video"></i> 开始扫描</button></div></div>
-        </div>
-        <div id="page-count" class="page">
+        </div>        <div id="page-count" class="page">
             <div class="section-title"><i class="fas fa-clipboard-list" style="color:#f59e0b;"></i> 盘点</div>
             <div class="count-search-row"><input type="date" class="form-control date-sm" id="countDateInput"><input type="text" class="form-control" id="countSearchInput" placeholder="搜索料号后四位..." style="flex:1;"><button class="btn btn-warning btn-sm" id="clearTodayBtn"><i class="fas fa-trash-alt"></i> 清空今日</button></div>
             <div class="plan-row" id="planRow"><span class="plan-info" id="planInfo">未导入计划</span><div style="display:flex; gap:8px;"><button class="btn btn-outline btn-sm" id="goCountListBtn"><i class="fas fa-list"></i> 清单</button></div></div>
@@ -526,8 +524,7 @@
             <div class="form-group"><label>输入料号后四位</label><div style="display:flex;gap:8px;"><input type="text" class="form-control" id="locationSearchInput" placeholder="例如: 0034"><button class="btn btn-info" id="locationSearchBtn"><i class="fas fa-search"></i> 查找</button></div></div>
             <button class="btn btn-outline btn-block" id="locationClearBtn" style="margin-bottom:16px;"><i class="fas fa-undo"></i> 清空结果</button>
             <div id="locationResult"><div class="table-wrap"><table><thead><tr><th>料号</th><th>储位</th><th>担当</th><th>操作</th></tr></thead><tbody id="locationResultBody"><tr><td colspan="4" class="text-center text-muted">输入后四位查找（储位数据库）</td></tr></tbody></table></div><div style="margin-top:8px;text-align:right;font-size:12px;color:#94a3b8;">找到 <span id="locationResultCount">0</span> 项</div></div>
-        </div>
-        <div id="page-data" class="page">
+        </div>        <div id="page-data" class="page">
             <div class="section-title"><i class="fas fa-cloud-upload-alt" style="color:#3b82f6;"></i> 数据导入</div>
             <div class="upload-card"><div class="upload-header"><i class="fas fa-file-excel" style="color:#22c55e;"></i> 批量上传库存 Excel</div><div class="file-input-wrap"><input type="file" id="excelFile" accept=".xls,.xlsx" class="form-control"><button class="btn btn-primary btn-sm" id="uploadExcelBtn"><i class="fas fa-upload"></i> 导入</button></div><small class="text-muted">表格列：料号、储位、MPN、数量</small><div class="upload-status-text" id="excelUploadStatus"></div></div>
             <div class="upload-card"><div class="upload-header"><i class="fas fa-map-marker-alt" style="color:#0ea5e9;"></i> 批量上传储位 Excel</div><div class="file-input-wrap"><input type="file" id="locationExcelFile" accept=".xls,.xlsx" class="form-control"><button class="btn btn-info btn-sm" id="uploadLocationExcelBtn"><i class="fas fa-upload"></i> 导入储位</button></div><small class="text-muted">表格列：料号、储位、担当</small><div class="upload-status-text" id="locationUploadStatus"></div></div>
@@ -557,7 +554,7 @@
         <button class="nav-item" data-tab="data">数据</button>
         <button class="nav-item" data-tab="mine">我的</button>
     </nav>
-</div> <!-- 计算器面板（独立于页面容器，从底部滑入） -->
+</div>
 <div class="calculator-panel" id="calculatorPanel">
     <div class="calculator-header">
         <span>计算器</span>
@@ -586,7 +583,6 @@
             <button class="calc-btn" data-value=".">.</button>
             <button class="calc-btn calc-equal" data-value="=">=</button>
             <button class="calc-btn" data-value="+">+</button>
-            <!-- 修改点2：新增"填入"按钮 -->
             <button class="calc-btn calc-fill" data-value="fill" style="grid-column: span 2;">填入</button>
         </div>
     </div>
@@ -598,10 +594,9 @@
 <div class="modal-overlay" id="shelfRangesModal"><div class="modal-box" style="max-width:360px;"><h3>储位分类 (开始 - 结束)</h3><small class="text-muted">例如: SG0101-0101 到 SG0104-0605</small><div id="shelfRangeInputs"><div class="modal-input-group"><label>架1</label><div class="range-inputs"><input type="text" class="shelf-range-start" data-shelf="0" placeholder="开始"><span>-</span><input type="text" class="shelf-range-end" data-shelf="0" placeholder="结束"></div></div><div class="modal-input-group"><label>架2</label><div class="range-inputs"><input type="text" class="shelf-range-start" data-shelf="1" placeholder="开始"><span>-</span><input type="text" class="shelf-range-end" data-shelf="1" placeholder="结束"></div></div><div class="modal-input-group"><label>架3</label><div class="range-inputs"><input type="text" class="shelf-range-start" data-shelf="2" placeholder="开始"><span>-</span><input type="text" class="shelf-range-end" data-shelf="2" placeholder="结束"></div></div><div class="modal-input-group"><label>架4</label><div class="range-inputs"><input type="text" class="shelf-range-start" data-shelf="3" placeholder="开始"><span>-</span><input type="text" class="shelf-range-end" data-shelf="3" placeholder="结束"></div></div><div class="modal-input-group"><label>架5</label><div class="range-inputs"><input type="text" class="shelf-range-start" data-shelf="4" placeholder="开始"><span>-</span><input type="text" class="shelf-range-end" data-shelf="4" placeholder="结束"></div></div><div class="modal-input-group"><label>架6</label><div class="range-inputs"><input type="text" class="shelf-range-start" data-shelf="5" placeholder="开始"><span>-</span><input type="text" class="shelf-range-end" data-shelf="5" placeholder="结束"></div></div><div class="modal-input-group"><label>架7</label><div class="range-inputs"><input type="text" class="shelf-range-start" data-shelf="6" placeholder="开始"><span>-</span><input type="text" class="shelf-range-end" data-shelf="6" placeholder="结束"></div></div></div><div class="modal-actions"><button class="btn-modal-cancel" id="shelfRangesCancel">取消</button><button class="btn-modal-danger" id="shelfRangesSave">保存</button></div></div></div>
 <div class="modal-overlay" id="deletePasswordModal"><div class="modal-box"><h3>🔒 请输入管理密码</h3><div class="modal-input-group"><input type="password" id="deletePasswordInput" placeholder="请输入密码"></div><div class="modal-actions"><button class="btn-modal-cancel" id="deletePasswordCancel">取消</button><button class="btn-modal-danger" id="deletePasswordConfirm">确认删除</button></div></div></div>
 <div class="modal-overlay" id="errorLogModal"><div class="modal-box" style="max-width:90%; width:400px;"><h3>错误日志</h3><div class="error-log-list" id="errorLogList"></div><div class="modal-actions"><button class="btn-modal-warning" id="clearErrorLogBtn"><i class="fas fa-trash"></i> 清空</button><button class="btn-modal-cancel" id="closeErrorLogBtn">关闭</button></div></div></div>
-<div class="modal-overlay" id="systemMaintenanceModal"><div class="modal-box"><h3>🛠️ 系统维护</h3><div class="modal-actions" style="flex-direction:column;gap:10px;"><button class="btn btn-outline btn-block" id="maintainErrorLogBtn"><i class="fas fa-bug"></i> 错误日志</button><button class="btn btn-outline btn-block" style="color:#ef4444;" id="maintainResetStockBtn"><i class="fas fa-boxes"></i> 重置库存数据</button><button class="btn btn-outline btn-block" style="color:#ef4444;" id="maintainResetCountBtn"><i class="fas fa-clipboard-list"></i> 重置盘点数据</button><button class="btn btn-outline btn-block" id="maintainClearCacheBtn"><i class="fas fa-broom"></i> 清空本地缓存</button><button class="btn-modal-cancel btn-block" style="margin-top:8px;" id="maintainCancelBtn">取消</button></div></div></div>
-<script>
+<div class="modal-overlay" id="systemMaintenanceModal"><div class="modal-box"><h3>🛠️ 系统维护</h3><div class="modal-actions" style="flex-direction:column;gap:10px;"><button class="btn btn-outline btn-block" id="maintainErrorLogBtn"><i class="fas fa-bug"></i> 错误日志</button><button class="btn btn-outline btn-block" style="color:#ef4444;" id="maintainResetStockBtn"><i class="fas fa-boxes"></i> 重置库存数据</button><button class="btn btn-outline btn-block" style="color:#ef4444;" id="maintainResetCountBtn"><i class="fas fa-clipboard-list"></i> 重置盘点数据</button><button class="btn btn-outline btn-block" id="maintainClearCacheBtn"><i class="fas fa-broom"></i> 清空本地缓存</button><button class="btn-modal-cancel btn-block" style="margin-top:8px;" id="maintainCancelBtn">取消</button></div></div></div> <script>
 const APP_VERSION = '23.4';
-const LAST_UPDATE_DATE = '2026-06-23'; // 修改点6：日期更新
+const LAST_UPDATE_DATE = '2026-06-23';
 
 document.addEventListener('DOMContentLoaded', async () => {
     const SUPABASE_URL = 'https://nrnncqeopxwbhbfecgpa.supabase.co';
@@ -673,7 +668,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     let scanStream = null, scanAnimId = null, scanning = false, lastScanData = null, cooldownUntil = 0;
     let torchState = false;
     let halfScanStream = null, halfScanAnimId = null, halfScanning = false, halfScanMode = null;
-    let autoRefreshTimer = null;
 
     async function saveRecordToCloud(r) {
         if (!currentUser) { logError('saveRecordToCloud', '用户未登录'); throw new Error('请先登录'); }
@@ -692,7 +686,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (error) { logError('saveRecordToCloud insert error', error.message + ' (code: ' + error.code + ')'); throw error; }
         return data;
     }
-    // 摄像头设置范围监听
+
     const cameraPreviewHeightRange = document.getElementById('cameraPreviewHeightRange');
     const cameraPreviewHeightValue = document.getElementById('cameraPreviewHeightValue');
     if (cameraPreviewHeightRange) {
@@ -796,8 +790,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     function isToday(d) { return d && new Date(d).toDateString()===new Date().toDateString(); }
     function toast(msg, type='info') { if (type === 'error') logError(msg); const icons = { success:'fa-check-circle', error:'fa-exclamation-circle', info:'fa-info-circle' }; const el = document.createElement('div'); el.className = `toast toast-${type}`; el.innerHTML = `<i class="fas ${icons[type]}"></i> ${msg}`; $('#toastContainer').appendChild(el); setTimeout(() => el.remove(), 3000); }
     function getSummaryAlerts() { const sums = {}; materials.forEach(m => { if (!sums[m.id]) sums[m.id] = 0; sums[m.id] += m.stock; }); return Object.entries(sums).filter(([id, total]) => total < LOW).map(([id, total]) => ({ id, total })); }
-    function updateMarquee() { const track = $('#marqueeTrack'); const summaryAlerts = getSummaryAlerts(); const lowItems = summaryAlerts.filter(a => !hiddenAlerts.has(`LOW:${a.id}`)).map(a => `<div class="marquee-item ${a.total===0?'red':''}"><i class="fas fa-exclamation-triangle"></i> ${a.id} 库存 ${a.total}</div>`); const customItems = userMessages.filter(m => !hiddenAlerts.has(`MSG:${m.text}`)).map(m => `<div class="marquee-item"><i class="fas fa-bullhorn"></i> ${m.text}</div>`); track.innerHTML = [...lowItems, ...customItems].join('') + [...lowItems, ...customItems].join('') || '<div class="marquee-item"><i class="fas fa-check-circle"></i> 库存充足</div>'; }    let currentPage='home';
-    function showPage(name) {
+    function updateMarquee() { const track = $('#marqueeTrack'); const summaryAlerts = getSummaryAlerts(); const lowItems = summaryAlerts.filter(a => !hiddenAlerts.has(`LOW:${a.id}`)).map(a => `<div class="marquee-item ${a.total===0?'red':''}"><i class="fas fa-exclamation-triangle"></i> ${a.id} 库存 ${a.total}</div>`); const customItems = userMessages.filter(m => !hiddenAlerts.has(`MSG:${m.text}`)).map(m => `<div class="marquee-item"><i class="fas fa-bullhorn"></i> ${m.text}</div>`); track.innerHTML = [...lowItems, ...customItems].join('') + [...lowItems, ...customItems].join('') || '<div class="marquee-item"><i class="fas fa-check-circle"></i> 库存充足</div>'; }
+    let currentPage='home';
+    async function showPage(name) {
         if (!currentUser && name!=='login' && name!=='register') { showPage('login'); return; }
         if (currentPage === 'scan' && name !== 'scan') { stopCam(); }
         if (currentPage === 'out' || currentPage === 'in') { stopHalfScan(); }
@@ -808,21 +803,22 @@ document.addEventListener('DOMContentLoaded', async () => {
         document.querySelectorAll('.bottom-nav .nav-item').forEach(n=>n.classList.toggle('active',n.dataset.tab===name));
         if (name==='mine') { $('#settingsBtn').classList.add('visible'); } else { $('#settingsBtn').classList.remove('visible'); }
         if (name==='out') { document.getElementById('outCangma').value = 'B8SA'; document.getElementById('outSubmitBtn').disabled = false; }
-        if(name==='stock') { document.getElementById('stockSearch').value = ''; renderStock(); }
+        // 修改点1: 进入库存页自动刷新
+        if(name==='stock') { document.getElementById('stockSearch').value = ''; await loadData(); renderStock(); }
+        // 修改点2: 进入出入库清单页自动刷新
+        if(name==='report') { document.getElementById('reportOutDate').value = new Date().toISOString().slice(0,10); await loadData(); document.querySelector('#page-report .tab-btn.active')?.click(); }
         if(name==='home'){updateDaily();updateMarquee();}
-        // 修改点4+5：进入盘点页始终渲染明细，仅计划空/日期变时导入
         if(name==='count') {
             document.getElementById('countDateInput').value = countViewDate;
             document.querySelectorAll('#page-count .tab-btn').forEach(b => b.classList.remove('active'));
             const detailTab = document.querySelector('#page-count .tab-btn[data-mode="detail"]');
             if (detailTab) detailTab.classList.add('active');
             updatePlanUI();
-            renderCount(); // 修改点5：始终渲染，确保明细实时同步
+            renderCount();
             if (countPlan.length === 0 || countPlanDate !== countViewDate) {
-                importPlan(); // 修改点4：仅计划空/日期变时导入
+                importPlan();
             }
         }
-        if(name==='report') { document.getElementById('reportOutDate').value = new Date().toISOString().slice(0,10); document.querySelector('.tab-btn.active')?.click(); }
         if(name==='location') clearLocationResult();
         if(name==='manualCount') { updateShelfUI(); document.getElementById('manualShelfLabel').textContent = ' - ' + (shelfNames[currentShelf]||('架'+(currentShelf+1))); loadManualPartList(currentShelf); }
         if(name==='mine'){updateMine();loadCustomStyles();loadProfileBg();}
@@ -834,7 +830,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (name === 'scan' && scanSettings.autoOpen && !scanning) { startCam(); }
     }
 
-    // 修改点1+2：计算器功能初始化（每次打开重置，新增填入按钮）
     (function initCalculator() {
         const panel = document.getElementById('calculatorPanel');
         const display = document.getElementById('calcDisplay');
@@ -861,7 +856,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         function handleInput(value) {
             if (value === 'C') { resetCalculator(); return; }
             if (value === '⌫') { expression = expression.slice(0, -1); updateDisplay(); return; }
-            // 修改点2：填入按钮 — 计算结果并填入数量输入框，关闭面板
             if (value === 'fill') {
                 const result = calculate(expression);
                 expression = String(result);
@@ -888,7 +882,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             btn.addEventListener('click', function() { handleInput(this.dataset.value); });
         });
 
-        // 修改点1：每次打开计算器都重置
         openBtn.addEventListener('click', () => {
             resetCalculator();
             panel.classList.add('show');
@@ -954,7 +947,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     document.getElementById('outContinuousSwitch').addEventListener('click', function() { outContinuous = !outContinuous; this.classList.toggle('on', outContinuous); toast(outContinuous ? '出库连续扫码已开启' : '出库单次扫码', 'info'); });
     document.getElementById('inContinuousSwitch').addEventListener('click', function() { inContinuous = !inContinuous; this.classList.toggle('on', inContinuous); toast(inContinuous ? '入库连续扫码已开启' : '入库单次扫码', 'info'); });
-
     function loadManualPartList(shelfIdx) {
         const partInput = document.getElementById('manualCountPart');
         const progress = document.getElementById('manualProgress');
@@ -1001,12 +993,15 @@ document.addEventListener('DOMContentLoaded', async () => {
             else { location = shelfNames[currentShelf] || ('架'+(currentShelf+1)); }
             const { error } = await supabase.from('scan_records').insert({ user_id: Number(currentUser.id), date: today, time: nowTime, part: part, qty, mpn, location: location });
             if (error) { toast('保存失败: ' + error.message, 'error'); logError('saveManualCount', error.message); return; }
-            // 修改点3：保存成功提示
             toast(`✅ 已保存 ${part} x ${qty} (${mpn||'无MPN'})`, 'success');
             document.getElementById('manualCountQty').value = ''; document.getElementById('manualCountQty').focus();
             if (manualPartList.length > 0) { manualPartIndex++; manualShelfProgress[currentShelf] = manualPartIndex; if (manualPartIndex < manualPartList.length) { fillNextPart(); } else { toast('🎉 该货架所有料号已盘点完毕！', 'success'); manualPartList = []; document.getElementById('manualCountPart').readOnly = false; document.getElementById('manualCountPart').value = ''; document.getElementById('manualProgress').textContent = '已完成'; } }
             else { document.getElementById('manualCountPart').value = ''; document.getElementById('manualCountMpn').value = ''; }
-            if (countViewDate === today) importPlan();
+            // 修改点7: 不再显示导入计划提示，改为静默更新计划数据
+            if (countViewDate === today) {
+                const { data: planData } = await supabase.from('scan_records').select('part, mpn, location').eq('user_id', Number(currentUser.id)).eq('date', today).eq('qty', 0);
+                if (planData) { countPlan = planData.map(d => ({ part: d.part, mpn: d.mpn || '', location: d.location || '' })); countPlanDate = today; }
+            }
         } finally { btn.disabled = false; btn.innerHTML = '<i class="fas fa-save"></i> 保存盘点'; }
     }
 
@@ -1025,7 +1020,27 @@ document.addEventListener('DOMContentLoaded', async () => {
         document.getElementById('backFromManualCount').onclick = () => showPage('scan');
         document.getElementById('saveManualCountBtn').onclick = saveManualCount;
         document.getElementById('skipManualBtn').onclick = () => { if (manualPartList.length > 0 && manualPartIndex < manualPartList.length) { manualPartIndex++; manualShelfProgress[currentShelf] = manualPartIndex; if (manualPartIndex < manualPartList.length) { fillNextPart(); document.getElementById('manualCountQty').value = ''; document.getElementById('manualCountQty').focus(); } else { toast('🎉 该货架所有料号已盘点完毕！', 'success'); manualPartList = []; document.getElementById('manualCountPart').readOnly = false; document.getElementById('manualCountPart').value = ''; document.getElementById('manualProgress').textContent = '已完成'; } } };
-        document.getElementById('manualJumpBtn').onclick = () => { const select = document.getElementById('manualJumpSelect'); const idx = parseInt(select.value); if (isNaN(idx) || idx < 0 || idx >= manualPartList.length) return; manualPartIndex = idx; manualShelfProgress[currentShelf] = idx; fillNextPart(); };
+        // 修改点8: 下拉框选择后直接跳转
+        document.getElementById('manualJumpSelect').addEventListener('change', function() {
+            const idx = parseInt(this.value);
+            if (isNaN(idx) || idx < 0 || idx >= manualPartList.length) return;
+            manualPartIndex = idx;
+            manualShelfProgress[currentShelf] = idx;
+            fillNextPart();
+        });
+        // 修改点9: 上一步按钮
+        document.getElementById('manualPrevBtn').addEventListener('click', function() {
+            if (manualPartList.length === 0) return;
+            if (manualPartIndex > 0) {
+                manualPartIndex--;
+                manualShelfProgress[currentShelf] = manualPartIndex;
+                fillNextPart();
+                document.getElementById('manualCountQty').value = '';
+                document.getElementById('manualCountQty').focus();
+            } else {
+                toast('已经是第一个料号', 'info');
+            }
+        });
         document.getElementById('manualMpnSwitch').addEventListener('click', function() { this.classList.toggle('on'); });
         const mpnInput = document.getElementById('manualCountMpn'); const mpnDropdown = document.getElementById('manualMpnDropdown');
         mpnInput.addEventListener('click', (e) => { e.stopPropagation(); if (mpnDropdown.children.length > 0) mpnDropdown.style.display = 'block'; });
@@ -1042,7 +1057,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         document.getElementById('refreshCountListBtn').addEventListener('click', () => { countViewDate = document.getElementById('countListDateInput').value; document.getElementById('countListModeTabs').querySelector('.tab-btn.active')?.click(); });
         document.getElementById('exportCountListBtn').addEventListener('click', exportCountList);
     }
-    initScanner();    document.getElementById('outForm').addEventListener('submit', async function(e) {
+    initScanner();
+    document.getElementById('outForm').addEventListener('submit', async function(e) {
         if (!currentUser || !currentUser.id) return;
         e.preventDefault();
         const outSubmitBtn = document.getElementById('outSubmitBtn');
@@ -1294,7 +1310,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     const outCangma = document.getElementById('outCangma'); const outSubmitBtn = document.getElementById('outSubmitBtn');
     outCangma.addEventListener('change', function() { outSubmitBtn.disabled = !this.value; });
     document.getElementById('outMpn').addEventListener('change',function(){const id=document.getElementById('outMaterialId').value;const m=findMaterial(id,this.value);if(m){document.getElementById('outStockHint').textContent=`当前库存: ${m.stock}`;document.getElementById('outQty').max=m.stock;}});
-    // ========== 删除记录密码验证 ==========
     document.addEventListener('click', function(e) {
         const btn = e.target.closest('.delete-record-btn');
         if (btn) {
@@ -1347,7 +1362,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         } catch (e) { toast('删除异常: ' + e.message, 'error'); logError('删除记录异常', e.message); }
     });
 
-    // ========== 系统维护模态框 ==========
     document.getElementById('systemMaintenanceBtn').addEventListener('click', () => {
         document.getElementById('systemMaintenanceModal').classList.add('show');
     });
@@ -1391,7 +1405,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         toast('本地缓存已清空','info'); refreshAll(); showPage('home');
     });
 
-    // ========== 设置面板 ==========
     const settingsBtn=$('#settingsBtn'),settingsOverlay=$('#settingsOverlay'),settingsPanel=$('#settingsPanel'),settingsClose=$('#settingsClose');
     function openSettings(){settingsOverlay.classList.add('show');settingsPanel.classList.add('show');}
     function closeSettings(){settingsOverlay.classList.remove('show');settingsPanel.classList.remove('show');}
@@ -1410,9 +1423,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     const soundSwitch = document.getElementById('soundSwitchTrack');
     if (soundSwitch) { if (scanSettings.sound) soundSwitch.classList.add('on'); else soundSwitch.classList.remove('on'); soundSwitch.addEventListener('click', () => { scanSettings.sound = !scanSettings.sound; soundSwitch.classList.toggle('on', scanSettings.sound); localStorage.setItem('scan_sound', scanSettings.sound); toast(scanSettings.sound ? '提示音已开启' : '提示音已关闭', 'info'); }); }
 
-    document.getElementById('logoutBtn').addEventListener('click',()=>{ showConfirm('确定要退出登录吗？','fa-sign-out-alt','#ef4444','btn-modal-danger',()=>{ if (autoRefreshTimer) { clearInterval(autoRefreshTimer); autoRefreshTimer = null; } currentUser=null;localStorage.removeItem('wms_user');showPage('login');toast('已退出登录','info'); }); });
+    document.getElementById('logoutBtn').addEventListener('click',()=>{ showConfirm('确定要退出登录吗？','fa-sign-out-alt','#ef4444','btn-modal-danger',()=>{ currentUser=null;localStorage.removeItem('wms_user');showPage('login');toast('已退出登录','info'); }); });
 
-    // ========== 自定义消息（滚动预警设置） ==========
     function renderSubCustomMsgs(){
         const c=$('#subCustomMsgList'); if(!c) return;
         const summaryAlerts = getSummaryAlerts();
@@ -1429,7 +1441,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('backFromMsgBtn').addEventListener('click',()=>showPage('mine'));
     document.getElementById('goCustomMsgBtn').addEventListener('click',()=>showPage('customMsg'));
 
-    // ========== 我的页面功能 ==========
     function updateMine(){ $('#myTotalMaterials').textContent=materials.length; $('#myTotalStock').textContent=materials.reduce((s,m)=>s+m.stock,0); $('#myTotalRecords').textContent=records.length; const d=Math.floor((new Date()-startTime)/1000); $('#sysUptime').textContent=`${Math.floor(d/3600)}h ${Math.floor((d%3600)/60)}m`; $('#lastUpdateTime').textContent=LAST_UPDATE_DATE; if(currentUser){$('#profileName').textContent=currentUser.real_name||currentUser.username;$('#profileRole').textContent=currentUser.is_admin?'管理员':'普通用户';} }
     function loadCustomStyles(){const avatar=localStorage.getItem('wms_avatar');if(avatar){document.getElementById('avatarIcon').style.display='none';let img=document.getElementById('avatarImg');if(!img){img=document.createElement('img');img.id='avatarImg';img.style.width='64px';img.style.height='64px';img.style.borderRadius='50%';img.style.objectFit='cover';document.getElementById('avatarBtn').appendChild(img);}img.src=avatar;}else{document.getElementById('avatarIcon').style.display='block';const img=document.getElementById('avatarImg');if(img) img.remove();}}
     function loadProfileBg(){const bg=localStorage.getItem('wms_profile_bg');const card=document.getElementById('myProfileCard');if(card) card.style.backgroundImage=bg?`url(${bg})`:'';}
@@ -1437,7 +1448,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('changeBgBtn').addEventListener('click',()=>{const input=document.createElement('input');input.type='file';input.accept='image/*';input.onchange=(e)=>{const file=e.target.files[0];if(!file) return;if(!file.type.startsWith('image/')) return toast('请选择图片文件','error');if(file.size>5*1024*1024) return toast('背景不能超过5MB','error');const reader=new FileReader();reader.onload=(ev)=>{localStorage.setItem('wms_profile_bg',ev.target.result);loadProfileBg();toast('背景已更新','success');};reader.readAsDataURL(file);};input.click();});
     document.getElementById('resetBgBtn').addEventListener('click',()=>{localStorage.removeItem('wms_avatar');localStorage.removeItem('wms_profile_bg');loadCustomStyles();loadProfileBg();toast('已重置','info');});
 
-    // ========== 登录注册 ==========
     document.getElementById('loginBtn').addEventListener('click',async()=>{const u=$('#loginUsername').value.trim(),p=$('#loginPassword').value;if(!u||!p) return toast('请输入账号密码','error');const {data,error}=await supabase.rpc('login_user',{p_username:u,p_password:p});if(error){toast('登录失败: '+error.message,'error');logError('loginBtn', error.message);return;}if(!data||!data.length){toast('登录失败','error');return;}const r=data[0];if(r.success){currentUser={id:r.id,username:r.username,real_name:r.real_name,is_admin:r.is_admin};localStorage.setItem('wms_user',JSON.stringify(currentUser));toast('登录成功','success');await loadData();setupAutocompletes();showPage('home');updateMine();updateMarquee();}else toast(r.message||'账号或密码错误','error');});
     document.getElementById('registerBtn').addEventListener('click',async()=>{const u=$('#regUsername').value.trim(),p=$('#regPassword').value,n=$('#regRealName').value.trim();if(!u||!p) return toast('请输入账号密码','error');if(!n) return toast('请输入姓名','error');const {data,error}=await supabase.rpc('register_user',{p_username:u,p_password:p,p_real_name:n});if(error){toast('注册失败: '+error.message,'error');logError('registerBtn', error.message);return;}if(!data||!data.length){toast('注册失败','error');return;}const r=data[0];if(r.success){toast('注册成功，请登录','success');showPage('login');$('#regUsername').value='';$('#regPassword').value='';$('#regRealName').value='';}else toast(r.message||'注册失败','error');});
     document.getElementById('goRegisterLink').addEventListener('click',e=>{e.preventDefault();showPage('register');});
@@ -1446,7 +1456,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     const marquee = $('#alertMarquee');
     marquee.addEventListener('click', function() { this.classList.toggle('paused'); });
 
-    // ========== 通用加载状态 ==========
     function setLoading(el, loading) { if (loading) { el.disabled = true; el._originalText = el.innerHTML; el.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 处理中...'; } else { el.disabled = false; el.innerHTML = el._originalText || el.innerHTML; } }
 
     function bindManualButtons() {
@@ -1512,7 +1521,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
     document.querySelectorAll('.collapsible-header').forEach(header => { header.addEventListener('click', function() { this.classList.toggle('expanded'); this.nextElementSibling.classList.toggle('show'); }); });
 
-    // ========== Excel 读取与上传 ==========
     function readExcel(file,cb){const reader=new FileReader();reader.onload=e=>{try{const wb=XLSX.read(new Uint8Array(e.target.result),{type:'array'});cb(null,XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{header:1,defval:''}));}catch(err){cb(err);}};reader.readAsArrayBuffer(file);}
 
     document.getElementById('uploadExcelBtn').addEventListener('click', async function() {
@@ -1601,16 +1609,14 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     });
 
-    // ========== 盘点清单模式切换 ==========
     document.querySelectorAll('#countListModeTabs .tab-btn').forEach(btn => { btn.addEventListener('click', function() { document.querySelectorAll('#countListModeTabs .tab-btn').forEach(b => b.classList.remove('active')); this.classList.add('active'); renderCountListByMode(this.dataset.mode); }); });
 
-    function startAutoRefresh() { if (autoRefreshTimer) clearInterval(autoRefreshTimer); autoRefreshTimer = setInterval(async () => { if (!currentUser) return; await loadData(); renderStock(document.getElementById('stockSearch')?.value || ''); updateDaily(); updateMarquee(); if (currentPage === 'count') renderCount(); if (currentPage === 'mine') updateMine(); if (currentPage === 'report') { const activeTab = document.querySelector('#page-report .tab-btn.active'); if (activeTab && activeTab.dataset.tab === 'tab-out') renderOutReport(); else autoRefreshInReport(); } setupAutocompletes(); }, 5 * 60 * 1000); }
+    // 修改点3: 已移除 startAutoRefresh 函数和调用，不再需要5分钟自动刷新
 
-    // ========== 页面初始化 ==========
     await loadData();
     setupAutocompletes();
     bindManualButtons();
-    if(currentUser){ showPage('home'); renderStock(); updateDaily(); updateMarquee(); updateMine(); loadCustomStyles(); loadProfileBg(); updateShelfUI(); startAutoRefresh(); }
+    if(currentUser){ showPage('home'); renderStock(); updateDaily(); updateMarquee(); updateMine(); loadCustomStyles(); loadProfileBg(); updateShelfUI(); }
     else showPage('login');
     document.onkeydown=e=>{if(e.key==='Escape'&&currentPage!=='home'&&currentUser) showPage('home');};
 });
