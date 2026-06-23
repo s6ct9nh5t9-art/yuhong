@@ -7,7 +7,7 @@
     <meta name="apple-mobile-web-app-title" content="仓库管理">
     <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📦</text></svg>">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>仓库管理系统 v23.3</title>
+    <title>仓库管理系统 v23.4</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -267,7 +267,6 @@
         .error-log-list{max-height:60vh;overflow-y:auto;text-align:left;padding:10px;background:#f8fafc;border-radius:8px;font-size:13px;color:#1e293b;margin-bottom:16px;}
         .error-log-item{border-bottom:1px solid #f1f5f9;padding:4px 0;}
         .error-log-item:last-child{border-bottom:none;}
-        /* 计算器面板样式 */
         .calculator-panel {
             position: fixed;
             bottom: 0;
@@ -334,6 +333,8 @@
         .calc-btn:active { background: #e2e8f0; }
         .calc-equal { background: #3b82f6; color: #fff; border-color: #3b82f6; }
         .calc-equal:active { background: #2563eb; }
+        .calc-fill { background: #22c55e; color: #fff; border-color: #22c55e; }
+        .calc-fill:active { background: #16a34a; }
     </style>
 </head>
 
@@ -375,7 +376,7 @@
                 <div class="home-card card-report" data-page="report"><div class="icon-wrap"><i class="fas fa-list"></i></div><div class="card-label">出入库清单</div></div>
             </div>
             <div class="daily-stats" id="dailyStats"><div class="stats-title"><i class="fas fa-calendar-day"></i> 今日数据</div><div class="stats-grid"><div class="stat-item"><div class="stat-value in" id="todayIn">0</div><div class="stat-label">入库总量</div></div><div class="stat-item"><div class="stat-value out" id="todayOut">0</div><div class="stat-label">出库总量</div></div><div class="stat-item"><div class="stat-value total" id="todayTotalStock">0</div><div class="stat-label">当前总库存</div></div><div class="stat-item"><div class="stat-value count" id="todayOps">0</div><div class="stat-label">今日操作笔数</div></div></div></div>
-        </div> <div id="page-scan" class="page">
+        </div>        <div id="page-scan" class="page">
             <div class="scanner-container">
                 <div class="scanner-wrapper" id="scannerWrapper">
                     <video id="scanVideo" autoplay playsinline muted></video>
@@ -448,11 +449,11 @@
             <div class="form-group" id="manualCountMpnGroup"><label>MPN</label><div class="mpn-dropdown-wrapper"><input type="text" class="form-control" id="manualCountMpn" placeholder="选择 MPN" readonly><div class="mpn-dropdown" id="manualMpnDropdown"></div></div><div style="display:flex;align-items:center;gap:8px;margin-top:6px;"><div class="switch-track" id="manualMpnSwitch"><div class="switch-thumb"></div></div><span style="font-size:12px;color:#94a3b8;">关闭时 MPN 不保存</span></div></div>
             <div class="form-group"><label>数量 <span class="required">*</span></label><input type="number" class="form-control" id="manualCountQty" value="1" min="1"></div>
             <div style="margin-top:8px;"><button class="btn btn-primary btn-block" id="saveManualCountBtn"><i class="fas fa-save"></i> 保存盘点</button></div>
-            <!-- 计算器入口按钮 -->
             <button class="btn btn-outline btn-block" id="openCalculatorBtn" style="margin-top:6px;">
                 <i class="fas fa-calculator"></i> 计算器
             </button>
-        </div> <div id="page-out" class="page">
+        </div>
+        <div id="page-out" class="page">
             <div class="section-title"><i class="fas fa-sign-out-alt" style="color:#ef4444;"></i> 出库</div>
             <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
                 <button class="btn btn-outline" id="outScanBtn"><i class="fas fa-qrcode"></i> 扫码</button>
@@ -540,7 +541,7 @@
             <div class="my-profile" id="myProfileCard"><div class="avatar" id="avatarBtn"><i class="fas fa-user-circle" id="avatarIcon"></i></div><div class="username" id="profileName">仓库管理员</div><div class="user-role" id="profileRole">WMS 系统</div><div class="bg-actions" style="display:flex;gap:8px;justify-content:center;margin-top:8px;"><button class="btn btn-outline btn-sm" id="changeAvatarBtn"><i class="fas fa-camera"></i> 头像</button><button class="btn btn-outline btn-sm" id="changeBgBtn"><i class="fas fa-image"></i> 背景</button><button class="btn btn-outline btn-sm" id="resetBgBtn"><i class="fas fa-undo"></i> 重置</button></div></div>
             <div class="my-info-grid"><div class="my-info-item"><div class="num" id="myTotalMaterials">0</div><div class="label">料号总数</div></div><div class="my-info-item"><div class="num" id="myTotalStock">0</div><div class="label">总库存量</div></div><div class="my-info-item"><div class="num" id="myTotalRecords">0</div><div class="label">操作记录</div></div></div>
             <button class="btn btn-outline btn-block" style="margin-top:20px;" id="goCustomMsgBtn"><i class="fas fa-bullhorn"></i> 滚动预警设置</button>
-            <div style="margin-top:20px;background:#f8fafc;border-radius:16px;padding:16px;"><div style="font-weight:600;margin-bottom:8px;"><i class="fas fa-info-circle" style="color:#3b82f6;"></i> 系统信息</div><div style="display:flex;justify-content:space-between;font-size:13px;color:#475569;padding:4px 0;"><span>版本</span><span>v23.3</span></div><div style="display:flex;justify-content:space-between;font-size:13px;color:#475569;padding:4px 0;"><span>开发者</span><span>于洪章</span></div><div style="display:flex;justify-content:space-between;font-size:13px;color:#475569;padding:4px 0;"><span>运行时间</span><span id="sysUptime">--</span></div><div style="display:flex;justify-content:space-between;font-size:13px;color:#475569;padding:4px 0;"><span>版本更新</span><span id="lastUpdateTime">2026-06-22</span></div></div>
+            <div style="margin-top:20px;background:#f8fafc;border-radius:16px;padding:16px;"><div style="font-weight:600;margin-bottom:8px;"><i class="fas fa-info-circle" style="color:#3b82f6;"></i> 系统信息</div><div style="display:flex;justify-content:space-between;font-size:13px;color:#475569;padding:4px 0;"><span>版本</span><span>v23.4</span></div><div style="display:flex;justify-content:space-between;font-size:13px;color:#475569;padding:4px 0;"><span>开发者</span><span>于洪章</span></div><div style="display:flex;justify-content:space-between;font-size:13px;color:#475569;padding:4px 0;"><span>运行时间</span><span id="sysUptime">--</span></div><div style="display:flex;justify-content:space-between;font-size:13px;color:#475569;padding:4px 0;"><span>版本更新</span><span id="lastUpdateTime">2026-06-23</span></div></div>
             <button class="btn btn-outline btn-block" style="margin-top:16px;" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> 退出登录</button>
         </div>
         <div id="page-custom-msg" class="page" style="padding-top:20px;">
@@ -556,8 +557,7 @@
         <button class="nav-item" data-tab="data">数据</button>
         <button class="nav-item" data-tab="mine">我的</button>
     </nav>
-</div>
-<!-- 计算器面板（独立于页面容器，从底部滑入） -->
+</div> <!-- 计算器面板（独立于页面容器，从底部滑入） -->
 <div class="calculator-panel" id="calculatorPanel">
     <div class="calculator-header">
         <span>计算器</span>
@@ -586,6 +586,8 @@
             <button class="calc-btn" data-value=".">.</button>
             <button class="calc-btn calc-equal" data-value="=">=</button>
             <button class="calc-btn" data-value="+">+</button>
+            <!-- 修改点2：新增"填入"按钮 -->
+            <button class="calc-btn calc-fill" data-value="fill" style="grid-column: span 2;">填入</button>
         </div>
     </div>
 </div>
@@ -597,8 +599,9 @@
 <div class="modal-overlay" id="deletePasswordModal"><div class="modal-box"><h3>🔒 请输入管理密码</h3><div class="modal-input-group"><input type="password" id="deletePasswordInput" placeholder="请输入密码"></div><div class="modal-actions"><button class="btn-modal-cancel" id="deletePasswordCancel">取消</button><button class="btn-modal-danger" id="deletePasswordConfirm">确认删除</button></div></div></div>
 <div class="modal-overlay" id="errorLogModal"><div class="modal-box" style="max-width:90%; width:400px;"><h3>错误日志</h3><div class="error-log-list" id="errorLogList"></div><div class="modal-actions"><button class="btn-modal-warning" id="clearErrorLogBtn"><i class="fas fa-trash"></i> 清空</button><button class="btn-modal-cancel" id="closeErrorLogBtn">关闭</button></div></div></div>
 <div class="modal-overlay" id="systemMaintenanceModal"><div class="modal-box"><h3>🛠️ 系统维护</h3><div class="modal-actions" style="flex-direction:column;gap:10px;"><button class="btn btn-outline btn-block" id="maintainErrorLogBtn"><i class="fas fa-bug"></i> 错误日志</button><button class="btn btn-outline btn-block" style="color:#ef4444;" id="maintainResetStockBtn"><i class="fas fa-boxes"></i> 重置库存数据</button><button class="btn btn-outline btn-block" style="color:#ef4444;" id="maintainResetCountBtn"><i class="fas fa-clipboard-list"></i> 重置盘点数据</button><button class="btn btn-outline btn-block" id="maintainClearCacheBtn"><i class="fas fa-broom"></i> 清空本地缓存</button><button class="btn-modal-cancel btn-block" style="margin-top:8px;" id="maintainCancelBtn">取消</button></div></div></div>
-<script> const APP_VERSION = '23.3';
-const LAST_UPDATE_DATE = '2026-06-22';
+<script>
+const APP_VERSION = '23.4';
+const LAST_UPDATE_DATE = '2026-06-23'; // 修改点6：日期更新
 
 document.addEventListener('DOMContentLoaded', async () => {
     const SUPABASE_URL = 'https://nrnncqeopxwbhbfecgpa.supabase.co';
@@ -793,9 +796,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     function isToday(d) { return d && new Date(d).toDateString()===new Date().toDateString(); }
     function toast(msg, type='info') { if (type === 'error') logError(msg); const icons = { success:'fa-check-circle', error:'fa-exclamation-circle', info:'fa-info-circle' }; const el = document.createElement('div'); el.className = `toast toast-${type}`; el.innerHTML = `<i class="fas ${icons[type]}"></i> ${msg}`; $('#toastContainer').appendChild(el); setTimeout(() => el.remove(), 3000); }
     function getSummaryAlerts() { const sums = {}; materials.forEach(m => { if (!sums[m.id]) sums[m.id] = 0; sums[m.id] += m.stock; }); return Object.entries(sums).filter(([id, total]) => total < LOW).map(([id, total]) => ({ id, total })); }
-    function updateMarquee() { const track = $('#marqueeTrack'); const summaryAlerts = getSummaryAlerts(); const lowItems = summaryAlerts.filter(a => !hiddenAlerts.has(`LOW:${a.id}`)).map(a => `<div class="marquee-item ${a.total===0?'red':''}"><i class="fas fa-exclamation-triangle"></i> ${a.id} 库存 ${a.total}</div>`); const customItems = userMessages.filter(m => !hiddenAlerts.has(`MSG:${m.text}`)).map(m => `<div class="marquee-item"><i class="fas fa-bullhorn"></i> ${m.text}</div>`); track.innerHTML = [...lowItems, ...customItems].join('') + [...lowItems, ...customItems].join('') || '<div class="marquee-item"><i class="fas fa-check-circle"></i> 库存充足</div>'; }
-
-    let currentPage='home';
+    function updateMarquee() { const track = $('#marqueeTrack'); const summaryAlerts = getSummaryAlerts(); const lowItems = summaryAlerts.filter(a => !hiddenAlerts.has(`LOW:${a.id}`)).map(a => `<div class="marquee-item ${a.total===0?'red':''}"><i class="fas fa-exclamation-triangle"></i> ${a.id} 库存 ${a.total}</div>`); const customItems = userMessages.filter(m => !hiddenAlerts.has(`MSG:${m.text}`)).map(m => `<div class="marquee-item"><i class="fas fa-bullhorn"></i> ${m.text}</div>`); track.innerHTML = [...lowItems, ...customItems].join('') + [...lowItems, ...customItems].join('') || '<div class="marquee-item"><i class="fas fa-check-circle"></i> 库存充足</div>'; }    let currentPage='home';
     function showPage(name) {
         if (!currentUser && name!=='login' && name!=='register') { showPage('login'); return; }
         if (currentPage === 'scan' && name !== 'scan') { stopCam(); }
@@ -809,7 +810,18 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (name==='out') { document.getElementById('outCangma').value = 'B8SA'; document.getElementById('outSubmitBtn').disabled = false; }
         if(name==='stock') { document.getElementById('stockSearch').value = ''; renderStock(); }
         if(name==='home'){updateDaily();updateMarquee();}
-        if(name==='count') { document.getElementById('countDateInput').value = countViewDate; document.querySelectorAll('#page-count .tab-btn').forEach(b => b.classList.remove('active')); const detailTab = document.querySelector('#page-count .tab-btn[data-mode="detail"]'); if (detailTab) detailTab.classList.add('active'); importPlan(); renderCount(); updatePlanUI(); }
+        // 修改点4+5：进入盘点页始终渲染明细，仅计划空/日期变时导入
+        if(name==='count') {
+            document.getElementById('countDateInput').value = countViewDate;
+            document.querySelectorAll('#page-count .tab-btn').forEach(b => b.classList.remove('active'));
+            const detailTab = document.querySelector('#page-count .tab-btn[data-mode="detail"]');
+            if (detailTab) detailTab.classList.add('active');
+            updatePlanUI();
+            renderCount(); // 修改点5：始终渲染，确保明细实时同步
+            if (countPlan.length === 0 || countPlanDate !== countViewDate) {
+                importPlan(); // 修改点4：仅计划空/日期变时导入
+            }
+        }
         if(name==='report') { document.getElementById('reportOutDate').value = new Date().toISOString().slice(0,10); document.querySelector('.tab-btn.active')?.click(); }
         if(name==='location') clearLocationResult();
         if(name==='manualCount') { updateShelfUI(); document.getElementById('manualShelfLabel').textContent = ' - ' + (shelfNames[currentShelf]||('架'+(currentShelf+1))); loadManualPartList(currentShelf); }
@@ -820,13 +832,20 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (name === 'out' && document.getElementById('outHalfScanPanel').classList.contains('show')) { document.getElementById('outFormContainer').classList.add('shift-down'); }
         if (name === 'in' && document.getElementById('inHalfScanPanel').classList.contains('show')) { document.getElementById('inFormContainer').classList.add('shift-down'); }
         if (name === 'scan' && scanSettings.autoOpen && !scanning) { startCam(); }
-    } // 计算器功能初始化
+    }
+
+    // 修改点1+2：计算器功能初始化（每次打开重置，新增填入按钮）
     (function initCalculator() {
         const panel = document.getElementById('calculatorPanel');
         const display = document.getElementById('calcDisplay');
         const openBtn = document.getElementById('openCalculatorBtn');
         const closeBtn = document.getElementById('closeCalculatorBtn');
         let expression = '';
+
+        function resetCalculator() {
+            expression = '';
+            display.textContent = '0';
+        }
 
         function updateDisplay() { display.textContent = expression || '0'; }
 
@@ -840,18 +859,28 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
 
         function handleInput(value) {
-            if (value === 'C') expression = '';
-            else if (value === '⌫') expression = expression.slice(0, -1);
-            else if (value === '=') {
+            if (value === 'C') { resetCalculator(); return; }
+            if (value === '⌫') { expression = expression.slice(0, -1); updateDisplay(); return; }
+            // 修改点2：填入按钮 — 计算结果并填入数量输入框，关闭面板
+            if (value === 'fill') {
                 const result = calculate(expression);
                 expression = String(result);
+                updateDisplay();
                 const qtyInput = document.getElementById('manualCountQty');
                 if (qtyInput && result !== 'Error' && !isNaN(result) && isFinite(result)) {
                     qtyInput.value = result;
                 }
                 panel.classList.remove('show');
+                return;
             }
-            else { if (expression.length > 50) return; expression += value; }
+            if (value === '=') {
+                const result = calculate(expression);
+                expression = String(result);
+                updateDisplay();
+                return;
+            }
+            if (expression.length > 50) return;
+            expression += value;
             updateDisplay();
         }
 
@@ -859,7 +888,11 @@ document.addEventListener('DOMContentLoaded', async () => {
             btn.addEventListener('click', function() { handleInput(this.dataset.value); });
         });
 
-        openBtn.addEventListener('click', () => { panel.classList.add('show'); });
+        // 修改点1：每次打开计算器都重置
+        openBtn.addEventListener('click', () => {
+            resetCalculator();
+            panel.classList.add('show');
+        });
         closeBtn.addEventListener('click', () => { panel.classList.remove('show'); });
         document.addEventListener('click', function(e) {
             if (!panel.contains(e.target) && e.target !== openBtn && !e.target.closest('#openCalculatorBtn') && panel.classList.contains('show')) {
@@ -867,7 +900,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
         });
         panel.classList.remove('show');
-    })(); 
+    })();
 
     $('#bottomNav').onclick=e=>{const btn=e.target.closest('.nav-item');if(btn&&pages[btn.dataset.tab]) showPage(btn.dataset.tab);};
     $('#page-home').onclick=e=>{const card=e.target.closest('.home-card[data-page]');if(card&&pages[card.dataset.page]) showPage(card.dataset.page);};
@@ -968,6 +1001,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             else { location = shelfNames[currentShelf] || ('架'+(currentShelf+1)); }
             const { error } = await supabase.from('scan_records').insert({ user_id: Number(currentUser.id), date: today, time: nowTime, part: part, qty, mpn, location: location });
             if (error) { toast('保存失败: ' + error.message, 'error'); logError('saveManualCount', error.message); return; }
+            // 修改点3：保存成功提示
             toast(`✅ 已保存 ${part} x ${qty} (${mpn||'无MPN'})`, 'success');
             document.getElementById('manualCountQty').value = ''; document.getElementById('manualCountQty').focus();
             if (manualPartList.length > 0) { manualPartIndex++; manualShelfProgress[currentShelf] = manualPartIndex; if (manualPartIndex < manualPartList.length) { fillNextPart(); } else { toast('🎉 该货架所有料号已盘点完毕！', 'success'); manualPartList = []; document.getElementById('manualCountPart').readOnly = false; document.getElementById('manualCountPart').value = ''; document.getElementById('manualProgress').textContent = '已完成'; } }
@@ -1008,8 +1042,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         document.getElementById('refreshCountListBtn').addEventListener('click', () => { countViewDate = document.getElementById('countListDateInput').value; document.getElementById('countListModeTabs').querySelector('.tab-btn.active')?.click(); });
         document.getElementById('exportCountListBtn').addEventListener('click', exportCountList);
     }
-    initScanner();
-    document.getElementById('outForm').addEventListener('submit', async function(e) {
+    initScanner();    document.getElementById('outForm').addEventListener('submit', async function(e) {
         if (!currentUser || !currentUser.id) return;
         e.preventDefault();
         const outSubmitBtn = document.getElementById('outSubmitBtn');
@@ -1260,7 +1293,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     const outCangma = document.getElementById('outCangma'); const outSubmitBtn = document.getElementById('outSubmitBtn');
     outCangma.addEventListener('change', function() { outSubmitBtn.disabled = !this.value; });
-    document.getElementById('outMpn').addEventListener('change',function(){const id=document.getElementById('outMaterialId').value;const m=findMaterial(id,this.value);if(m){document.getElementById('outStockHint').textContent=`当前库存: ${m.stock}`;document.getElementById('outQty').max=m.stock;}}); // ========== 删除记录密码验证 ==========
+    document.getElementById('outMpn').addEventListener('change',function(){const id=document.getElementById('outMaterialId').value;const m=findMaterial(id,this.value);if(m){document.getElementById('outStockHint').textContent=`当前库存: ${m.stock}`;document.getElementById('outQty').max=m.stock;}});
+    // ========== 删除记录密码验证 ==========
     document.addEventListener('click', function(e) {
         const btn = e.target.closest('.delete-record-btn');
         if (btn) {
