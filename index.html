@@ -275,7 +275,7 @@
             transform: translate(-50%, 100%);
             width: 100%;
             max-width: 480px;
-            height: 33vh;
+            height: 66vh;
             background: #fff;
             z-index: 200;
             border-radius: 20px 20px 0 0;
@@ -375,8 +375,7 @@
                 <div class="home-card card-report" data-page="report"><div class="icon-wrap"><i class="fas fa-list"></i></div><div class="card-label">出入库清单</div></div>
             </div>
             <div class="daily-stats" id="dailyStats"><div class="stats-title"><i class="fas fa-calendar-day"></i> 今日数据</div><div class="stats-grid"><div class="stat-item"><div class="stat-value in" id="todayIn">0</div><div class="stat-label">入库总量</div></div><div class="stat-item"><div class="stat-value out" id="todayOut">0</div><div class="stat-label">出库总量</div></div><div class="stat-item"><div class="stat-value total" id="todayTotalStock">0</div><div class="stat-label">当前总库存</div></div><div class="stat-item"><div class="stat-value count" id="todayOps">0</div><div class="stat-label">今日操作笔数</div></div></div></div>
-        </div>
-        <div id="page-scan" class="page">
+        </div> <div id="page-scan" class="page">
             <div class="scanner-container">
                 <div class="scanner-wrapper" id="scannerWrapper">
                     <video id="scanVideo" autoplay playsinline muted></video>
@@ -588,9 +587,6 @@
             <button class="calc-btn calc-equal" data-value="=">=</button>
             <button class="calc-btn" data-value="+">+</button>
         </div>
-        <button class="btn btn-primary btn-block" id="fillCalcResultBtn" style="margin-top:8px;">
-            <i class="fas fa-arrow-down"></i> 填入数量
-        </button>
     </div>
 </div>
 <div class="modal-overlay" id="confirmModal"><div class="modal-box"><i id="modalIcon" class="fas fa-question-circle" style="color:#3b82f6;"></i><p id="modalText">确定执行此操作吗？</p><div class="modal-actions"><button class="btn-modal-cancel" id="modalCancel">取消</button><button class="btn-modal-danger" id="modalOk">确认</button></div></div></div>
@@ -693,8 +689,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (error) { logError('saveRecordToCloud insert error', error.message + ' (code: ' + error.code + ')'); throw error; }
         return data;
     }
-
-    // (摄像头设置范围监听代码保持原有，此处略但实际包含)
+    // 摄像头设置范围监听
     const cameraPreviewHeightRange = document.getElementById('cameraPreviewHeightRange');
     const cameraPreviewHeightValue = document.getElementById('cameraPreviewHeightValue');
     if (cameraPreviewHeightRange) {
@@ -793,7 +788,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     async function saveMaterialsToCloud() { if (!currentUser) return; await supabase.from('materials').upsert(materials.map(m => ({ ...m, user_id: currentUser.id })), { onConflict: 'user_id, id, mpn' }); }
     async function syncMessagesToCloud() { if (!currentUser) return; await supabase.from('messages').delete().eq('user_id', currentUser.id).not('text', 'like', '__alert_config__%'); if (userMessages.length > 0) await supabase.from('messages').insert(userMessages.map(m => ({ text: m.text, user_id: currentUser.id }))); localStorage.setItem('wms_messages', JSON.stringify(userMessages)); }
     async function saveLocationDataToCloud() { if (locationData.length === 0) return; const rows = locationData.map(d => ({ part: d.part, location: d.location, responsible: d.responsible || '' })); const { error } = await supabase.from('locations').upsert(rows, { onConflict: 'part' }); if (error) { toast('储位保存失败: ' + error.message, 'error'); logError('saveLocationDataToCloud', error.message); throw error; } setCachedLocations(locationData); }
-
     async function refreshAll() { await saveMaterialsToCloud(); await saveLocationDataToCloud(); renderStock(); updateDaily(); updateMarquee(); if (currentPage==='count') renderCount(); if (currentPage==='customMsg') renderSubCustomMsgs(); if (currentPage==='mine') updateMine(); setupAutocompletes(); }
     function findMaterial(id, mpn) { return materials.find(m => m.id===id && m.mpn===mpn); }
     function isToday(d) { return d && new Date(d).toDateString()===new Date().toDateString(); }
@@ -826,14 +820,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (name === 'out' && document.getElementById('outHalfScanPanel').classList.contains('show')) { document.getElementById('outFormContainer').classList.add('shift-down'); }
         if (name === 'in' && document.getElementById('inHalfScanPanel').classList.contains('show')) { document.getElementById('inFormContainer').classList.add('shift-down'); }
         if (name === 'scan' && scanSettings.autoOpen && !scanning) { startCam(); }
-    }
-    // 计算器功能初始化
+    } // 计算器功能初始化
     (function initCalculator() {
         const panel = document.getElementById('calculatorPanel');
         const display = document.getElementById('calcDisplay');
         const openBtn = document.getElementById('openCalculatorBtn');
         const closeBtn = document.getElementById('closeCalculatorBtn');
-        const fillBtn = document.getElementById('fillCalcResultBtn');
         let expression = '';
 
         function updateDisplay() { display.textContent = expression || '0'; }
@@ -850,7 +842,15 @@ document.addEventListener('DOMContentLoaded', async () => {
         function handleInput(value) {
             if (value === 'C') expression = '';
             else if (value === '⌫') expression = expression.slice(0, -1);
-            else if (value === '=') { const result = calculate(expression); expression = String(result); }
+            else if (value === '=') {
+                const result = calculate(expression);
+                expression = String(result);
+                const qtyInput = document.getElementById('manualCountQty');
+                if (qtyInput && result !== 'Error' && !isNaN(result) && isFinite(result)) {
+                    qtyInput.value = result;
+                }
+                panel.classList.remove('show');
+            }
             else { if (expression.length > 50) return; expression += value; }
             updateDisplay();
         }
@@ -866,17 +866,10 @@ document.addEventListener('DOMContentLoaded', async () => {
                 panel.classList.remove('show');
             }
         });
-        fillBtn.addEventListener('click', () => {
-            const qtyInput = document.getElementById('manualCountQty');
-            if (!qtyInput) return;
-            const num = parseFloat(expression);
-            if (!isNaN(num) && num >= 0) {
-                qtyInput.value = num;
-                toast('已填入数量: ' + num, 'success');
-            } else { toast('计算结果无效', 'error'); }
-        });
         panel.classList.remove('show');
-    })(); $('#bottomNav').onclick=e=>{const btn=e.target.closest('.nav-item');if(btn&&pages[btn.dataset.tab]) showPage(btn.dataset.tab);};
+    })(); 
+
+    $('#bottomNav').onclick=e=>{const btn=e.target.closest('.nav-item');if(btn&&pages[btn.dataset.tab]) showPage(btn.dataset.tab);};
     $('#page-home').onclick=e=>{const card=e.target.closest('.home-card[data-page]');if(card&&pages[card.dataset.page]) showPage(card.dataset.page);};
 
     function updateDaily(){ const today=records.filter(r=>isToday(r.date)); let tin=0,tout=0; today.forEach(r=>{if(r.type==='in') tin+=r.quantity; else tout+=r.quantity;}); $('#todayIn').textContent=tin; $('#todayOut').textContent=tout; $('#todayTotalStock').textContent=materials.reduce((s,m)=>s+m.stock,0); $('#todayOps').textContent=today.length; }
@@ -1016,7 +1009,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         document.getElementById('exportCountListBtn').addEventListener('click', exportCountList);
     }
     initScanner();
-
     document.getElementById('outForm').addEventListener('submit', async function(e) {
         if (!currentUser || !currentUser.id) return;
         e.preventDefault();
@@ -1083,7 +1075,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         const date = document.getElementById('countListDateInput').value;
         tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted">加载中...</td></tr>';
         try {
-            const { data, error } = await supabase.from('scan_records').select('part, mpn, qty').eq('user_id', Number(currentUser.id)).eq('date', date).gt('qty', 0);
+            const { data, error } = await supabase.from('scan_records').select('part, mpn, qty').eq('user_id', Number(currentUser.id)).eq('date', date).gt('qty', 0).order('time', { ascending: true });
             if (error) throw error;
             if (!data || data.length === 0) { tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted">当天无盘点数据</td></tr>'; return; }
             if (mode === 'part') {
@@ -1133,7 +1125,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (!currentUser || !currentUser.id) return;
         const c = $('#countList'); const date = countViewDate;
         const search = (document.getElementById('countSearchInput')?.value || '').trim().toUpperCase();
-        const { data, error } = await supabase.from('scan_records').select('*').eq('user_id', Number(currentUser.id)).eq('date', date).order('time', { ascending: false });
+        const { data, error } = await supabase.from('scan_records').select('*').eq('user_id', Number(currentUser.id)).eq('date', date).order('time', { ascending: true });
         if (error) { c.innerHTML = '<div class="empty-state">加载失败</div>'; logError('renderCount', error.message); return; }
         let items = (data || []).filter(r => !search || r.part.endsWith(search));
         if (countFilterShelf !== 'all') { const shelfIdx = parseInt(countFilterShelf); if (!isNaN(shelfIdx)) items = items.filter(r => classifyLocation(r.location) === shelfIdx); }
