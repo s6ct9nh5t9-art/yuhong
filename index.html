@@ -106,8 +106,7 @@
         .my-info-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-top:16px}
         .my-info-item{background:#fff;border-radius:14px;padding:14px 6px;text-align:center;border:1px solid #f1f5f9}
         .my-info-item .num{font-size:22px;font-weight:700;color:#1e293b}
-        .my-info-item .label{font-size:12px;color:#94a3b8;margin-top:2px}
-        .custom-msg-item{display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:#fff;border-radius:10px;margin-bottom:6px;border:1px solid #f1f5f9}
+        .my-info-item .label{font-size:12px;color:#94a3b8;margin-top:2px}        .custom-msg-item{display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:#fff;border-radius:10px;margin-bottom:6px;border:1px solid #f1f5f9}
         .btn-remove{color:#ef4444;cursor:pointer;padding:4px 8px;border-radius:6px;background:none;border:none;font-size:14px}
         .upload-card{background:#f8fafc;border-radius:16px;padding:16px;margin-bottom:16px;border:1px solid #e9eef3}
         .file-input-wrap{display:flex;align-items:center;gap:8px}
@@ -227,6 +226,25 @@
         .bom-progress-fill{height:100%;width:0%;background:#3b82f6;border-radius:6px;transition:width 0.3s ease}
         .bom-progress-text{font-size:13px;font-weight:500;color:#1e293b;margin-top:6px;display:none}
         .bom-progress-text.success{color:#16a34a}.bom-progress-text.error{color:#dc2626}
+        /* 半屏扫码面板 - 从上方滑出 */
+        .scan-half-panel{position:fixed;top:0;left:50%;transform:translate(-50%,-100%);width:100%;max-width:480px;height:50vh;background:#000;z-index:200;border-radius:0 0 20px 20px;display:flex;flex-direction:column;transition:transform 0.35s ease;box-shadow:0 10px 30px rgba(0,0,0,0.3)}
+        .scan-half-panel.show{transform:translate(-50%,0)}
+        .scan-half-header{display:flex;align-items:center;justify-content:flex-end;padding:12px 16px 8px;color:#fff}
+        .scan-half-header i{cursor:pointer;color:#fff;font-size:22px}
+        .scan-half-body{flex:1;position:relative;overflow:hidden}
+        .scan-half-body video{width:100%;height:100%;object-fit:cover}
+        .scan-half-body canvas{display:none}
+        .scan-half-footer{display:flex;justify-content:center;padding:12px;background:#000}
+        .shift-down{margin-top:50vh;transition:margin-top 0.35s ease}
+        /* 折叠面板 */
+        .collapsible-body{display:none}
+        .collapsible-body.show{display:block}
+        .collapsible-header .fa-chevron-down{transition:transform 0.3s ease}
+        .collapsible-header.expanded .fa-chevron-down{transform:rotate(180deg)}
+        .collapsible-header{cursor:pointer;display:flex;align-items:center;gap:8px;font-weight:600;font-size:14px;color:#1e293b;padding:8px 0}
+        /* 滚动预警设置 */
+        .checkbox-label{display:flex;align-items:center;gap:8px;font-size:14px;color:#1e293b;padding:6px 0;cursor:pointer;line-height:1.5}
+        .checkbox-label input[type="checkbox"]{width:16px;height:16px;margin:0;flex-shrink:0}
     </style>
 </head> <body>
 <div id="app">
@@ -357,7 +375,7 @@
                     <button type="submit" class="btn btn-danger btn-block" id="outSubmitBtn" disabled><i class="fas fa-arrow-right"></i> 确认出库</button>
                 </form>
             </div>
-            <div class="scan-half-panel" id="outHalfScanPanel"><div class="scan-half-header"><span>扫码出库</span><i class="fas fa-times" id="closeOutHalfScan"></i></div><div class="scan-half-body"><video id="outHalfScanVideo" autoplay playsinline muted></video><canvas id="outHalfScanCanvas"></canvas></div><div class="scan-half-footer"><button class="btn btn-primary btn-sm" id="outHalfScanBtn"><i class="fas fa-video"></i> 开始扫描</button></div></div>
+            <div class="scan-half-panel" id="outHalfScanPanel"><div class="scan-half-header"><i class="fas fa-times" id="closeOutHalfScan"></i></div><div class="scan-half-body"><video id="outHalfScanVideo" autoplay playsinline muted></video><canvas id="outHalfScanCanvas"></canvas></div><div class="scan-half-footer"><button class="btn btn-primary btn-sm" id="outHalfScanBtn"><i class="fas fa-video"></i> 开始扫描</button></div></div>
         </div>
         <div id="page-in" class="page">
             <div class="section-title"><i class="fas fa-sign-in-alt" style="color:#22c55e;"></i> 入库</div>
@@ -376,7 +394,7 @@
                     <button type="submit" class="btn btn-success btn-block" id="inSubmitBtn"><i class="fas fa-arrow-left"></i> 确认入库</button>
                 </form>
             </div>
-            <div class="scan-half-panel" id="inHalfScanPanel"><div class="scan-half-header"><span>扫码入库</span><i class="fas fa-times" id="closeInHalfScan"></i></div><div class="scan-half-body"><video id="inHalfScanVideo" autoplay playsinline muted></video><canvas id="inHalfScanCanvas"></canvas></div><div class="scan-half-footer"><button class="btn btn-primary btn-sm" id="inHalfScanBtn"><i class="fas fa-video"></i> 开始扫描</button></div></div>
+            <div class="scan-half-panel" id="inHalfScanPanel"><div class="scan-half-header"><i class="fas fa-times" id="closeInHalfScan"></i></div><div class="scan-half-body"><video id="inHalfScanVideo" autoplay playsinline muted></video><canvas id="inHalfScanCanvas"></canvas></div><div class="scan-half-footer"><button class="btn btn-primary btn-sm" id="inHalfScanBtn"><i class="fas fa-video"></i> 开始扫描</button></div></div>
         </div>
         <div id="page-count" class="page">
             <div class="section-title"><i class="fas fa-clipboard-list" style="color:#f59e0b;"></i> 盘点</div>
@@ -406,8 +424,7 @@
             <div class="tab-nav"><button class="tab-btn active" data-tab="tab-out">出库</button><button class="tab-btn" data-tab="tab-in">入库</button></div>
             <div class="report-tab-content active" id="tab-out"><div class="form-row" style="margin-bottom:12px;"><div class="form-group"><label>日期</label><input type="date" class="form-control date-sm" id="reportOutDate"></div><div class="form-group"><label>仓码</label><select class="form-control" id="reportOutCangma"><option value="">全部</option><option value="B8SA">B8SA</option><option value="B909">B909</option><option value="B907">B907</option></select></div></div><div class="table-wrap" style="margin-top:12px;"><table><thead><tr><th>料号</th><th>MPN</th><th>出库总数</th><th>操作</th></tr></thead><tbody id="outReportBody"><tr><td colspan="4" class="text-center text-muted">请选择日期查询</td></tr></tbody></table></div></div>
             <div class="report-tab-content" id="tab-in"><div class="form-group"><label>料号（选填）</label><div class="autocomplete-wrapper"><input type="text" class="form-control" id="reportInMaterialInput" placeholder="输入料号任意位数搜索" autocomplete="off"><input type="hidden" id="reportInMaterialId"><div class="autocomplete-dropdown" id="reportInMaterialDropdown"></div></div></div><button class="btn btn-primary btn-inline" id="queryInBtn"><i class="fas fa-search"></i> 查询</button><div class="table-wrap" style="margin-top:12px;"><table><thead><tr><th>料号</th><th>MPN</th><th>入库总数</th><th>日期</th><th>操作</th></tr></thead><tbody id="inReportBody"><tr><td colspan="5" class="text-center text-muted">查询当天入库记录</td></tr></tbody></table></div></div>
-        </div>
-        <div id="page-location" class="page">
+        </div>        <div id="page-location" class="page">
             <div class="section-title"><i class="fas fa-search" style="color:#0ea5e9;"></i> 查找</div>
             <div class="tab-nav" id="locationModeTabs">
                 <button class="tab-btn active" data-mode="loc">储位查找</button>
@@ -445,51 +462,44 @@
                 <button class="btn btn-outline btn-block" id="bomClearBtn" style="margin-top:8px;margin-bottom:16px;"><i class="fas fa-undo"></i> 清空结果</button>
                 <div id="bomResultList"></div>
             </div>
-        </div>        <div id="page-data" class="page">
+        </div>
+        <div id="page-data" class="page">
             <div class="section-title"><i class="fas fa-cloud-upload-alt" style="color:#3b82f6;"></i> 数据导入</div>
-            
-            <!-- 1. 上传库存 -->
             <div class="upload-card">
-                <div class="collapsible-header expanded" id="headerUploadStock">
+                <div class="collapsible-header" id="headerUploadStock">
                     <i class="fas fa-chevron-down"></i> <i class="fas fa-file-excel" style="color:#22c55e;"></i> 批量上传库存 Excel
                 </div>
-                <div class="collapsible-body show" id="bodyUploadStock">
+                <div class="collapsible-body" id="bodyUploadStock">
                     <div class="file-input-wrap"><input type="file" id="excelFile" accept=".xls,.xlsx" class="form-control"><button class="btn btn-primary btn-sm" id="uploadExcelBtn"><i class="fas fa-upload"></i> 导入</button></div>
                     <small class="text-muted">表格列：料号、储位、MPN、数量</small>
                     <div class="upload-status-text" id="excelUploadStatus"></div>
                 </div>
             </div>
-
-            <!-- 2. 上传储位 -->
             <div class="upload-card">
-                <div class="collapsible-header expanded" id="headerUploadLocation">
+                <div class="collapsible-header" id="headerUploadLocation">
                     <i class="fas fa-chevron-down"></i> <i class="fas fa-map-marker-alt" style="color:#0ea5e9;"></i> 批量上传储位 Excel
                 </div>
-                <div class="collapsible-body show" id="bodyUploadLocation">
+                <div class="collapsible-body" id="bodyUploadLocation">
                     <div class="file-input-wrap"><input type="file" id="locationExcelFile" accept=".xls,.xlsx" class="form-control"><button class="btn btn-info btn-sm" id="uploadLocationExcelBtn"><i class="fas fa-upload"></i> 导入储位</button></div>
                     <small class="text-muted">表格列：料号、储位、担当</small>
                     <div class="upload-status-text" id="locationUploadStatus"></div>
                 </div>
             </div>
-
-            <!-- 3. 上传盘点 -->
             <div class="upload-card">
-                <div class="collapsible-header expanded" id="headerUploadCount">
+                <div class="collapsible-header" id="headerUploadCount">
                     <i class="fas fa-chevron-down"></i> <i class="fas fa-clipboard-check" style="color:#f59e0b;"></i> 上传盘点 Excel
                 </div>
-                <div class="collapsible-body show" id="bodyUploadCount">
+                <div class="collapsible-body" id="bodyUploadCount">
                     <div class="file-input-wrap"><input type="file" id="countExcelFile" accept=".xls,.xlsx" class="form-control"><button class="btn btn-warning btn-sm" id="uploadCountExcelBtn"><i class="fas fa-upload"></i> 导入盘点</button></div>
                     <small class="text-muted">表格列：料号、储位（基准计划）</small>
                     <div class="upload-status-text" id="countUploadStatus"></div>
                 </div>
             </div>
-
-            <!-- 4. 上传 BOM -->
             <div class="upload-card">
-                <div class="collapsible-header expanded" id="headerUploadBom">
+                <div class="collapsible-header" id="headerUploadBom">
                     <i class="fas fa-chevron-down"></i> <i class="fas fa-tasks" style="color:#f59e0b;"></i> 批量上传 BOM
                 </div>
-                <div class="collapsible-body show" id="bodyUploadBom">
+                <div class="collapsible-body" id="bodyUploadBom">
                     <div class="file-input-wrap"><input type="file" id="bomExcelFile" accept=".xls,.xlsx" class="form-control"><button class="btn btn-warning btn-sm" id="uploadBomExcelBtn"><i class="fas fa-upload"></i> 导入 BOM</button></div>
                     <small class="text-muted">表格列要求：工单号、机种号、料号、厂商、MPN</small>
                     <div class="bom-progress-wrap">
@@ -499,25 +509,20 @@
                     <div class="upload-status-text" id="bomUploadStatus"></div>
                 </div>
             </div>
-
-            <!-- 5. 上传机种号 -->
             <div class="upload-card">
-                <div class="collapsible-header expanded" id="headerUploadModels">
+                <div class="collapsible-header" id="headerUploadModels">
                     <i class="fas fa-chevron-down"></i> <i class="fas fa-microchip" style="color:#8b5cf6;"></i> 批量上传机种号
                 </div>
-                <div class="collapsible-body show" id="bodyUploadModels">
+                <div class="collapsible-body" id="bodyUploadModels">
                     <div class="file-input-wrap"><input type="file" id="modelsExcelFile" accept=".xls,.xlsx" class="form-control"><button class="btn btn-primary btn-sm" id="uploadModelsExcelBtn"><i class="fas fa-upload"></i> 导入机种号</button></div>
                     <small class="text-muted">表格第一列：机种号（如 JC94-WF0123）</small>
                     <div class="upload-status-text" id="modelsUploadStatus"></div>
                 </div>
             </div>
-
-            <!-- 手动添加折叠区域 -->
             <div class="manual-card"><div class="collapsible-header" id="countManualHeader"><i class="fas fa-chevron-down"></i> 手动添加盘点</div><div class="collapsible-body" id="countManualBody"><div class="form-row" style="margin-bottom:12px;"><div class="form-group"><label>料号 <span class="required">*</span></label><input type="text" class="form-control" id="countManId" placeholder="料号"></div><div class="form-group"><label>储位 <span class="required">*</span></label><input type="text" class="form-control" id="countManLoc" placeholder="储位"></div></div><button class="btn btn-outline btn-block" id="addCountManBtn"><i class="fas fa-plus"></i> 添加盘点计划</button></div></div>
             <div class="manual-card"><div class="collapsible-header" id="stockManualHeader"><i class="fas fa-chevron-down"></i> 手动添加库存数据</div><div class="collapsible-body" id="stockManualBody"><div class="form-row" style="margin-bottom:12px;"><div class="form-group"><label>料号 <span class="required">*</span></label><input type="text" class="form-control" id="manId" placeholder="料号"></div><div class="form-group"><label>储位</label><input type="text" class="form-control" id="manLocation" placeholder="储位"></div><div class="form-group"><label>MPN <span class="required">*</span></label><input type="text" class="form-control" id="manMpn" placeholder="MPN"></div><div class="form-group"><label>数量</label><input type="number" class="form-control" id="manStock" value="0" min="0"></div></div><button class="btn btn-success btn-block" id="saveManualBtn"><i class="fas fa-save"></i> 添加</button></div></div>
             <div class="manual-card" style="margin-top:0;"><div class="collapsible-header" id="locManualHeader"><i class="fas fa-chevron-down"></i> 手动添加储位数据</div><div class="collapsible-body" id="locManualBody"><div class="form-row" style="margin-bottom:12px;"><div class="form-group"><label>料号 <span class="required">*</span></label><input type="text" class="form-control" id="locManId" placeholder="料号"></div><div class="form-group"><label>储位 <span class="required">*</span></label><input type="text" class="form-control" id="locManLocation" placeholder="储位"></div><div class="form-group"><label>担当</label><input type="text" class="form-control" id="locManResponsible" placeholder="担当"></div></div><button class="btn btn-info btn-block" id="saveLocationManualBtn"><i class="fas fa-save"></i> 添加</button></div></div>
         </div>
-
         <div id="page-mine" class="page">
             <div class="section-title"><i class="fas fa-user" style="color:#8b5cf6;"></i> 我的</div>
             <div class="my-profile" id="myProfileCard"><div class="avatar" id="avatarBtn"><i class="fas fa-user-circle" id="avatarIcon"></i></div><div class="username" id="profileName">仓库管理员</div><div class="user-role" id="profileRole">WMS 系统</div><div class="bg-actions" style="display:flex;gap:8px;justify-content:center;margin-top:8px;"><button class="btn btn-outline btn-sm" id="changeAvatarBtn"><i class="fas fa-camera"></i> 头像</button><button class="btn btn-outline btn-sm" id="changeBgBtn"><i class="fas fa-image"></i> 背景</button><button class="btn btn-outline btn-sm" id="resetBgBtn"><i class="fas fa-undo"></i> 重置</button></div></div>
@@ -598,8 +603,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     let inContinuous = false;
     let errorLogs = [];
     let pendingDeleteRecordId = null;
-    window._bomModels = [];
-    window._bomParts = [];
     try { errorLogs = JSON.parse(localStorage.getItem('wms_error_logs') || '[]'); } catch(e){ errorLogs = []; }
 
     function logError(message, detail = '') {
@@ -829,7 +832,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             locationData = cached.data;
         }
         if (countPlanDate !== countViewDate) { countPlan = []; countPlanDate = countViewDate; }
-        loadBomDict();
     }
 
     async function saveMaterialsToCloud() {
@@ -983,72 +985,58 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     })();
 
-    // ==================== BOM 联想词典 ====================
-    async function loadBomDict() {
-        const cacheKey = 'wms_bom_dict_cache';
-        const cacheTimeKey = 'wms_bom_dict_cache_time';
-        const now = Date.now();
-        const cachedTime = localStorage.getItem(cacheTimeKey);
-        if (cachedTime && localStorage.getItem(cacheKey) && (now - parseInt(cachedTime) < 30 * 60 * 1000)) {
-            try {
-                const dict = JSON.parse(localStorage.getItem(cacheKey));
-                window._bomModels = dict.models || [];
-                window._bomParts = dict.parts || [];
-                setupBomAutocompletes();
-                return;
-            } catch(e) {}
-        }
-        try {
-            const { data: modelsData } = await supabase.from('models_dict').select('model');
-            const { data: partsData } = await supabase.from('locations').select('part');
-            const models = [...new Set((modelsData || []).map(r => String(r.model || '').trim()).filter(Boolean))];
-            const parts = [...new Set((partsData || []).map(r => String(r.part || '').trim()).filter(Boolean))];
-            window._bomModels = models;
-            window._bomParts = parts;
-            localStorage.setItem(cacheKey, JSON.stringify({ models, parts }));
-            localStorage.setItem(cacheTimeKey, String(now));
-            setupBomAutocompletes();
-        } catch(e) {}
-    }
-
+    // ==================== BOM 联想 - 后端实时查询 ====================
     function setupBomAutocompletes() {
         const modelInput = document.getElementById('bomModelInput');
         const partInput = document.getElementById('bomPartInput');
         const modelDropdown = document.getElementById('bomModelDropdown');
         const partDropdown = document.getElementById('bomPartDropdown');
         if (!modelInput || !partInput) return;
-        function createBomAutocomplete(input, dropdown, dataSourceKey) {
-            let currentFocus = -1;
-            input.addEventListener('input', function() {
-                const val = this.value.trim();
-                dropdown.style.display = 'none'; dropdown.innerHTML = '';
-                if (!val) return;
-                const dict = window[dataSourceKey] || [];
-                const upperVal = val.toUpperCase();
-                let matches = dataSourceKey === '_bomParts'
-                    ? dict.filter(item => item.toUpperCase().endsWith(upperVal))
-                    : dict.filter(item => item.toUpperCase().includes(upperVal));
-                if (matches.length === 0) return;
-                matches.slice(0, 50).forEach((item) => {
+
+        let modelTimer;
+        modelInput.addEventListener('input', function() {
+            clearTimeout(modelTimer);
+            const val = this.value.trim();
+            modelDropdown.style.display = 'none';
+            modelDropdown.innerHTML = '';
+            if (!val) return;
+            modelTimer = setTimeout(async () => {
+                const { data } = await supabase.from('models_dict').select('model').ilike('model', '%' + val + '%').limit(50);
+                if (!data || data.length === 0) return;
+                data.forEach(item => {
                     const div = document.createElement('div');
-                    div.textContent = item;
-                    div.addEventListener('click', () => { input.value = item; dropdown.style.display = 'none'; renderBomResult(); });
-                    dropdown.appendChild(div);
+                    div.textContent = item.model;
+                    div.addEventListener('click', () => { modelInput.value = item.model; modelDropdown.style.display = 'none'; renderBomResult(); });
+                    modelDropdown.appendChild(div);
                 });
-                dropdown.style.display = 'block';
-            });
-            input.addEventListener('keydown', function(e) {
-                let items = dropdown.getElementsByTagName('div');
-                if (e.key === 'ArrowDown') { currentFocus++; addActive(items); }
-                else if (e.key === 'ArrowUp') { currentFocus--; addActive(items); }
-                else if (e.key === 'Enter') { e.preventDefault(); if (currentFocus > -1 && items[currentFocus]) items[currentFocus].click(); }
-            });
-            function addActive(items) { if (!items.length) return; removeActive(items); if (currentFocus >= items.length) currentFocus = 0; if (currentFocus < 0) currentFocus = items.length - 1; items[currentFocus].classList.add('autocomplete-active'); }
-            function removeActive(items) { for (let item of items) item.classList.remove('autocomplete-active'); }
-            document.addEventListener('click', function(e) { if (e.target !== input) dropdown.style.display = 'none'; });
-        }
-        createBomAutocomplete(modelInput, modelDropdown, '_bomModels');
-        createBomAutocomplete(partInput, partDropdown, '_bomParts');
+                modelDropdown.style.display = 'block';
+            }, 300);
+        });
+
+        let partTimer;
+        partInput.addEventListener('input', function() {
+            clearTimeout(partTimer);
+            const val = this.value.trim();
+            partDropdown.style.display = 'none';
+            partDropdown.innerHTML = '';
+            if (!val) return;
+            partTimer = setTimeout(async () => {
+                const { data } = await supabase.from('locations').select('part').ilike('part', '%' + val).limit(50);
+                if (!data || data.length === 0) return;
+                data.forEach(item => {
+                    const div = document.createElement('div');
+                    div.textContent = item.part;
+                    div.addEventListener('click', () => { partInput.value = item.part; partDropdown.style.display = 'none'; renderBomResult(); });
+                    partDropdown.appendChild(div);
+                });
+                partDropdown.style.display = 'block';
+            }, 300);
+        });
+
+        document.addEventListener('click', function(e) {
+            if (e.target !== modelInput) modelDropdown.style.display = 'none';
+            if (e.target !== partInput) partDropdown.style.display = 'none';
+        });
     }
 
     async function renderBomResult() {
@@ -1249,7 +1237,9 @@ document.addEventListener('DOMContentLoaded', async () => {
             else onMaterialSelected(mat, 'in');
         }
         toast('已识别料号: ' + part, 'success');
-    }    // ==================== 连续扫码开关 ====================
+    }
+
+    // ==================== 连续扫码开关 ====================
     document.getElementById('outContinuousSwitch').addEventListener('click', function() {
         outContinuous = !outContinuous; this.classList.toggle('on', outContinuous);
     });
@@ -1834,7 +1824,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             toast('成功导入/更新 '+toUpsert.length+' 条 BOM', 'success');
             document.getElementById('bomUploadStatus').style.display = 'block';
             document.getElementById('bomUploadStatus').textContent = '已导入/更新 '+toUpsert.length+' 条';
-            loadBomDict();
         });
     });
 
@@ -1854,7 +1843,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             toast('成功导入 '+toUpsert.length+' 个机种号', 'success');
             document.getElementById('modelsUploadStatus').style.display = 'block';
             document.getElementById('modelsUploadStatus').textContent = '已导入 '+toUpsert.length+' 个';
-            loadBomDict();
         });
     });
 
@@ -1895,7 +1883,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 else if (target.classList.contains('bom-mpn-editable')) updateData = { mpn: newVal };
                 else updateData = { manufacturer: newVal };
                 await supabase.from('boms').update(updateData).eq('id', id);
-                loadBomDict(); renderBomResult();
+                renderBomResult();
             } catch(e) {}
         };
         const finishEdit = async () => {
@@ -1911,6 +1899,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     // ==================== 初始化 ====================
     await loadData();
     setupAutocompletes();
+    setupBomAutocompletes();
     if(currentUser){
         await fetchUserTeamId();
         showPage('home'); renderStock(); updateDaily(); updateMarquee(); updateMine(); loadCustomStyles(); loadProfileBg(); updateShelfUI();
