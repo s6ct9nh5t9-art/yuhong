@@ -5,7 +5,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="仓库管理">
-    <link rel="apple-touch-icon" href="icon.png">
+    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📦</text></svg>">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>仓库管理系统 v23.5</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
@@ -359,10 +359,39 @@
         .calc-fill { background: #22c55e; color: #fff; border-color: #22c55e; }
         .calc-fill:active { background: #16a34a; }
         .calc-fill.disabled { background: #94a3b8; border-color: #94a3b8; pointer-events: none; opacity: 0.6; }
-    </style>
-</head>
 
-<body>
+        .bom-card {
+            background: #fff;
+            border: 1px solid #e2e8f0;
+            border-radius: 14px;
+            padding: 14px 16px;
+            margin-bottom: 12px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+        }
+        .bom-top-row, .bom-mid-row, .bom-bottom-row {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 6px 12px;
+            color: #1e293b;
+        }
+        .bom-top-row { margin-bottom: 8px; }
+        .bom-mid-row { margin-bottom: 8px; font-size: 15px; font-weight: 700; color: #0f172a; }
+        .bom-bottom-row { color: #475569; font-size: 13px; }
+        .bom-part-editable, .bom-mpn-editable, .bom-manufacturer-editable { cursor: pointer; border-bottom: 1px dashed transparent; transition: 0.2s; }
+        .bom-part-editable:hover, .bom-mpn-editable:hover, .bom-manufacturer-editable:hover { border-bottom-color: #94a3b8; }
+        .bom-mid-row i { color: #3b82f6; font-size: 14px; }
+        .bom-bottom-row i { color: #94a3b8; width: 14px; }
+
+        /* ===== BOM 专属上传进度条样式 ===== */
+        .bom-progress-wrap { margin-top: 10px; width: 100%; }
+        .bom-progress-bg { width: 100%; height: 8px; background: #e2e8f0; border-radius: 6px; overflow: hidden; display: none; }
+        .bom-progress-fill { height: 100%; width: 0%; background: #3b82f6; border-radius: 6px; transition: width 0.3s ease; }
+        .bom-progress-text { font-size: 13px; font-weight: 500; color: #1e293b; margin-top: 6px; display: none; }
+        .bom-progress-text.success { color: #16a34a; }
+        .bom-progress-text.error { color: #dc2626; }
+    </style>
+</head> <body>
 <div id="app">
     <div id="settingsBtn" class="settings-btn"><i class="fas fa-cog"></i></div>
     <div id="settingsOverlay" class="settings-overlay"></div>
@@ -400,7 +429,8 @@
                 <div class="home-card card-report" data-page="report"><div class="icon-wrap"><i class="fas fa-list"></i></div><div class="card-label">出入库清单</div></div>
             </div>
             <div class="daily-stats" id="dailyStats"><div class="stats-title"><i class="fas fa-calendar-day"></i> 今日数据</div><div class="stats-grid"><div class="stat-item"><div class="stat-value in" id="todayIn">0</div><div class="stat-label">入库总量</div></div><div class="stat-item"><div class="stat-value out" id="todayOut">0</div><div class="stat-label">出库总量</div></div><div class="stat-item"><div class="stat-value total" id="todayTotalStock">0</div><div class="stat-label">当前总库存</div></div><div class="stat-item"><div class="stat-value count" id="todayOps">0</div><div class="stat-label">今日操作笔数</div></div></div></div>
-        </div>        <div id="page-scan" class="page">
+        </div>
+        <div id="page-scan" class="page">
             <div class="scanner-container">
                 <div class="scanner-wrapper" id="scannerWrapper">
                     <video id="scanVideo" autoplay playsinline muted></video>
@@ -542,27 +572,114 @@
             <div class="report-tab-content active" id="tab-out"><div class="form-row" style="margin-bottom:12px;"><div class="form-group"><label>日期</label><input type="date" class="form-control date-sm" id="reportOutDate"></div><div class="form-group"><label>仓码</label><select class="form-control" id="reportOutCangma"><option value="">全部</option><option value="B8SA">B8SA</option><option value="B909">B909</option><option value="B907">B907</option></select></div></div><div class="table-wrap" style="margin-top:12px;"><table><thead><tr><th>料号</th><th>MPN</th><th>出库总数</th><th>操作</th></tr></thead><tbody id="outReportBody"><tr><td colspan="4" class="text-center text-muted">请选择日期查询</td></tr></tbody></table></div></div>
             <div class="report-tab-content" id="tab-in"><div class="form-group"><label>料号（选填）</label><div class="autocomplete-wrapper"><input type="text" class="form-control" id="reportInMaterialInput" placeholder="输入料号任意位数搜索" autocomplete="off"><input type="hidden" id="reportInMaterialId"><div class="autocomplete-dropdown" id="reportInMaterialDropdown"></div></div></div><button class="btn btn-primary btn-inline" id="queryInBtn"><i class="fas fa-search"></i> 查询</button><div class="table-wrap" style="margin-top:12px;"><table><thead><tr><th>料号</th><th>MPN</th><th>入库总数</th><th>日期</th><th>操作</th></tr></thead><tbody id="inReportBody"><tr><td colspan="5" class="text-center text-muted">查询当天入库记录</td></tr></tbody></table></div></div>
         </div>
+        
+        <!-- ========== 查找页 (包含储位、BOM 双标签) ========== -->
         <div id="page-location" class="page">
-            <div class="section-title"><i class="fas fa-map-pin" style="color:#0ea5e9;"></i> 储位查找</div>
-            <div class="form-group">
-                <label>输入料号关键字</label>
-                <div style="display:flex;gap:8px;">
-                    <input type="text" class="form-control" id="locationSearchInput" placeholder="输入料号任意位数">
-                    <button class="btn btn-info" id="locationSearchBtn"><i class="fas fa-search"></i> 查找</button>
+            <div class="section-title"><i class="fas fa-search" style="color:#0ea5e9;"></i> 查找</div>
+            <div class="tab-nav" id="locationModeTabs">
+                <button class="tab-btn active" data-mode="loc">储位查找</button>
+                <button class="tab-btn" data-mode="bom">BOM查找</button>
+            </div>
+
+            <!-- 储位查找子页面 -->
+            <div id="loc-mode-loc" class="report-tab-content active">
+                <div class="form-group">
+                    <label>输入料号关键字</label>
+                    <div style="display:flex;gap:8px;">
+                        <input type="text" class="form-control" id="locationSearchInput" placeholder="输入料号任意位数">
+                        <button class="btn btn-info" id="locationSearchBtn"><i class="fas fa-search"></i> 查找</button>
+                    </div>
+                </div>
+                <button class="btn btn-outline btn-block" id="locationClearBtn" style="margin-bottom:16px;"><i class="fas fa-undo"></i> 清空结果</button>
+                <div id="locationResult"><div class="table-wrap"><table><thead><tr><th>料号</th><th>储位</th><th>担当</th><th>操作</th></tr></thead><tbody id="locationResultBody"><tr><td colspan="4" class="text-center text-muted">输入料号关键字搜索</td></tr></tbody></table></div><div style="margin-top:8px;text-align:right;font-size:12px;color:#94a3b8;">找到 <span id="locationResultCount">0</span> 项</div></div>
+            </div>
+
+            <!-- BOM查找子页面 -->
+            <div id="loc-mode-bom" class="report-tab-content">
+                <div class="form-row" style="margin-bottom:16px;">
+                    <div class="form-group">
+                        <label>机种号</label>
+                        <div class="autocomplete-wrapper">
+                            <input type="text" class="form-control" id="bomModelInput" placeholder="输入机种号" autocomplete="off">
+                            <div class="autocomplete-dropdown" id="bomModelDropdown"></div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>料号</label>
+                        <div class="autocomplete-wrapper">
+                            <input type="text" class="form-control" id="bomPartInput" placeholder="输入料号" autocomplete="off">
+                            <div class="autocomplete-dropdown" id="bomPartDropdown"></div>
+                        </div>
+                    </div>
+                </div>
+                <button class="btn btn-primary btn-block" id="bomSearchBtn"><i class="fas fa-search"></i> 查询 BOM</button>
+                <button class="btn btn-outline btn-block" id="bomClearBtn" style="margin-top:8px;margin-bottom:16px;"><i class="fas fa-undo"></i> 清空结果</button>
+                <div id="bomResultList"></div>
+            </div>
+        </div>        <div id="page-data" class="page">
+            <div class="section-title"><i class="fas fa-cloud-upload-alt" style="color:#3b82f6;"></i> 数据导入</div>
+            
+            <!-- 1. 上传库存 -->
+            <div class="upload-card">
+                <div class="collapsible-header expanded" id="headerUploadStock">
+                    <i class="fas fa-chevron-down"></i> <i class="fas fa-file-excel" style="color:#22c55e;"></i> 批量上传库存 Excel
+                </div>
+                <div class="collapsible-body show" id="bodyUploadStock">
+                    <div class="file-input-wrap"><input type="file" id="excelFile" accept=".xls,.xlsx" class="form-control"><button class="btn btn-primary btn-sm" id="uploadExcelBtn"><i class="fas fa-upload"></i> 导入</button></div>
+                    <small class="text-muted">表格列：料号、储位、MPN、数量</small>
+                    <div class="upload-status-text" id="excelUploadStatus"></div>
                 </div>
             </div>
-            <button class="btn btn-outline btn-block" id="locationClearBtn" style="margin-bottom:16px;"><i class="fas fa-undo"></i> 清空结果</button>
-            <div id="locationResult"><div class="table-wrap"><table><thead><tr><th>料号</th><th>储位</th><th>担当</th><th>操作</th></tr></thead><tbody id="locationResultBody"><tr><td colspan="4" class="text-center text-muted">输入料号关键字搜索</td></tr></tbody></table></div><div style="margin-top:8px;text-align:right;font-size:12px;color:#94a3b8;">找到 <span id="locationResultCount">0</span> 项</div></div>
-        </div>
-        <div id="page-data" class="page">
-            <div class="section-title"><i class="fas fa-cloud-upload-alt" style="color:#3b82f6;"></i> 数据导入</div>
-            <div class="upload-card"><div class="upload-header"><i class="fas fa-file-excel" style="color:#22c55e;"></i> 批量上传库存 Excel</div><div class="file-input-wrap"><input type="file" id="excelFile" accept=".xls,.xlsx" class="form-control"><button class="btn btn-primary btn-sm" id="uploadExcelBtn"><i class="fas fa-upload"></i> 导入</button></div><small class="text-muted">表格列：料号、储位、MPN、数量</small><div class="upload-status-text" id="excelUploadStatus"></div></div>
-            <div class="upload-card"><div class="upload-header"><i class="fas fa-map-marker-alt" style="color:#0ea5e9;"></i> 批量上传储位 Excel</div><div class="file-input-wrap"><input type="file" id="locationExcelFile" accept=".xls,.xlsx" class="form-control"><button class="btn btn-info btn-sm" id="uploadLocationExcelBtn"><i class="fas fa-upload"></i> 导入储位</button></div><small class="text-muted">表格列：料号、储位、担当</small><div class="upload-status-text" id="locationUploadStatus"></div></div>
-            <div class="upload-card"><div class="upload-header"><i class="fas fa-clipboard-check" style="color:#f59e0b;"></i> 上传盘点 Excel</div><div class="file-input-wrap"><input type="file" id="countExcelFile" accept=".xls,.xlsx" class="form-control"><button class="btn btn-warning btn-sm" id="uploadCountExcelBtn"><i class="fas fa-upload"></i> 导入盘点</button></div><small class="text-muted">表格列：料号、储位（基准计划）</small><div class="upload-status-text" id="countUploadStatus"></div></div>
+
+            <!-- 2. 上传储位 -->
+            <div class="upload-card">
+                <div class="collapsible-header expanded" id="headerUploadLocation">
+                    <i class="fas fa-chevron-down"></i> <i class="fas fa-map-marker-alt" style="color:#0ea5e9;"></i> 批量上传储位 Excel
+                </div>
+                <div class="collapsible-body show" id="bodyUploadLocation">
+                    <div class="file-input-wrap"><input type="file" id="locationExcelFile" accept=".xls,.xlsx" class="form-control"><button class="btn btn-info btn-sm" id="uploadLocationExcelBtn"><i class="fas fa-upload"></i> 导入储位</button></div>
+                    <small class="text-muted">表格列：料号、储位、担当</small>
+                    <div class="upload-status-text" id="locationUploadStatus"></div>
+                </div>
+            </div>
+
+            <!-- 3. 上传盘点 -->
+            <div class="upload-card">
+                <div class="collapsible-header expanded" id="headerUploadCount">
+                    <i class="fas fa-chevron-down"></i> <i class="fas fa-clipboard-check" style="color:#f59e0b;"></i> 上传盘点 Excel
+                </div>
+                <div class="collapsible-body show" id="bodyUploadCount">
+                    <div class="file-input-wrap"><input type="file" id="countExcelFile" accept=".xls,.xlsx" class="form-control"><button class="btn btn-warning btn-sm" id="uploadCountExcelBtn"><i class="fas fa-upload"></i> 导入盘点</button></div>
+                    <small class="text-muted">表格列：料号、储位（基准计划）</small>
+                    <div class="upload-status-text" id="countUploadStatus"></div>
+                </div>
+            </div>
+
+            <!-- 4. 上传 BOM -->
+            <div class="upload-card">
+                <div class="collapsible-header expanded" id="headerUploadBom">
+                    <i class="fas fa-chevron-down"></i> <i class="fas fa-tasks" style="color:#f59e0b;"></i> 批量上传 BOM <span style="font-size:12px;color:#94a3b8;font-weight:normal;margin-left:4px;">(含实时进度)</span>
+                </div>
+                <div class="collapsible-body show" id="bodyUploadBom">
+                    <div class="file-input-wrap"><input type="file" id="bomExcelFile" accept=".xls,.xlsx" class="form-control"><button class="btn btn-warning btn-sm" id="uploadBomExcelBtn"><i class="fas fa-upload"></i> 导入 BOM</button></div>
+                    <small class="text-muted">表格列要求：工单号、机种号、料号、厂商、MPN</small>
+                    <!-- BOM 进度条与状态区 -->
+                    <div class="bom-progress-wrap">
+                        <div class="bom-progress-bg" id="bomProgressBg">
+                            <div class="bom-progress-fill" id="bomProgressFill"></div>
+                        </div>
+                        <div class="bom-progress-text" id="bomProgressText"></div>
+                    </div>
+                    <div class="upload-status-text" id="bomUploadStatus"></div>
+                </div>
+            </div>
+
+            <!-- 手动添加折叠区域 -->
             <div class="manual-card"><div class="collapsible-header" id="countManualHeader"><i class="fas fa-chevron-down"></i> 手动添加盘点</div><div class="collapsible-body" id="countManualBody"><div class="form-row" style="margin-bottom:12px;"><div class="form-group"><label>料号 <span class="required">*</span></label><input type="text" class="form-control" id="countManId" placeholder="料号"></div><div class="form-group"><label>储位 <span class="required">*</span></label><input type="text" class="form-control" id="countManLoc" placeholder="储位"></div></div><button class="btn btn-outline btn-block" id="addCountManBtn"><i class="fas fa-plus"></i> 添加盘点计划</button></div></div>
             <div class="manual-card"><div class="collapsible-header" id="stockManualHeader"><i class="fas fa-chevron-down"></i> 手动添加库存数据</div><div class="collapsible-body" id="stockManualBody"><div class="form-row" style="margin-bottom:12px;"><div class="form-group"><label>料号 <span class="required">*</span></label><input type="text" class="form-control" id="manId" placeholder="料号"></div><div class="form-group"><label>储位</label><input type="text" class="form-control" id="manLocation" placeholder="储位"></div><div class="form-group"><label>MPN <span class="required">*</span></label><input type="text" class="form-control" id="manMpn" placeholder="MPN"></div><div class="form-group"><label>数量</label><input type="number" class="form-control" id="manStock" value="0" min="0"></div></div><button class="btn btn-success btn-block" id="saveManualBtn"><i class="fas fa-save"></i> 添加</button></div></div>
             <div class="manual-card" style="margin-top:0;"><div class="collapsible-header" id="locManualHeader"><i class="fas fa-chevron-down"></i> 手动添加储位数据</div><div class="collapsible-body" id="locManualBody"><div class="form-row" style="margin-bottom:12px;"><div class="form-group"><label>料号 <span class="required">*</span></label><input type="text" class="form-control" id="locManId" placeholder="料号"></div><div class="form-group"><label>储位 <span class="required">*</span></label><input type="text" class="form-control" id="locManLocation" placeholder="储位"></div><div class="form-group"><label>担当</label><input type="text" class="form-control" id="locManResponsible" placeholder="担当"></div></div><button class="btn btn-info btn-block" id="saveLocationManualBtn"><i class="fas fa-save"></i> 添加</button></div></div>
         </div>
+
         <div id="page-mine" class="page">
             <div class="section-title"><i class="fas fa-user" style="color:#8b5cf6;"></i> 我的</div>
             <div class="my-profile" id="myProfileCard"><div class="avatar" id="avatarBtn"><i class="fas fa-user-circle" id="avatarIcon"></i></div><div class="username" id="profileName">仓库管理员</div><div class="user-role" id="profileRole">WMS 系统</div><div class="bg-actions" style="display:flex;gap:8px;justify-content:center;margin-top:8px;"><button class="btn btn-outline btn-sm" id="changeAvatarBtn"><i class="fas fa-camera"></i> 头像</button><button class="btn btn-outline btn-sm" id="changeBgBtn"><i class="fas fa-image"></i> 背景</button><button class="btn btn-outline btn-sm" id="resetBgBtn"><i class="fas fa-undo"></i> 重置</button></div></div>
@@ -580,11 +697,12 @@
     </div>
     <nav class="bottom-nav" id="bottomNav" style="display:none;">
         <button class="nav-item active" data-tab="home">首页</button>
-        <button class="nav-item" data-tab="location">储位查询</button>
+        <button class="nav-item" data-tab="location">查找</button>
         <button class="nav-item" data-tab="data">数据</button>
         <button class="nav-item" data-tab="mine">我的</button>
     </nav>
-</div> <button class="calculator-float-btn" id="calculatorFloatBtn" title="计算器">
+</div>
+<button class="calculator-float-btn" id="calculatorFloatBtn" title="计算器">
     <i class="fas fa-calculator"></i>
 </button>
 <div class="calculator-panel" id="calculatorPanel">
@@ -627,8 +745,7 @@
 <div class="modal-overlay" id="deletePasswordModal"><div class="modal-box"><h3>🔒 请输入管理密码</h3><div class="modal-input-group"><input type="password" id="deletePasswordInput" placeholder="请输入密码"></div><div class="modal-actions"><button class="btn-modal-cancel" id="deletePasswordCancel">取消</button><button class="btn-modal-danger" id="deletePasswordConfirm">确认删除</button></div></div></div>
 <div class="modal-overlay" id="errorLogModal"><div class="modal-box" style="max-width:90%; width:400px;"><h3>错误日志</h3><div class="error-log-list" id="errorLogList"></div><div class="modal-actions"><button class="btn-modal-warning" id="clearErrorLogBtn"><i class="fas fa-trash"></i> 清空</button><button class="btn-modal-cancel" id="closeErrorLogBtn">关闭</button></div></div></div>
 <div class="modal-overlay" id="systemMaintenanceModal"><div class="modal-box"><h3>🛠️ 系统维护</h3><div class="modal-actions" style="flex-direction:column;gap:10px;"><button class="btn btn-outline btn-block" id="maintainErrorLogBtn"><i class="fas fa-bug"></i> 错误日志</button><button class="btn btn-outline btn-block" style="color:#ef4444;" id="maintainResetStockBtn"><i class="fas fa-boxes"></i> 重置库存数据</button><button class="btn btn-outline btn-block" style="color:#ef4444;" id="maintainResetCountBtn"><i class="fas fa-clipboard-list"></i> 重置盘点数据</button><button class="btn btn-outline btn-block" id="maintainClearCacheBtn"><i class="fas fa-broom"></i> 清空本地缓存</button><button class="btn-modal-cancel btn-block" style="margin-top:8px;" id="maintainCancelBtn">取消</button></div></div></div>
-<script>
-const APP_VERSION = '23.5';
+<script> const APP_VERSION = '23.5';
 const LAST_UPDATE_DATE = '2026-06-25';
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -643,6 +760,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     let countPlan = [];
     let countPlanDate = '';
     let locationData = [];
+    let bomData = [];
     let hiddenAlerts = new Set();
     let countViewMode = 'detail';
     let countViewDate = new Date().toISOString().slice(0, 10);
@@ -657,6 +775,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     let inContinuous = false;
     let errorLogs = [];
     let pendingDeleteRecordId = null;
+    // BOM 联想词典全局变量
+    window._bomModels = [];
+    window._bomParts = [];
     try { errorLogs = JSON.parse(localStorage.getItem('wms_error_logs') || '[]'); } catch(e){ errorLogs = []; }
 
     function logError(message, detail = '') {
@@ -846,9 +967,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (detailTab) detailTab.classList.add('active');
             updatePlanUI();
             renderCount();
-            if (countPlan.length === 0 || countPlanDate !== countViewDate) {
-                importPlan();
-            }
+            if (countPlan.length === 0 || countPlanDate !== countViewDate) { importPlan(); }
         }
         if(name==='location') clearLocationResult();
         if(name==='manualCount') { updateShelfUI(); document.getElementById('manualShelfLabel').textContent = ' - ' + (shelfNames[currentShelf]||('架'+(currentShelf+1))); loadManualPartList(currentShelf); }
@@ -888,16 +1007,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         const display = document.getElementById('calcDisplay');
         const closeBtn = document.getElementById('closeCalculatorBtn');
         let expression = '';
-
         floatBtn.style.display = 'flex';
-
-        function resetCalculator() {
-            expression = '';
-            display.textContent = '0';
-        }
-
+        function resetCalculator() { expression = ''; display.textContent = '0'; }
         function updateDisplay() { display.textContent = expression || '0'; }
-
         function calculate(expr) {
             try {
                 let safeExpr = expr.replace(/×/g, '*').replace(/÷/g, '/').replace(/−/g, '-');
@@ -906,61 +1018,30 @@ document.addEventListener('DOMContentLoaded', async () => {
                 return Math.round((result + Number.EPSILON) * 1000000) / 1000000;
             } catch { return 'Error'; }
         }
-
         function handleInput(value) {
             if (value === 'C') { resetCalculator(); return; }
             if (value === '⌫') { expression = expression.slice(0, -1); updateDisplay(); return; }
             if (value === 'fill') {
                 const target = getFillTargetPage();
-                if (!target) {
-                    toast('当前页面无法填入数量', 'info');
-                    return;
-                }
+                if (!target) { toast('当前页面无法填入数量', 'info'); return; }
                 const result = calculate(expression);
-                if (result === 'Error' || isNaN(result) || !isFinite(result)) {
-                    toast('计算结果无效', 'error');
-                    return;
-                }
-                expression = String(result);
-                updateDisplay();
+                if (result === 'Error' || isNaN(result) || !isFinite(result)) { toast('计算结果无效', 'error'); return; }
+                expression = String(result); updateDisplay();
                 const numResult = Number(result);
-                if (target === 'manualCount') {
-                    const qtyInput = document.getElementById('manualCountQty');
-                    if (qtyInput) qtyInput.value = numResult;
-                } else if (target === 'out') {
-                    const qtyInput = document.getElementById('outQty');
-                    if (qtyInput) qtyInput.value = numResult;
-                } else if (target === 'in') {
-                    const qtyInput = document.getElementById('inQty');
-                    if (qtyInput) qtyInput.value = numResult;
-                }
-                panel.classList.remove('show');
-                return;
+                if (target === 'manualCount') { const qtyInput = document.getElementById('manualCountQty'); if (qtyInput) qtyInput.value = numResult; }
+                else if (target === 'out') { const qtyInput = document.getElementById('outQty'); if (qtyInput) qtyInput.value = numResult; }
+                else if (target === 'in') { const qtyInput = document.getElementById('inQty'); if (qtyInput) qtyInput.value = numResult; }
+                panel.classList.remove('show'); return;
             }
-            if (value === '=') {
-                const result = calculate(expression);
-                expression = String(result);
-                updateDisplay();
-                return;
-            }
+            if (value === '=') { const result = calculate(expression); expression = String(result); updateDisplay(); return; }
             if (expression.length > 50) return;
-            expression += value;
-            updateDisplay();
+            expression += value; updateDisplay();
         }
-
-        floatBtn.addEventListener('click', () => {
-            resetCalculator();
-            updateCalcFillButton();
-            panel.classList.add('show');
-        });
+        floatBtn.addEventListener('click', () => { resetCalculator(); updateCalcFillButton(); panel.classList.add('show'); });
         closeBtn.addEventListener('click', () => { panel.classList.remove('show'); });
-        document.querySelectorAll('.calc-btn').forEach(btn => {
-            btn.addEventListener('click', function() { handleInput(this.dataset.value); });
-        });
+        document.querySelectorAll('.calc-btn').forEach(btn => { btn.addEventListener('click', function() { handleInput(this.dataset.value); }); });
         document.addEventListener('click', function(e) {
-            if (!panel.contains(e.target) && e.target !== floatBtn && !floatBtn.contains(e.target) && panel.classList.contains('show')) {
-                panel.classList.remove('show');
-            }
+            if (!panel.contains(e.target) && e.target !== floatBtn && !floatBtn.contains(e.target) && panel.classList.contains('show')) { panel.classList.remove('show'); }
         });
         panel.classList.remove('show');
     })();
@@ -994,8 +1075,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             toast(`✅ 已保存 ${part} × ${finalQty}`, 'success');
             return true;
         } catch (e) { toast('保存失败: ' + e.message, 'error'); logError('performSave', e.message); return false; }
-    }
-    function handleScan(data) {
+    }    function handleScan(data) {
         const now = Date.now();
         if (lastScanData !== null && data === lastScanData && now < cooldownUntil) return;
         lastScanData = data; cooldownUntil = now + (scanSettings.cooldown * 1000);
@@ -1007,10 +1087,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         else toast('✅ 识别成功', 'success');
     }
     async function scanFrame() { const video = document.getElementById('scanVideo'); if (!scanning || video.readyState < 2) { scanAnimId = requestAnimationFrame(scanFrame); return; } let w = video.videoWidth, h = video.videoHeight; if (!w || !h) { scanAnimId = requestAnimationFrame(scanFrame); return; } const canvas = document.getElementById('scanCanvas'); const ctx = canvas.getContext('2d', { willReadFrequently: true }); const maxDim = 640; if (w > maxDim || h > maxDim) { const r = Math.min(maxDim / w, maxDim / h); w *= r; h *= r; } canvas.width = w; canvas.height = h; ctx.drawImage(video, 0, 0, w, h); const imgData = ctx.getImageData(0, 0, w, h); const code = jsQR(imgData.data, w, h, { inversionAttempts: 'dontInvert' }); if (code && code.data) handleScan(code.data); scanAnimId = requestAnimationFrame(scanFrame); }
-    async function startCam() { if (scanStream) await stopCam(); try { scanStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment', width: { ideal: 640 }, height: { ideal: 480 }, focusMode: { ideal: 'continuous' } } }); document.getElementById('scanVideo').srcObject = scanStream; await document.getElementById('scanVideo').play(); const videoTrack = scanStream.getVideoTracks()[0]; if (videoTrack && videoTrack.getCapabilities && videoTrack.getCapabilities().zoom) { try { await videoTrack.applyConstraints({ advanced: [{ zoom: 1 }] }); } catch(e) {} } document.getElementById('placeholder').style.display = 'none'; document.getElementById('overlay').style.display = 'block'; document.getElementById('btnStart').innerHTML = '<i class="fas fa-stop"></i> 停止'; document.getElementById('btnStart').className = 'btn btn-danger'; document.getElementById('btnTorch').disabled = false; scanning = true; scanAnimId = requestAnimationFrame(scanFrame); toast('📷 摄像头已启动', 'info'); } catch (e) { toast('❌ 摄像头启动失败', 'error'); logError('startCam', e.message); stopCam(); } }
+    async function startCam() { if (scanStream) await stopCam(); try { scanStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment', width: { ideal: 640 }, height: { ideal: 480 }, focusMode: { ideal: 'continuous' } } }); document.getElementById('scanVideo').srcObject = scanStream; await document.getElementById('scanVideo').play(); document.getElementById('placeholder').style.display = 'none'; document.getElementById('overlay').style.display = 'block'; document.getElementById('btnStart').innerHTML = '<i class="fas fa-stop"></i> 停止'; document.getElementById('btnStart').className = 'btn btn-danger'; document.getElementById('btnTorch').disabled = false; scanning = true; scanAnimId = requestAnimationFrame(scanFrame); toast('📷 摄像头已启动', 'info'); } catch (e) { toast('❌ 摄像头启动失败', 'error'); logError('startCam', e.message); stopCam(); } }
     async function stopCam() { scanning = false; if (scanAnimId) { cancelAnimationFrame(scanAnimId); scanAnimId = null; } if (scanStream) { scanStream.getTracks().forEach(t => t.stop()); scanStream = null; } document.getElementById('scanVideo').srcObject = null; document.getElementById('placeholder').style.display = 'flex'; document.getElementById('overlay').style.display = 'none'; document.getElementById('btnStart').innerHTML = '<i class="fas fa-video"></i> 开始扫描'; document.getElementById('btnStart').className = 'btn btn-primary'; document.getElementById('btnTorch').disabled = true; document.getElementById('btnTorch').classList.remove('active'); torchState = false; }
 
-    async function startHalfScan(mode) { if (halfScanStream) await stopHalfScan(); halfScanMode = mode; const panelId = mode === 'out' ? 'outHalfScanPanel' : 'inHalfScanPanel'; const videoId = mode === 'out' ? 'outHalfScanVideo' : 'inHalfScanVideo'; const canvasId = mode === 'out' ? 'outHalfScanCanvas' : 'inHalfScanCanvas'; const containerId = mode === 'out' ? 'outFormContainer' : 'inFormContainer'; const panel = document.getElementById(panelId); const video = document.getElementById(videoId); const canvas = document.getElementById(canvasId); panel.classList.add('show'); document.getElementById(containerId).classList.add('shift-down'); try { halfScanStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment', width: { ideal: 640 }, height: { ideal: 480 }, focusMode: { ideal: 'continuous' } } }); video.srcObject = halfScanStream; await video.play(); const videoTrack = halfScanStream.getVideoTracks()[0]; if (videoTrack && videoTrack.getCapabilities && videoTrack.getCapabilities().zoom) { try { await videoTrack.applyConstraints({ advanced: [{ zoom: 1 }] }); } catch(e) {} } halfScanning = true; function frame() { if (!halfScanning) return; if (video.readyState >= 2) { let w = video.videoWidth, h = video.videoHeight; if (w && h) { canvas.width = w; canvas.height = h; const ctx = canvas.getContext('2d', { willReadFrequently: true }); ctx.drawImage(video, 0, 0, w, h); const imgData = ctx.getImageData(0, 0, w, h); const code = jsQR(imgData.data, w, h, { inversionAttempts: 'dontInvert' }); if (code && code.data) { handleHalfScanResult(code.data, mode); const isContinuous = mode === 'out' ? outContinuous : inContinuous; if (!isContinuous) stopHalfScan(); return; } } } halfScanAnimId = requestAnimationFrame(frame); } halfScanAnimId = requestAnimationFrame(frame); } catch (e) { toast('❌ 摄像头启动失败', 'error'); logError('startHalfScan', e.message); stopHalfScan(); } }
+    async function startHalfScan(mode) { if (halfScanStream) await stopHalfScan(); halfScanMode = mode; const panelId = mode === 'out' ? 'outHalfScanPanel' : 'inHalfScanPanel'; const videoId = mode === 'out' ? 'outHalfScanVideo' : 'inHalfScanVideo'; const canvasId = mode === 'out' ? 'outHalfScanCanvas' : 'inHalfScanCanvas'; const containerId = mode === 'out' ? 'outFormContainer' : 'inFormContainer'; const panel = document.getElementById(panelId); const video = document.getElementById(videoId); const canvas = document.getElementById(canvasId); panel.classList.add('show'); document.getElementById(containerId).classList.add('shift-down'); try { halfScanStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment', width: { ideal: 640 }, height: { ideal: 480 }, focusMode: { ideal: 'continuous' } } }); video.srcObject = halfScanStream; await video.play(); halfScanning = true; function frame() { if (!halfScanning) return; if (video.readyState >= 2) { let w = video.videoWidth, h = video.videoHeight; if (w && h) { canvas.width = w; canvas.height = h; const ctx = canvas.getContext('2d', { willReadFrequently: true }); ctx.drawImage(video, 0, 0, w, h); const imgData = ctx.getImageData(0, 0, w, h); const code = jsQR(imgData.data, w, h, { inversionAttempts: 'dontInvert' }); if (code && code.data) { handleHalfScanResult(code.data, mode); const isContinuous = mode === 'out' ? outContinuous : inContinuous; if (!isContinuous) stopHalfScan(); return; } } } halfScanAnimId = requestAnimationFrame(frame); } halfScanAnimId = requestAnimationFrame(frame); } catch (e) { toast('❌ 摄像头启动失败', 'error'); logError('startHalfScan', e.message); stopHalfScan(); } }
     async function stopHalfScan() { halfScanning = false; if (halfScanAnimId) { cancelAnimationFrame(halfScanAnimId); halfScanAnimId = null; } if (halfScanStream) { halfScanStream.getTracks().forEach(t => t.stop()); halfScanStream = null; } document.getElementById('outHalfScanPanel')?.classList.remove('show'); document.getElementById('inHalfScanPanel')?.classList.remove('show'); document.getElementById('outFormContainer')?.classList.remove('shift-down'); document.getElementById('inFormContainer')?.classList.remove('shift-down'); }
     function handleHalfScanResult(data, mode) { const parsed = parseSmart(data); let part = parsed.part; if (part && part.length > 1) part = part.substring(1); if (!part) return toast('未识别到料号', 'error'); const inputId = mode === 'out' ? 'outMaterialInput' : 'inMaterialInput'; const hiddenId = mode === 'out' ? 'outMaterialId' : 'inMaterialId'; document.getElementById(inputId).value = part; document.getElementById(hiddenId).value = part; const mat = materials.find(m => m.id === part); if (mat) { if (mode === 'out') onMaterialSelected(mat, 'out'); else onMaterialSelected(mat, 'in'); } toast(`已识别料号: ${part}`, 'success'); }
     document.getElementById('outContinuousSwitch').addEventListener('click', function() { outContinuous = !outContinuous; this.classList.toggle('on', outContinuous); toast(outContinuous ? '出库连续扫码已开启' : '出库单次扫码', 'info'); });
@@ -1275,6 +1355,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         countSpan.textContent=total>MAX_STOCK_DISPLAY?`${MAX_STOCK_DISPLAY}+ (${source})`:`${total} (${source})`;
     }
     document.getElementById('stockSearch').addEventListener('input',function(){clearTimeout(stockSearchTimer);stockSearchTimer=setTimeout(()=>renderStock(this.value),300);});
+
     document.querySelectorAll('#page-report .tab-btn').forEach(btn=>{btn.addEventListener('click',function(){const tabName=this.dataset.tab;document.querySelectorAll('#page-report .tab-btn').forEach(b=>b.classList.remove('active'));this.classList.add('active');document.querySelectorAll('#page-report .report-tab-content').forEach(c=>c.classList.remove('active'));const target = document.getElementById(tabName); target.classList.add('active'); if(tabName==='tab-out'){renderOutReport();}else{autoRefreshInReport();}});});
 
     function renderOutReport() {
@@ -1364,8 +1445,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             function closeAllLists(){dropdown.style.display='none';currentFocus=-1;}
             document.addEventListener('click',function(e){if(e.target!==input) closeAllLists();});
         });
-    }
-    function onMaterialSelected(mat, type){
+    }    function onMaterialSelected(mat, type){
         const mpnOptions = materials.filter(m => m.id === mat.id).map(m => m.mpn);
         const mpnSel = document.getElementById(type==='out'?'outMpn':'inMpn');
         mpnSel.innerHTML = ''; mpnOptions.forEach(mpn => { const opt = document.createElement('option'); opt.value = mpn; opt.textContent = mpn; mpnSel.appendChild(opt); });
@@ -1642,7 +1722,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 if (part && location) toUpsert.push({ part, location, responsible });
             }
             if (toUpsert.length === 0) { setLoading(this, false); return toast('无有效数据', 'error'); }
-            const { error } = await supabase.from('locations').upsert(toUpsert, { onConflict: 'part' });
+            const { error } = await supabase.rpc('upsert_locations_batch', { p_data: toUpsert });
             setLoading(this, false);
             if (error) { toast('上传失败: ' + error.message, 'error'); logError('uploadLocationExcelBtn', error.message); return; }
             toast(`成功导入 ${toUpsert.length} 条储位数据`, 'success');
@@ -1683,10 +1763,239 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     });
 
+    // ==================== BOM 专属逻辑 (数据隔离、联想、卡片渲染、进度条与自动保存) ====================
+    // 1. BOM 页面 Tab 切换
+    document.querySelectorAll('#locationModeTabs .tab-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            document.querySelectorAll('#locationModeTabs .tab-btn').forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            document.querySelectorAll('#page-location .report-tab-content').forEach(c => c.classList.remove('active'));
+            const targetId = this.dataset.mode === 'loc' ? 'loc-mode-loc' : 'loc-mode-bom';
+            document.getElementById(targetId).classList.add('active');
+            if (this.dataset.mode === 'bom') loadBomData();
+        });
+    });
+
+    // 2. 加载 BOM 联想词 (轻量级，仅加载去重机种号与料号)
+    async function loadBomData() {
+        if (!currentUser) return;
+        const cacheKey = 'wms_bom_dict_cache';
+        const cacheTimeKey = 'wms_bom_dict_cache_time';
+        const now = new Date().getTime();
+        const cacheDuration = 1800000;
+        const cachedTime = localStorage.getItem(cacheTimeKey);
+        const cachedData = localStorage.getItem(cacheKey);
+        if (cachedTime && cachedData && (now - parseInt(cachedTime) < cacheDuration)) {
+            try { const dict = JSON.parse(cachedData); window._bomModels = dict.models || []; window._bomParts = dict.parts || []; return; } catch(e){}
+        }
+        const [modelsRes, partsRes] = await Promise.all([
+            supabase.from('boms').select('model').not('model', 'is', null).not('model', 'eq', ''),
+            supabase.from('boms').select('part').not('part', 'is', null).not('part', 'eq', '')
+        ]);
+        let models = [], parts = [];
+        if (!modelsRes.error && modelsRes.data) { models = [...new Set(modelsRes.data.map(item => item.model))].filter(Boolean); }
+        if (!partsRes.error && partsRes.data) { parts = [...new Set(partsRes.data.map(item => item.part))].filter(Boolean); }
+        window._bomModels = models; window._bomParts = parts;
+        localStorage.setItem(cacheKey, JSON.stringify({ models, parts }));
+        localStorage.setItem(cacheTimeKey, String(now));
+    }
+
+    // 3. BOM 双输入框联想功能 (基于本地词典瞬间响应)
+    function setupBomAutocompletes() {
+        const modelInput = document.getElementById('bomModelInput');
+        const partInput = document.getElementById('bomPartInput');
+        const modelDropdown = document.getElementById('bomModelDropdown');
+        const partDropdown = document.getElementById('bomPartDropdown');
+        function createBomAutocomplete(input, dropdown, dataSourceKey) {
+            let currentFocus = -1;
+            input.addEventListener('input', function() {
+                const val = this.value.trim();
+                dropdown.style.display = 'none'; dropdown.innerHTML = '';
+                if (!val) return;
+                const dict = window[dataSourceKey] || [];
+                const matches = dict.filter(item => item.includes(val));
+                if (matches.length === 0) return;
+                matches.slice(0, 50).forEach((item) => {
+                    const div = document.createElement('div');
+                    div.textContent = item;
+                    div.addEventListener('click', () => { input.value = item; dropdown.style.display = 'none'; renderBomResult(); });
+                    dropdown.appendChild(div);
+                });
+                dropdown.style.display = 'block';
+            });
+            input.addEventListener('keydown', function(e) {
+                let items = dropdown.getElementsByTagName('div');
+                if (e.key === 'ArrowDown') { currentFocus++; addActive(items); }
+                else if (e.key === 'ArrowUp') { currentFocus--; addActive(items); }
+                else if (e.key === 'Enter') { e.preventDefault(); if (currentFocus > -1 && items[currentFocus]) items[currentFocus].click(); }
+            });
+            function addActive(items) { if (!items.length) return; removeActive(items); if (currentFocus >= items.length) currentFocus = 0; if (currentFocus < 0) currentFocus = items.length - 1; items[currentFocus].classList.add('autocomplete-active'); }
+            function removeActive(items) { for (let item of items) item.classList.remove('autocomplete-active'); }
+            document.addEventListener('click', function(e) { if (e.target !== input) dropdown.style.display = 'none'; });
+        }
+        createBomAutocomplete(modelInput, modelDropdown, '_bomModels');
+        createBomAutocomplete(partInput, partDropdown, '_bomParts');
+    }
+
+    // 4. 渲染 BOM 结果 (精准匹配数据库)
+    async function renderBomResult() {
+        const container = document.getElementById('bomResultList');
+        const modelVal = document.getElementById('bomModelInput').value.trim();
+        const partVal = document.getElementById('bomPartInput').value.trim();
+        if (!modelVal && !partVal) {
+            container.innerHTML = '<div class="empty-state"><i class="fas fa-search"></i><p>输入机种号或料号查询 BOM</p></div>';
+            return;
+        }
+        container.innerHTML = '<div class="empty-state"><i class="fas fa-spinner fa-spin"></i><p>查询中...</p></div>';
+        let query = supabase.from('boms').select('*');
+        if (modelVal) query = query.eq('model', modelVal);
+        if (partVal) query = query.eq('part', partVal);
+        const { data, error } = await query;
+        if (error) {
+            container.innerHTML = `<div class="empty-state"><i class="fas fa-exclamation-triangle" style="color:#ef4444;"></i><p>查询失败: ${error.message}</p></div>`;
+            return;
+        }
+        if (!data || data.length === 0) {
+            container.innerHTML = '<div class="empty-state"><i class="fas fa-search"></i><p>未找到匹配的 BOM 记录</p></div>';
+            return;
+        }
+        container.innerHTML = data.map(b => `
+            <div class="bom-card" data-id="${b.id}">
+                <div class="bom-top-row">
+                    <span><i class="fas fa-file-alt"></i> <span class="bom-wo">${b.wo || '-'}</span></span>
+                    <span><i class="fas fa-microchip"></i> <span class="bom-model">${b.model || '-'}</span></span>
+                </div>
+                <div class="bom-mid-row">
+                    <i class="fas fa-barcode"></i> <span class="bom-part-editable" data-id="${b.id}">${b.part}</span>
+                </div>
+                <div class="bom-bottom-row">
+                    <span><i class="fas fa-building"></i> 厂商: <span class="bom-manufacturer-editable" data-id="${b.id}">${b.manufacturer || '-'}</span></span>
+                    <span><i class="fas fa-tag"></i> MPN: <span class="bom-mpn-editable" data-id="${b.id}">${b.mpn}</span></span>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    document.getElementById('bomSearchBtn').addEventListener('click', renderBomResult);
+    document.getElementById('bomClearBtn').addEventListener('click', () => {
+        document.getElementById('bomModelInput').value = '';
+        document.getElementById('bomPartInput').value = '';
+        document.getElementById('bomResultList').innerHTML = '<div class="empty-state"><i class="fas fa-search"></i><p>输入机种号或料号查询 BOM</p></div>';
+    });
+
+    // 5. BOM 卡片内联编辑自动保存（失焦自动保存）
+    document.getElementById('bomResultList').addEventListener('click', function(e) {
+        const target = e.target;
+        if (!target.classList.contains('bom-part-editable') && 
+            !target.classList.contains('bom-mpn-editable') && 
+            !target.classList.contains('bom-manufacturer-editable')) return;
+        if (target.tagName === 'INPUT') return;
+        const id = parseInt(target.dataset.id);
+        const currentText = target.textContent.trim() === '-' ? '' : target.textContent.trim();
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.value = currentText;
+        input.classList.add('form-control', 'inline-edit-input');
+        if (target.classList.contains('bom-part-editable')) { input.style.width = '150px'; input.style.fontSize = '15px'; } else { input.style.width = '120px'; input.style.fontSize = '13px'; }
+        target.parentNode.replaceChild(input, target);
+        input.focus(); input.select();
+        const saveToCloud = async (newVal) => {
+            if (newVal === currentText) return;
+            try {
+                let updateData = {};
+                if (target.classList.contains('bom-part-editable')) updateData = { part: newVal };
+                else if (target.classList.contains('bom-mpn-editable')) updateData = { mpn: newVal };
+                else if (target.classList.contains('bom-manufacturer-editable')) updateData = { manufacturer: newVal };
+                const { error } = await supabase.from('boms').update(updateData).eq('id', id);
+                if (error) throw error;
+                toast('✅ 已更新', 'success');
+                await loadBomData(); renderBomResult();
+            } catch (e) { toast(`❌ 保存失败: ${e.message}`, 'error'); logError('bom_field_edit_failed', e.message); }
+        };
+        const finishEdit = async () => {
+            const newVal = input.value.trim();
+            const span = document.createElement('span'); span.className = target.className; span.dataset.id = id; span.textContent = newVal || '-';
+            input.parentNode.replaceChild(span, input);
+            await saveToCloud(newVal);
+        };
+        input.addEventListener('blur', finishEdit);
+        input.addEventListener('keydown', async (e) => {
+            if (e.key === 'Enter') { input.removeEventListener('blur', finishEdit); await finishEdit(); } else if (e.key === 'Escape') { input.value = currentText; input.blur(); }
+        });
+    });
+
+    // 6. BOM 上传功能 (带分片进度条，防重复报错)
+    document.getElementById('uploadBomExcelBtn').addEventListener('click', async function() {
+        if (!currentUser || !currentUser.id) { toast('请先登录', 'error'); return; }
+        const file = document.getElementById('bomExcelFile').files[0];
+        if (!file) { toast('请选择Excel文件', 'error'); return; }
+        setLoading(this, true);
+        readExcel(file, async (err, rows) => {
+            if (err) { setLoading(this, false); toast('解析失败: ' + err.message, 'error'); return; }
+            if (!rows || rows.length < 2) { setLoading(this, false); toast('表格数据不足，请检查表头或内容', 'error'); return; }
+            const headers = rows[0].map(h => String(h).trim());
+            const idxWo = headers.findIndex(h => h.includes('工单'));
+            const idxModel = headers.findIndex(h => h.includes('机种'));
+            const idxId = headers.findIndex(h => h.includes('料号'));
+            const idxMan = headers.findIndex(h => h.includes('厂商'));
+            const idxMpn = headers.findIndex(h => h.includes('MPN'));
+            if (idxId === -1 || idxMpn === -1) { setLoading(this, false); toast('表格必须包含 "料号" 和 "MPN" 两列', 'error'); return; }
+            const toUpsert = [];
+            for (let i = 1; i < rows.length; i++) {
+                const row = rows[i];
+                const id = String(row[idxId] || '').trim();
+                const mpn = String(row[idxMpn] || '').trim();
+                if (!id || !mpn) continue;
+                const wo = idxWo > -1 ? String(row[idxWo] || '').trim() : '';
+                const model = idxModel > -1 ? String(row[idxModel] || '').trim() : '';
+                const manufacturer = idxMan > -1 ? String(row[idxMan] || '').trim() : '';
+                toUpsert.push({ wo, model, part: id, manufacturer, mpn });
+            }
+            if (toUpsert.length === 0) { setLoading(this, false); toast('没有有效的BOM数据，请确认列名是否正确', 'error'); return; }
+            
+            // 进度条 UI 初始化
+            const progressBg = document.getElementById('bomProgressBg');
+            const progressFill = document.getElementById('bomProgressFill');
+            const progressText = document.getElementById('bomProgressText');
+            progressBg.style.display = 'block'; progressFill.style.width = '0%';
+            progressText.style.display = 'block'; progressText.className = 'bom-progress-text';
+            
+            // 分批处理防重复报错 (每次 200 条)
+            const batchSize = 200; let uploadedCount = 0;
+            for (let i = 0; i < toUpsert.length; i += batchSize) {
+                const batch = toUpsert.slice(i, i + batchSize);
+                const { error } = await supabase.rpc('upsert_boms_batch', { p_data: batch });
+                if (error) { 
+                    setLoading(this, false); 
+                    progressText.className = 'bom-progress-text error';
+                    progressText.innerHTML = `❌ 上传失败: ${error.message}`;
+                    toast('上传失败: ' + error.message, 'error'); logError('uploadBomExcelBtn', error.message); return; 
+                }
+                uploadedCount += batch.length;
+                const pct = Math.round((uploadedCount / toUpsert.length) * 100);
+                progressFill.style.width = pct + '%';
+                progressText.textContent = `⏳ 正在上传: ${uploadedCount} / ${toUpsert.length} 条 (${pct}%)`;
+                // 每批交个小停顿，给 UI 渲染时间和数据库喘息
+                await new Promise(r => setTimeout(r, 50));
+            }
+            
+            setLoading(this, false);
+            progressBg.style.display = 'none';
+            progressText.className = 'bom-progress-text success';
+            progressText.innerHTML = `✅ 成功导入/更新 ${toUpsert.length} 条 BOM 数据`;
+            toast(`✅ 成功导入/更新 ${toUpsert.length} 条 BOM 数据`, 'success');
+            const statusDiv = document.getElementById('bomUploadStatus');
+            statusDiv.style.display = 'block'; statusDiv.textContent = `已导入/更新 ${toUpsert.length} 条`; statusDiv.style.color = '#166534';
+            await loadBomData();
+        });
+    });
+
     document.querySelectorAll('#countListModeTabs .tab-btn').forEach(btn => { btn.addEventListener('click', function() { document.querySelectorAll('#countListModeTabs .tab-btn').forEach(b => b.classList.remove('active')); this.classList.add('active'); renderCountListByMode(this.dataset.mode); }); });
 
     await loadData();
+    await loadBomData(); // 初始化 BOM 联想词缓存
     setupAutocompletes();
+    setupBomAutocompletes();
     bindManualButtons();
     if(currentUser){ showPage('home'); renderStock(); updateDaily(); updateMarquee(); updateMine(); loadCustomStyles(); loadProfileBg(); updateShelfUI(); }
     else showPage('login');
