@@ -1763,7 +1763,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     });
 
-    // ==================== BOM 专属逻辑 (数据隔离、联想、卡片渲染、进度条与自动保存) ====================
+    // ==================== BOM 专属逻辑 ====================
     // 1. BOM 页面 Tab 切换
     document.querySelectorAll('#locationModeTabs .tab-btn').forEach(btn => {
         btn.addEventListener('click', function() {
@@ -1776,7 +1776,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     });
 
-    // 2. 加载 BOM 联想词 (轻量级，仅加载去重机种号与料号)
+    // 2. 加载 BOM 联想词 (优化：去除首尾空格，统一大写)
     async function loadBomData() {
         if (!currentUser) return;
         const cacheKey = 'wms_bom_dict_cache';
@@ -1793,14 +1793,19 @@ document.addEventListener('DOMContentLoaded', async () => {
             supabase.from('boms').select('part').not('part', 'is', null).not('part', 'eq', '')
         ]);
         let models = [], parts = [];
-        if (!modelsRes.error && modelsRes.data) { models = [...new Set(modelsRes.data.map(item => item.model))].filter(Boolean); }
-        if (!partsRes.error && partsRes.data) { parts = [...new Set(partsRes.data.map(item => item.part))].filter(Boolean); }
+        if (!modelsRes.error && modelsRes.data) { 
+            models = [...new Set(modelsRes.data.map(item => String(item.model).trim()))].filter(Boolean); 
+        }
+        if (!partsRes.error && partsRes.data) { 
+            parts = [...new Set(partsRes.data.map(item => String(item.part).trim()))].filter(Boolean); 
+        }
         window._bomModels = models; window._bomParts = parts;
         localStorage.setItem(cacheKey, JSON.stringify({ models, parts }));
         localStorage.setItem(cacheTimeKey, String(now));
+        toast(`✅ 已加载 ${models.length} 个机种号, ${parts.length} 个料号`, 'info');
     }
 
-    // 3. BOM 双输入框联想功能 (基于本地词典瞬间响应)
+    // 3. BOM 双输入框联想功能 (终极优化：机种号优先匹配结尾/开头，料号严格匹配后4位)
     function setupBomAutocompletes() {
         const modelInput = document.getElementById('bomModelInput');
         const partInput = document.getElementById('bomPartInput');
@@ -1813,12 +1818,43 @@ document.addEventListener('DOMContentLoaded', async () => {
                 dropdown.style.display = 'none'; dropdown.innerHTML = '';
                 if (!val) return;
                 const dict = window[dataSourceKey] || [];
-                const matches = dict.filter(item => item.includes(val));
+                const upperVal = val.toUpperCase();
+                let matches = [];
+                
+                if (dataSourceKey === '_bomParts') {
+                    // 料号：严格匹配后4位 (endsWith)
+                    matches = dict.filter(item => item.toUpperCase().endsWith(upperVal));
+                } else {
+                    // 机种号：优先匹配结尾，其次开头，最后包含 (endsWith/startsWith/includes)
+                    matches = dict.filter(item => {
+                        const upperItem = item.toUpperCase();
+                        return upperItem.endsWith(upperVal) || upperItem.startsWith(upperVal) || upperItem.includes(upperVal);
+                    });
+                    // 排序：结尾匹配的排在最前，开头匹配的排第二
+                    matches.sort((a, b) => {
+                        const upperA = a.toUpperCase();
+                        const upperB = b.toUpperCase();
+                        const aEnds = upperA.endsWith(upperVal);
+                        const bEnds = upperB.endsWith(upperVal);
+                        if (aEnds && !bEnds) return -1;
+                        if (!aEnds && bEnds) return 1;
+                        const aStarts = upperA.startsWith(upperVal);
+                        const bStarts = upperB.startsWith(upperVal);
+                        if (aStarts && !bStarts) return -1;
+                        if (!aStarts && bStarts) return 1;
+                        return a.localeCompare(b);
+                    });
+                }
+
                 if (matches.length === 0) return;
                 matches.slice(0, 50).forEach((item) => {
                     const div = document.createElement('div');
                     div.textContent = item;
-                    div.addEventListener('click', () => { input.value = item; dropdown.style.display = 'none'; renderBomResult(); });
+                    div.addEventListener('click', () => { 
+                        input.value = item; 
+                        dropdown.style.display = 'none'; 
+                        renderBomResult(); 
+                    });
                     dropdown.appendChild(div);
                 });
                 dropdown.style.display = 'block';
@@ -1953,14 +1989,12 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
             if (toUpsert.length === 0) { setLoading(this, false); toast('没有有效的BOM数据，请确认列名是否正确', 'error'); return; }
             
-            // 进度条 UI 初始化
             const progressBg = document.getElementById('bomProgressBg');
             const progressFill = document.getElementById('bomProgressFill');
             const progressText = document.getElementById('bomProgressText');
             progressBg.style.display = 'block'; progressFill.style.width = '0%';
             progressText.style.display = 'block'; progressText.className = 'bom-progress-text';
             
-            // 分批处理防重复报错 (每次 200 条)
             const batchSize = 200; let uploadedCount = 0;
             for (let i = 0; i < toUpsert.length; i += batchSize) {
                 const batch = toUpsert.slice(i, i + batchSize);
@@ -1975,7 +2009,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                 const pct = Math.round((uploadedCount / toUpsert.length) * 100);
                 progressFill.style.width = pct + '%';
                 progressText.textContent = `⏳ 正在上传: ${uploadedCount} / ${toUpsert.length} 条 (${pct}%)`;
-                // 每批交个小停顿，给 UI 渲染时间和数据库喘息
                 await new Promise(r => setTimeout(r, 50));
             }
             
@@ -1993,7 +2026,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.querySelectorAll('#countListModeTabs .tab-btn').forEach(btn => { btn.addEventListener('click', function() { document.querySelectorAll('#countListModeTabs .tab-btn').forEach(b => b.classList.remove('active')); this.classList.add('active'); renderCountListByMode(this.dataset.mode); }); });
 
     await loadData();
-    await loadBomData(); // 初始化 BOM 联想词缓存
+    await loadBomData();
     setupAutocompletes();
     setupBomAutocompletes();
     bindManualButtons();
