@@ -106,7 +106,8 @@
         .my-info-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-top:16px}
         .my-info-item{background:#fff;border-radius:14px;padding:14px 6px;text-align:center;border:1px solid #f1f5f9}
         .my-info-item .num{font-size:22px;font-weight:700;color:#1e293b}
-        .my-info-item .label{font-size:12px;color:#94a3b8;margin-top:2px}        .custom-msg-item{display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:#fff;border-radius:10px;margin-bottom:6px;border:1px solid #f1f5f9}
+        .my-info-item .label{font-size:12px;color:#94a3b8;margin-top:2px}
+        .custom-msg-item{display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:#fff;border-radius:10px;margin-bottom:6px;border:1px solid #f1f5f9}
         .btn-remove{color:#ef4444;cursor:pointer;padding:4px 8px;border-radius:6px;background:none;border:none;font-size:14px}
         .upload-card{background:#f8fafc;border-radius:16px;padding:16px;margin-bottom:16px;border:1px solid #e9eef3}
         .file-input-wrap{display:flex;align-items:center;gap:8px}
@@ -226,7 +227,6 @@
         .bom-progress-fill{height:100%;width:0%;background:#3b82f6;border-radius:6px;transition:width 0.3s ease}
         .bom-progress-text{font-size:13px;font-weight:500;color:#1e293b;margin-top:6px;display:none}
         .bom-progress-text.success{color:#16a34a}.bom-progress-text.error{color:#dc2626}
-        /* 半屏扫码面板 - 从上方滑出 */
         .scan-half-panel{position:fixed;top:0;left:50%;transform:translate(-50%,-100%);width:100%;max-width:480px;height:50vh;background:#000;z-index:200;border-radius:0 0 20px 20px;display:flex;flex-direction:column;transition:transform 0.35s ease;box-shadow:0 10px 30px rgba(0,0,0,0.3)}
         .scan-half-panel.show{transform:translate(-50%,0)}
         .scan-half-header{display:flex;align-items:center;justify-content:flex-end;padding:12px 16px 8px;color:#fff}
@@ -236,17 +236,16 @@
         .scan-half-body canvas{display:none}
         .scan-half-footer{display:flex;justify-content:center;padding:12px;background:#000}
         .shift-down{margin-top:50vh;transition:margin-top 0.35s ease}
-        /* 折叠面板 */
         .collapsible-body{display:none}
         .collapsible-body.show{display:block}
         .collapsible-header .fa-chevron-down{transition:transform 0.3s ease}
         .collapsible-header.expanded .fa-chevron-down{transform:rotate(180deg)}
         .collapsible-header{cursor:pointer;display:flex;align-items:center;gap:8px;font-weight:600;font-size:14px;color:#1e293b;padding:8px 0}
-        /* 滚动预警设置 */
         .checkbox-label{display:flex;align-items:center;gap:8px;font-size:14px;color:#1e293b;padding:6px 0;cursor:pointer;line-height:1.5}
         .checkbox-label input[type="checkbox"]{width:16px;height:16px;margin:0;flex-shrink:0}
     </style>
-</head> <body>
+</head>
+<body>
 <div id="app">
     <div id="settingsBtn" class="settings-btn"><i class="fas fa-cog"></i></div>
     <div id="settingsOverlay" class="settings-overlay"></div>
@@ -261,10 +260,10 @@
             <div class="setting-item"><span class="setting-label">提示音</span><div class="switch-track" id="soundSwitchTrack"><div class="switch-thumb"></div></div></div>
             <div class="setting-item"><span class="setting-label">货架名称</span><button class="btn btn-outline btn-sm" id="editShelfNamesBtn"><i class="fas fa-pen"></i> 编辑</button></div>
             <div class="setting-item"><span class="setting-label">储位分类</span><button class="btn btn-outline btn-sm" id="editShelfRangesBtn"><i class="fas fa-pen"></i> 编辑</button></div>
+            <div class="setting-item"><span class="setting-label">字体大小</span><div class="setting-value"><button class="btn btn-outline btn-sm" id="fontSizeDown" style="width:36px;height:36px;padding:0;">−</button><span id="fontSizeValue" style="margin:0 10px;font-weight:600;min-width:36px;text-align:center;">100%</span><button class="btn btn-outline btn-sm" id="fontSizeUp" style="width:36px;height:36px;padding:0;">+</button></div></div>
             <button id="systemMaintenanceBtn" class="btn btn-outline btn-block" style="margin-top:8px;"><i class="fas fa-tools"></i> 系统维护</button>
         </div>
-    </div>
-    <div class="page-container" id="pageContainer">
+    </div>    <div class="page-container" id="pageContainer">
         <div id="page-login" class="page active">
             <div class="auth-wrap"><div class="auth-card"><h2><i class="fas fa-warehouse" style="color:#3b82f6;"></i> 仓库管理</h2><div class="form-group"><label>账号</label><input type="text" class="form-control" id="loginUsername" placeholder="请输入账号"></div><div class="form-group"><label>密码</label><input type="password" class="form-control" id="loginPassword" placeholder="请输入密码"></div><button class="btn btn-primary" id="loginBtn"><i class="fas fa-sign-in-alt"></i> 登录</button><div class="auth-link">还没有账号？<a id="goRegisterLink">立即注册</a></div></div></div>
         </div>
@@ -412,8 +411,7 @@
             <div class="form-row" style="margin-bottom:12px;"><div class="form-group"><label>日期</label><input type="date" class="form-control date-sm" id="countListDateInput"></div><div class="form-group"><label>&nbsp;</label><button class="btn btn-primary btn-block" id="refreshCountListBtn"><i class="fas fa-sync-alt"></i> 刷新</button></div></div>
             <div class="tab-nav" id="countListModeTabs"><button class="tab-btn active" data-mode="part">按料号汇总</button><button class="tab-btn" data-mode="mpn">按 MPN 汇总</button></div>
             <div class="table-wrap"><table><thead id="countListTableHead"><tr><th>料号</th><th>盘点数量</th><th>系统数量</th><th>差异</th></tr></thead><tbody id="countListBody"><tr><td colspan="4" class="text-center text-muted">点击刷新查看数据</td></tr></tbody></table></div>
-        </div>
-        <div id="page-stock" class="page">
+        </div>        <div id="page-stock" class="page">
             <div class="section-title"><i class="fas fa-boxes" style="color:#3b82f6;"></i> 库存</div>
             <div class="form-group" style="margin-bottom:12px;"><input type="text" class="form-control" id="stockSearch" placeholder="🔍 搜索料号 / MPN ..."></div>
             <div class="table-wrap"><table><thead><tr><th>料号</th><th>MPN</th><th>库存</th></tr></thead><tbody id="stockBody"></tbody></table></div>
@@ -424,7 +422,8 @@
             <div class="tab-nav"><button class="tab-btn active" data-tab="tab-out">出库</button><button class="tab-btn" data-tab="tab-in">入库</button></div>
             <div class="report-tab-content active" id="tab-out"><div class="form-row" style="margin-bottom:12px;"><div class="form-group"><label>日期</label><input type="date" class="form-control date-sm" id="reportOutDate"></div><div class="form-group"><label>仓码</label><select class="form-control" id="reportOutCangma"><option value="">全部</option><option value="B8SA">B8SA</option><option value="B909">B909</option><option value="B907">B907</option></select></div></div><div class="table-wrap" style="margin-top:12px;"><table><thead><tr><th>料号</th><th>MPN</th><th>出库总数</th><th>操作</th></tr></thead><tbody id="outReportBody"><tr><td colspan="4" class="text-center text-muted">请选择日期查询</td></tr></tbody></table></div></div>
             <div class="report-tab-content" id="tab-in"><div class="form-group"><label>料号（选填）</label><div class="autocomplete-wrapper"><input type="text" class="form-control" id="reportInMaterialInput" placeholder="输入料号任意位数搜索" autocomplete="off"><input type="hidden" id="reportInMaterialId"><div class="autocomplete-dropdown" id="reportInMaterialDropdown"></div></div></div><button class="btn btn-primary btn-inline" id="queryInBtn"><i class="fas fa-search"></i> 查询</button><div class="table-wrap" style="margin-top:12px;"><table><thead><tr><th>料号</th><th>MPN</th><th>入库总数</th><th>日期</th><th>操作</th></tr></thead><tbody id="inReportBody"><tr><td colspan="5" class="text-center text-muted">查询当天入库记录</td></tr></tbody></table></div></div>
-        </div>        <div id="page-location" class="page">
+        </div>
+        <div id="page-location" class="page">
             <div class="section-title"><i class="fas fa-search" style="color:#0ea5e9;"></i> 查找</div>
             <div class="tab-nav" id="locationModeTabs">
                 <button class="tab-btn active" data-mode="loc">储位查找</button>
@@ -673,6 +672,21 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (error) throw error;
     }
 
+    // ==================== 字体大小调节 ====================
+    let currentFontSize = parseInt(localStorage.getItem('wms_font_size') || '100');
+    function applyFontSize(size) {
+        document.documentElement.style.fontSize = size + '%';
+        document.getElementById('fontSizeValue').textContent = size + '%';
+        localStorage.setItem('wms_font_size', size);
+    }
+    applyFontSize(currentFontSize);
+    document.getElementById('fontSizeDown').addEventListener('click', () => {
+        if (currentFontSize > 70) { currentFontSize -= 10; applyFontSize(currentFontSize); }
+    });
+    document.getElementById('fontSizeUp').addEventListener('click', () => {
+        if (currentFontSize < 150) { currentFontSize += 10; applyFontSize(currentFontSize); }
+    });
+
     // ==================== 设置面板初始化 ====================
     const cameraPreviewHeightRange = document.getElementById('cameraPreviewHeightRange');
     if (cameraPreviewHeightRange) {
@@ -772,23 +786,36 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // ==================== 数据加载 ====================
     async function loadAlertConfig() {
-        if (!currentUser) { hiddenAlerts = new Set(JSON.parse(localStorage.getItem('wms_hidden_alerts')||'[]')); return; }
-        const { data } = await supabase.from('messages').select('text').eq('user_id', currentUser.id).like('text', '__alert_config__%').maybeSingle();
-        if (data && data.text) {
-            try { const config = JSON.parse(data.text.replace('__alert_config__', '')); hiddenAlerts = new Set(config.hidden || []); } catch { hiddenAlerts = new Set(); }
+        if (!currentUser) { 
+            hiddenAlerts = new Set(JSON.parse(localStorage.getItem('wms_hidden_alerts')||'[]')); 
+            return; 
+        }
+        const teamId = userTeamId || 1;
+        const { data } = await supabase.from('team_settings')
+            .select('value')
+            .eq('team_id', teamId)
+            .eq('key', 'alert_hidden')
+            .maybeSingle();
+        if (data && data.value) {
+            try { hiddenAlerts = new Set(data.value.hidden || []); } catch { hiddenAlerts = new Set(); }
         } else {
-            hiddenAlerts = new Set(JSON.parse(localStorage.getItem('wms_hidden_alerts')||'[]'));
+            hiddenAlerts = new Set();
         }
     }
 
     async function saveAlertConfig() {
+        const teamId = userTeamId || 1;
         const config = { hidden: [...hiddenAlerts] };
-        const configStr = '__alert_config__' + JSON.stringify(config);
-        if (!currentUser) { localStorage.setItem('wms_hidden_alerts', JSON.stringify([...hiddenAlerts])); return; }
+        if (!currentUser) { 
+            localStorage.setItem('wms_hidden_alerts', JSON.stringify([...hiddenAlerts])); 
+            return; 
+        }
         try {
-            await supabase.from('messages').delete().eq('user_id', currentUser.id).like('text', '__alert_config__%');
-            await supabase.from('messages').insert({ text: configStr, user_id: currentUser.id, team_id: userTeamId || 1 });
-            localStorage.setItem('wms_hidden_alerts', JSON.stringify([...hiddenAlerts]));
+            await supabase.from('team_settings').upsert({
+                team_id: teamId,
+                key: 'alert_hidden',
+                value: config
+            }, { onConflict: 'team_id, key' });
         } catch(e) {}
     }
 
@@ -1053,9 +1080,15 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (!data || data.length === 0) { container.innerHTML = '<div class="empty-state"><i class="fas fa-search"></i><p>未找到匹配的 BOM 记录</p></div>'; return; }
         container.innerHTML = data.map(b =>
             '<div class="bom-card" data-id="'+b.id+'">'+
-            '<div class="bom-top-row"><span><i class="fas fa-file-alt"></i> '+ (b.wo || '-') +'</span><span><i class="fas fa-microchip"></i> '+ (b.model || '-') +'</span></div>'+
-            '<div class="bom-mid-row"><i class="fas fa-barcode"></i> <span class="bom-part-editable" data-id="'+b.id+'">'+b.part+'</span></div>'+
-            '<div class="bom-bottom-row"><span><i class="fas fa-building"></i> 厂商: <span class="bom-manufacturer-editable" data-id="'+b.id+'">'+ (b.manufacturer || '-') +'</span></span><span><i class="fas fa-tag"></i> MPN: <span class="bom-mpn-editable" data-id="'+b.id+'">'+b.mpn+'</span></span></div>'+
+            '<div class="bom-top-row">'+
+                '<span><i class="fas fa-file-alt"></i> <span style="color:#2563eb;font-weight:700;">'+(b.wo || '-')+'</span></span>'+
+                '<span><i class="fas fa-microchip"></i> <span style="color:#7c3aed;font-weight:700;">'+(b.model || '-')+'</span></span>'+
+            '</div>'+
+            '<div class="bom-mid-row"><i class="fas fa-barcode"></i> <span class="bom-part-editable" data-id="'+b.id+'" style="color:#0f172a;font-weight:700;">'+b.part+'</span></div>'+
+            '<div class="bom-bottom-row">'+
+                '<span><i class="fas fa-building"></i> 厂商: <span class="bom-manufacturer-editable" data-id="'+b.id+'" style="color:#dc2626;font-weight:600;">'+(b.manufacturer || '-')+'</span></span>'+
+                '<span><i class="fas fa-tag"></i> MPN: <span class="bom-mpn-editable" data-id="'+b.id+'" style="color:#059669;font-weight:600;">'+b.mpn+'</span></span>'+
+            '</div>'+
             '</div>'
         ).join('');
     }
@@ -1302,7 +1335,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             document.getElementById('manualCountQty').value = ''; document.getElementById('manualCountQty').focus();
             if (manualPartList.length > 0) { manualPartIndex++; manualShelfProgress[currentShelf] = manualPartIndex; fillNextPart(); }
             else { document.getElementById('manualCountPart').value = ''; document.getElementById('manualCountMpn').value = ''; }
-            if (countViewDate === today) { const { data: planData } = await supabase.from('scan_records').select('part, mpn, location').eq('user_id', Number(currentUser.id)).eq('team_id', userTeamId || 1).eq('date', today).eq('qty', 0); if (planData) { countPlan = planData.map(d => ({ part: d.part, mpn: d.mpn || '', location: d.location || '' })); countPlanDate = today; } }
+            if (countViewDate === today) { const { data: planData } = await supabase.from('scan_records').select('part, mpn, location').eq('team_id', userTeamId || 1).eq('date', today).eq('qty', 0); if (planData) { countPlan = planData.map(d => ({ part: d.part, mpn: d.mpn || '', location: d.location || '' })); countPlanDate = today; } }
         } finally { btn.disabled = false; btn.innerHTML = '<i class="fas fa-save"></i> 保存盘点'; }
     }
 
@@ -1349,51 +1382,95 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('outForm').addEventListener('submit', async function(e) {
         if (!currentUser || !currentUser.id) return;
         e.preventDefault();
-        const outSubmitBtn = document.getElementById('outSubmitBtn'); if (outSubmitBtn.disabled) return;
+        const outSubmitBtn = document.getElementById('outSubmitBtn'); 
+        if (outSubmitBtn.disabled) return;
         outSubmitBtn.disabled = true;
-        const id = document.getElementById('outMaterialId').value, mpn = document.getElementById('outMpn').value;
-        const cangma = document.getElementById('outCangma').value, qty = parseInt(document.getElementById('outQty').value);
-        if(!id||!mpn||!qty||qty<1) { outSubmitBtn.disabled = false; return toast('请完善信息','error'); }
-        const m = findMaterial(id, mpn);
-        if(!m) { outSubmitBtn.disabled = false; return toast('物料不存在','error'); }
-        if(m.stock < qty) { outSubmitBtn.disabled = false; return toast('库存不足','error'); }
-        m.stock -= qty;
+        const id = document.getElementById('outMaterialId').value, 
+              mpn = document.getElementById('outMpn').value;
+        const cangma = document.getElementById('outCangma').value, 
+              qty = parseInt(document.getElementById('outQty').value);
+        if(!id||!mpn||!qty||qty<1) { 
+            outSubmitBtn.disabled = false; 
+            return toast('请完善信息','error'); 
+        }
         try {
+            const { data: result, error } = await supabase.rpc('decrease_stock', {
+                p_user_id: Number(currentUser.id),
+                p_team_id: userTeamId || 1,
+                p_material_id: id,
+                p_mpn: mpn,
+                p_quantity: qty
+            });
+            if (error) { outSubmitBtn.disabled = false; return toast('出库失败: ' + error.message, 'error'); }
+            if (result === -1) { outSubmitBtn.disabled = false; return toast('物料不存在', 'error'); }
+            if (result === -2) { outSubmitBtn.disabled = false; return toast('库存不足', 'error'); }
+            
             await saveRecordToCloud({ type:'out', materialId:id, mpn, quantity:qty, date: new Date().toISOString().slice(0,10), dest: mpn, note: cangma });
-            await saveMaterialsToCloud();
+            
+            const m = findMaterial(id, mpn);
+            if (m) m.stock = result;
+            
             toast('出库成功：'+id+' '+mpn+' x '+qty, 'success');
-            document.getElementById('outMaterialInput').value = ''; document.getElementById('outMaterialId').value = '';
-            document.getElementById('outMpn').innerHTML = '<option value="">请先选择料号</option>'; document.getElementById('outMpn').disabled = true;
-            document.getElementById('outQty').value = ''; document.getElementById('outStockHint').textContent = '';
+            document.getElementById('outMaterialInput').value = ''; 
+            document.getElementById('outMaterialId').value = '';
+            document.getElementById('outMpn').innerHTML = '<option value="">请先选择料号</option>'; 
+            document.getElementById('outMpn').disabled = true;
+            document.getElementById('outQty').value = ''; 
+            document.getElementById('outStockHint').textContent = '';
             renderStock(); updateDaily(); updateMarquee();
             if (!outContinuous) stopHalfScan();
-        } catch(e) { m.stock += qty; toast('出库失败: ' + e.message, 'error'); }
-        finally { outSubmitBtn.disabled = false; refreshAll(); }
+        } catch(e) { toast('出库失败: ' + e.message, 'error'); } 
+        finally { outSubmitBtn.disabled = false; }
     });
 
     // ==================== 入库 ====================
     document.getElementById('inForm').addEventListener('submit', async function(e) {
         if (!currentUser || !currentUser.id) return;
         e.preventDefault();
-        const inSubmitBtn = document.getElementById('inSubmitBtn'); if (inSubmitBtn.disabled) return;
+        const inSubmitBtn = document.getElementById('inSubmitBtn'); 
+        if (inSubmitBtn.disabled) return;
         inSubmitBtn.disabled = true;
-        const id = document.getElementById('inMaterialId').value, mpn = document.getElementById('inMpn').value;
+        const id = document.getElementById('inMaterialId').value, 
+              mpn = document.getElementById('inMpn').value;
         const qty = parseInt(document.getElementById('inQty').value);
-        if(!id||!mpn||!qty||qty<1) { inSubmitBtn.disabled = false; return toast('请完善信息','error'); }
-        const m = findMaterial(id, mpn);
-        if(!m) { inSubmitBtn.disabled = false; return toast('物料不存在','error'); }
-        m.stock += qty;
+        if(!id||!mpn||!qty||qty<1) { 
+            inSubmitBtn.disabled = false; 
+            return toast('请完善信息','error'); 
+        }
         try {
+            let { data: result, error } = await supabase.rpc('increase_stock', {
+                p_user_id: Number(currentUser.id),
+                p_team_id: userTeamId || 1,
+                p_material_id: id,
+                p_mpn: mpn,
+                p_quantity: qty
+            });
+            if (error) { inSubmitBtn.disabled = false; return toast('入库失败: ' + error.message, 'error'); }
+            
+            if (result === -1) {
+                const { error: insertError } = await supabase.from('materials').insert({
+                    team_id: userTeamId || 1, id: id, mpn: mpn, stock: qty,
+                    user_id: Number(currentUser.id), location: '', manufacturer: '', responsible: ''
+                });
+                if (insertError) { inSubmitBtn.disabled = false; return toast('创建物料失败: ' + insertError.message, 'error'); }
+                materials.push({ id, mpn, stock: qty, location: '', manufacturer: '', responsible: '' });
+            } else {
+                const m = findMaterial(id, mpn);
+                if (m) m.stock = result;
+            }
+            
             await saveRecordToCloud({ type:'in', materialId:id, mpn, quantity:qty, date: new Date().toISOString().slice(0,10), source: mpn, note: '' });
-            await saveMaterialsToCloud();
+            
             toast('入库成功：'+id+' '+mpn+' x '+qty, 'success');
-            document.getElementById('inMaterialInput').value = ''; document.getElementById('inMaterialId').value = '';
-            document.getElementById('inMpn').innerHTML = '<option value="">请先选择料号</option>'; document.getElementById('inMpn').disabled = true;
+            document.getElementById('inMaterialInput').value = ''; 
+            document.getElementById('inMaterialId').value = '';
+            document.getElementById('inMpn').innerHTML = '<option value="">请先选择料号</option>'; 
+            document.getElementById('inMpn').disabled = true;
             document.getElementById('inQty').value = '';
             renderStock(); updateDaily(); updateMarquee();
             if (!inContinuous) stopHalfScan();
-        } catch(e) { m.stock -= qty; toast('入库失败: ' + e.message, 'error'); }
-        finally { inSubmitBtn.disabled = false; refreshAll(); }
+        } catch(e) { toast('入库失败: ' + e.message, 'error'); } 
+        finally { inSubmitBtn.disabled = false; }
     });
 
     // ==================== 盘点清单 ====================
@@ -1403,7 +1480,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         const date = document.getElementById('countListDateInput').value;
         tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted">加载中...</td></tr>';
         try {
-            const { data, error } = await supabase.from('scan_records').select('part, mpn, qty').eq('user_id', Number(currentUser.id)).eq('team_id', userTeamId || 1).eq('date', date).gt('qty', 0).order('"time"', { ascending: true });
+            const { data, error } = await supabase.from('scan_records').select('part, mpn, qty').eq('team_id', userTeamId || 1).eq('date', date).gt('qty', 0).order('"time"', { ascending: true });
             if (error) throw error;
             if (!data || data.length === 0) { tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted">当天无盘点数据</td></tr>'; return; }
             if (mode === 'part') {
@@ -1441,7 +1518,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     async function importPlan() {
         if (!currentUser || !currentUser.id) return;
         const date = countViewDate;
-        const { data, error } = await supabase.from('scan_records').select('part, mpn, location').eq('user_id', Number(currentUser.id)).eq('team_id', userTeamId || 1).eq('date', date).eq('qty', 0);
+        const { data, error } = await supabase.from('scan_records').select('part, mpn, location').eq('team_id', userTeamId || 1).eq('date', date).eq('qty', 0);
         if (error) return;
         countPlan = (data || []).map(d => ({ part: d.part, mpn: d.mpn || '', location: d.location || '' }));
         countPlanDate = date; manualShelfProgress = {}; updatePlanUI(); updateShelfUI();
@@ -1454,7 +1531,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('clearTodayBtn').addEventListener('click', () => {
         if (!currentUser || !currentUser.id) return;
         showConfirm('确定清空当日盘点数据？', 'fa-trash-alt', '#ef4444', 'btn-modal-danger', async () => {
-            await supabase.from('scan_records').delete().eq('user_id', Number(currentUser.id)).eq('team_id', userTeamId || 1).eq('date', countViewDate).gt('qty', 0);
+            await supabase.from('scan_records').delete().eq('team_id', userTeamId || 1).eq('date', countViewDate).gt('qty', 0);
             toast('已清空', 'success'); renderCount();
         });
     });
@@ -1463,7 +1540,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (!currentUser || !currentUser.id) return;
         const c = document.getElementById('countList'); const date = countViewDate;
         const search = (document.getElementById('countSearchInput')?.value || '').trim().toUpperCase();
-        const { data, error } = await supabase.from('scan_records').select('*').eq('user_id', Number(currentUser.id)).eq('team_id', userTeamId || 1).eq('date', date).order('"time"', { ascending: true });
+        const { data, error } = await supabase.from('scan_records').select('*').eq('team_id', userTeamId || 1).eq('date', date).order('"time"', { ascending: true });
         if (error) { c.innerHTML = '<div class="empty-state">加载失败</div>'; return; }
         let items = (data || []).filter(r => !search || r.part.endsWith(search));
         if (countFilterShelf !== 'all') { const shelfIdx = parseInt(countFilterShelf); if (!isNaN(shelfIdx)) items = items.filter(r => classifyLocation(r.location) === shelfIdx); }
