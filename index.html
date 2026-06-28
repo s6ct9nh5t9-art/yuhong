@@ -5,7 +5,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="仓库管理">
-    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📦</text></svg>">
+    <link rel="apple-touch-icon" href="icon.png">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>仓库管理系统 v24.1</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
@@ -107,7 +107,7 @@
         .my-info-item{background:#fff;border-radius:14px;padding:14px 6px;text-align:center;border:1px solid #f1f5f9}
         .my-info-item .num{font-size:22px;font-weight:700;color:#1e293b}
         .my-info-item .label{font-size:12px;color:#94a3b8;margin-top:2px}
-        .custom-msg-item{display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:#fff;border-radius:10px;margin-bottom:6px;border:1px solid #f1f5f9}
+        .custom-msg-item{display:fl#42445Aex;align-items:center;justify-content:space-between;padding:8px 12px;background:#fff;border-radius:10px;margin-bottom:6px;border:1px solid #f1f5f9}
         .btn-remove{color:#ef4444;cursor:pointer;padding:4px 8px;border-radius:6px;background:none;border:none;font-size:14px}
         .upload-card{background:#f8fafc;border-radius:16px;padding:16px;margin-bottom:16px;border:1px solid #e9eef3}
         .file-input-wrap{display:flex;align-items:center;gap:8px}
@@ -243,6 +243,14 @@
         .collapsible-header{cursor:pointer;display:flex;align-items:center;gap:8px;font-weight:600;font-size:14px;color:#1e293b;padding:8px 0}
         .checkbox-label{display:flex;align-items:center;gap:8px;font-size:14px;color:#1e293b;padding:6px 0;cursor:pointer;line-height:1.5}
         .checkbox-label input[type="checkbox"]{width:16px;height:16px;margin:0;flex-shrink:0}
+        .home-card{opacity:0;transform:translateY(30px);animation:cardBounceIn 0.5s cubic-bezier(0.34,1.56,0.64,1) forwards}
+        .home-card:nth-child(1){animation-delay:0.20s}
+        .home-card:nth-child(2){animation-delay:0.45s}
+        .home-card:nth-child(3){animation-delay:0.70s}
+        .home-card:nth-child(4){animation-delay:0.95s}
+        .home-card:nth-child(5){animation-delay:1.20s}
+        .home-card:nth-child(6){animation-delay:1.45s}
+        @keyframes cardBounceIn{0%{opacity:0;transform:translateY(30px) scale(0.9)}100%{opacity:1;transform:translateY(0) scale(1)}}
     </style>
 </head>
 <body>
@@ -281,7 +289,7 @@
                 <div class="home-card card-stock" data-page="stock"><div class="icon-wrap"><i class="fas fa-boxes"></i></div><div class="card-label">库存</div></div>
                 <div class="home-card card-report" data-page="report"><div class="icon-wrap"><i class="fas fa-list"></i></div><div class="card-label">出入库清单</div></div>
             </div>
-            <div class="daily-stats" id="dailyStats"><div class="stats-title"><i class="fas fa-calendar-day"></i> 今日数据</div><div class="stats-grid"><div class="stat-item"><div class="stat-value in" id="todayIn">0</div><div class="stat-label">入库总量</div></div><div class="stat-item"><div class="stat-value out" id="todayOut">0</div><div class="stat-label">出库总量</div></div><div class="stat-item"><div class="stat-value total" id="todayTotalStock">0</div><div class="stat-label">当前总库存</div></div><div class="stat-item"><div class="stat-value count" id="todayOps">0</div><div class="stat-label">今日操作笔数</div></div></div></div>
+            <div class="daily-stats" id="dailyStats"><div class="stats-title"><i class="fas fa-calendar-day"></i> 今日数据</div><div class="stats-grid" style="grid-template-columns:1fr 1fr 1fr;"><div class="stat-item"><div class="stat-value in" id="todayIn">0</div><div class="stat-label">入库总量</div></div><div class="stat-item"><div class="stat-value in" id="todayInCount">0</div><div class="stat-label">入库笔数</div></div><div class="stat-item"><div class="stat-value total" id="todayTotalStock">0</div><div class="stat-label">当前总库存</div></div><div class="stat-item"><div class="stat-value out" id="todayOut">0</div><div class="stat-label">出库总量</div></div><div class="stat-item"><div class="stat-value out" id="todayOutCount">0</div><div class="stat-label">出库笔数</div></div><div class="stat-item"><div class="stat-value count" id="todayOps">0</div><div class="stat-label">总笔数</div></div></div></div>
         </div>
         <div id="page-scan" class="page">
             <div class="scanner-container">
@@ -524,8 +532,8 @@
         </div>
         <div id="page-mine" class="page">
             <div class="section-title"><i class="fas fa-user" style="color:#8b5cf6;"></i> 我的</div>
-            <div class="my-profile" id="myProfileCard"><div class="avatar" id="avatarBtn"><i class="fas fa-user-circle" id="avatarIcon"></i></div><div class="username" id="profileName">仓库管理员</div><div class="user-role" id="profileRole">WMS 系统</div><div class="bg-actions" style="display:flex;gap:8px;justify-content:center;margin-top:8px;"><button class="btn btn-outline btn-sm" id="changeAvatarBtn"><i class="fas fa-camera"></i> 头像</button><button class="btn btn-outline btn-sm" id="changeBgBtn"><i class="fas fa-image"></i> 背景</button><button class="btn btn-outline btn-sm" id="resetBgBtn"><i class="fas fa-undo"></i> 重置</button></div></div>
-            <div class="my-info-grid"><div class="my-info-item"><div class="num" id="myTotalMaterials">0</div><div class="label">料号总数</div></div><div class="my-info-item"><div class="num" id="myTotalStock">0</div><div class="label">总库存量</div></div><div class="my-info-item"><div class="num" id="myTotalRecords">0</div><div class="label">操作记录</div></div></div>
+            <div class="my-profile" id="myProfileCard"><div class="avatar" id="avatarBtn"><i class="fas fa-user-circle" id="avatarIcon"></i></div><div class="username" id="profileName">仓库管理员</div><div class="user-role" id="profileRole">WMS 系统</div><div class="bg-actions" style="display:flex;gap:8px;justify-content:center;margin-top:8px;"><button class="btn btn-outline btn-sm" id="changeAvatarBtn"><i class="fas fa-camera"></i> 头像</button><button class="btn btn-outline btn-sm" id="changeBgBtn"><i class="fas fa-image"></i> 背景</button><button class="btn btn-outline btn-sm" id="resetBgBtn"><i class="fasfa-undo"></i> 重置</button></div></div>
+            <div class="my-info-grid"><div class="my-info-item"><div class="num" id="myLowStockCount">0</div><div class="label">预警料号</div></div><div class="my-info-item"><div class="num" id="myTotalLocations">0</div><div class="label">储位总数</div></div><div class="my-info-item"><div class="num" id="myCheckedLocations">0</div><div class="label">已盘储位</div></div></div>
             <button class="btn btn-outline btn-block" style="margin-top:20px;" id="goCustomMsgBtn"><i class="fas fa-bullhorn"></i> 滚动预警设置</button>
             <div style="margin-top:20px;background:#f8fafc;border-radius:16px;padding:16px;"><div style="font-weight:600;margin-bottom:8px;"><i class="fas fa-info-circle" style="color:#3b82f6;"></i> 系统信息</div><div style="display:flex;justify-content:space-between;font-size:13px;color:#475569;padding:4px 0;"><span>版本</span><span>v24.1</span></div><div style="display:flex;justify-content:space-between;font-size:13px;color:#475569;padding:4px 0;"><span>开发者</span><span>于洪章</span></div><div style="display:flex;justify-content:space-between;font-size:13px;color:#475569;padding:4px 0;"><span>运行时间</span><span id="sysUptime">--</span></div><div style="display:flex;justify-content:space-between;font-size:13px;color:#475569;padding:4px 0;"><span>版本更新</span><span id="lastUpdateTime">2026-06-27</span></div></div>
             <button class="btn btn-outline btn-block" style="margin-top:16px;" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> 退出登录</button>
@@ -804,20 +812,18 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     async function saveAlertConfig() {
+    const config = { hidden: [...hiddenAlerts] };
+    localStorage.setItem('wms_hidden_alerts', JSON.stringify([...hiddenAlerts]));
+    if (!currentUser) return;
+    try {
         const teamId = userTeamId || 1;
-        const config = { hidden: [...hiddenAlerts] };
-        if (!currentUser) { 
-            localStorage.setItem('wms_hidden_alerts', JSON.stringify([...hiddenAlerts])); 
-            return; 
-        }
-        try {
-            await supabase.from('team_settings').upsert({
-                team_id: teamId,
-                key: 'alert_hidden',
-                value: config
-            }, { onConflict: 'team_id, key' });
-        } catch(e) {}
-    }
+        await supabase.from('team_settings').upsert({
+            team_id: teamId,
+            key: 'alert_hidden',
+            value: config
+        }, { onConflict: 'team_id, key' });
+    } catch (e) {}
+}
 
     function getCachedLocations() { try { return JSON.parse(localStorage.getItem('wms_locations')); } catch { return null; } }
     function setCachedLocations(data) {
@@ -1096,16 +1102,20 @@ document.addEventListener('DOMContentLoaded', async () => {
     // ==================== 导航 ====================
     document.getElementById('bottomNav').onclick=e=>{const btn=e.target.closest('.nav-item');if(btn&&pages[btn.dataset.tab]) showPage(btn.dataset.tab);};
     document.getElementById('page-home').onclick=e=>{const card=e.target.closest('.home-card[data-page]');if(card&&pages[card.dataset.page]) showPage(card.dataset.page);};
-
     function updateDaily(){
-        const today=records.filter(r=>isToday(r.date));
-        let tin=0,tout=0;
-        today.forEach(r=>{if(r.type==='in') tin+=r.quantity; else tout+=r.quantity;});
-        document.getElementById('todayIn').textContent=tin;
-        document.getElementById('todayOut').textContent=tout;
-        document.getElementById('todayTotalStock').textContent=materials.reduce((s,m)=>s+m.stock,0);
-        document.getElementById('todayOps').textContent=today.length;
-    }
+    const today=records.filter(r=>isToday(r.date));
+    let tin=0,tout=0,inCount=0,outCount=0;
+    today.forEach(r=>{
+        if(r.type==='in'){tin+=r.quantity;inCount++;}
+        else{tout+=r.quantity;outCount++;}
+    });
+    document.getElementById('todayIn').textContent=tin;
+    document.getElementById('todayInCount').textContent=inCount;
+    document.getElementById('todayOut').textContent=tout;
+    document.getElementById('todayOutCount').textContent=outCount;
+    document.getElementById('todayTotalStock').textContent=materials.reduce((s,m)=>s+m.stock,0);
+    document.getElementById('todayOps').textContent=today.length;
+}
 
     function parseSmart(str) {
         const parts = str.trim().split(/[ ,\t|]+/);
@@ -1711,7 +1721,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('goCustomMsgBtn').addEventListener('click',()=>showPage('customMsg'));
 
     // ==================== 我的 ====================
-    function updateMine(){document.getElementById('myTotalMaterials').textContent=materials.length;document.getElementById('myTotalStock').textContent=materials.reduce((s,m)=>s+m.stock,0);document.getElementById('myTotalRecords').textContent=records.length;const d=Math.floor((new Date()-startTime)/1000);document.getElementById('sysUptime').textContent=Math.floor(d/3600)+'h '+Math.floor((d%3600)/60)+'m';document.getElementById('lastUpdateTime').textContent=LAST_UPDATE_DATE;if(currentUser){document.getElementById('profileName').textContent=currentUser.real_name||currentUser.username;document.getElementById('profileRole').textContent=currentUser.is_admin?'管理员':'普通用户';}}
+    function updateMine(){document.getElementById('myLowStockCount').textContent=materials.filter(m=>m.stock<LOW).length;document.getElementById('myTotalLocations').textContent=locationData.length;if(currentUser){(async()=>{const today=new Date().toISOString().slice(0,10);const{data}=await supabase.from('scan_records').select('location').eq('team_id',userTeamId||1).eq('date',today).gt('qty',0);document.getElementById('myCheckedLocations').textContent=new Set((data||[]).map(r=>r.location).filter(Boolean)).size;})();}const d=Math.floor((new Date()-startTime)/1000);document.getElementById('sysUptime').textContent=Math.floor(d/3600)+'h '+Math.floor((d%3600)/60)+'m';document.getElementById('lastUpdateTime').textContent=LAST_UPDATE_DATE;if(currentUser){document.getElementById('profileName').textContent=currentUser.real_name||currentUser.username;document.getElementById('profileRole').textContent=currentUser.is_admin?'管理员':'普通用户';}}
     function loadCustomStyles(){const avatar=localStorage.getItem('wms_avatar');if(avatar){document.getElementById('avatarIcon').style.display='none';let img=document.getElementById('avatarImg');if(!img){img=document.createElement('img');img.id='avatarImg';img.style.width='64px';img.style.height='64px';img.style.borderRadius='50%';img.style.objectFit='cover';document.getElementById('avatarBtn').appendChild(img);}img.src=avatar;}else{document.getElementById('avatarIcon').style.display='block';const img=document.getElementById('avatarImg');if(img) img.remove();}}
     function loadProfileBg(){const bg=localStorage.getItem('wms_profile_bg');const card=document.getElementById('myProfileCard');if(card) card.style.backgroundImage=bg?'url('+bg+')':'';}
     document.getElementById('changeAvatarBtn').addEventListener('click',()=>{const input=document.createElement('input');input.type='file';input.accept='image/*';input.onchange=(e)=>{const file=e.target.files[0];if(!file) return;const reader=new FileReader();reader.onload=(ev)=>{localStorage.setItem('wms_avatar',ev.target.result);loadCustomStyles();};reader.readAsDataURL(file);};input.click();});
@@ -1887,7 +1897,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             const progressBg = document.getElementById('bomProgressBg'), progressFill = document.getElementById('bomProgressFill'), progressText = document.getElementById('bomProgressText');
             progressBg.style.display = 'block'; progressFill.style.width = '0%'; progressText.style.display = 'block'; progressText.className = 'bom-progress-text';
             let uploadedCount = 0;
-            for (let i = 0; i < toUpsert.length; i += 50) {
+            for (let i = 0; i < toUpsert.length; i += 1000) {
                 const batch = toUpsert.slice(i, i + 50);
                 const { error } = await supabase.rpc('upsert_boms_batch', { p_data: batch });
                 if (error) { setLoading(this, false); progressText.className = 'bom-progress-text error'; progressText.innerHTML = '上传失败: '+error.message; toast('上传失败: '+error.message, 'error'); return; }
@@ -1982,7 +1992,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         showPage('home'); renderStock(); updateDaily(); updateMarquee(); updateMine(); loadCustomStyles(); loadProfileBg(); updateShelfUI();
     } else showPage('login');
     document.onkeydown=e=>{if(e.key==='Escape'&&currentPage!=='home'&&currentUser) showPage('home');};
-});
 </script>
 </body>
 </html>
