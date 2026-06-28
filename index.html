@@ -201,7 +201,7 @@
         .range-inputs{display:flex;align-items:center;gap:6px}.range-inputs span{margin:0 2px;color:#64748b}.range-inputs input{flex:1}
         .error-log-list{max-height:60vh;overflow-y:auto;text-align:left;padding:10px;background:#f8fafc;border-radius:8px;font-size:13px;color:#1e293b;margin-bottom:16px}
         .error-log-item{border-bottom:1px solid #f1f5f9;padding:4px 0}.error-log-item:last-child{border-bottom:none}
-        .calculator-float-btn{position:fixed;right:16px;bottom:120px;width:48px;height:48px;border-radius:50%;background:#3b82f6;color:#fff;font-size:20px;border:none;box-shadow:0 4px 16px rgba(59,130,246,0.4);z-index:150;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:transform 0.2s}
+        .calculator-float-btn{position:fixed;right:16px;bottom:120px;width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,#06b6d4,#3b82f6,#8b5cf6,#ec4899);color:#fff;font-size:20px;border:none;box-shadow:none;z-index:150;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:transform 0.2s, bottom 0.25s ease}
         .calculator-float-btn:active{transform:scale(0.9)}
         .calculator-panel{position:fixed;bottom:0;left:50%;transform:translate(-50%,100%);width:100%;max-width:480px;height:50vh;background:#fff;z-index:200;border-radius:20px 20px 0 0;box-shadow:0 -10px 25px rgba(0,0,0,0.15);transition:transform 0.35s ease;display:flex;flex-direction:column}
         .calculator-panel.show{transform:translate(-50%,0)}
@@ -213,7 +213,7 @@
         .calc-btn{padding:10px 4px;font-size:18px;font-weight:600;border-radius:10px;border:1px solid #e2e8f0;background:#fff;color:#1e293b;cursor:pointer;transition:background 0.1s}
         .calc-btn:active{background:#e2e8f0}
         .calc-equal{background:#3b82f6;color:#fff;border-color:#3b82f6}
-        .calc-fill{background:#22c55e;color:#fff;border-color:#22c55e}
+        .calc-fill{background:#22c55e;color:#fff;border-color:#22c55e;width:100%;grid-column:1/-1}
         .calc-fill.disabled{background:#94a3b8;border-color:#94a3b8;pointer-events:none;opacity:0.6}
         .bom-card{background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:14px 16px;margin-bottom:12px;box-shadow:0 2px 6px rgba(0,0,0,0.04)}
         .bom-top-row,.bom-mid-row,.bom-bottom-row{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;color:#1e293b}
@@ -256,7 +256,7 @@
 </head>
 <body>
 <div id="app">
-    <div id="settingsBtn" class="settings-btn"><i class="fas fa-cog"></i></div>
+    <div id="settingsBtn" class="settings-btn"><i class="fas fa-cog" style="background:linear-gradient(135deg,#f59e0b,#ec4899);-webkit-background-clip:text;-webkit-text-fill-color:transparent;"></i></div>
     <div id="settingsOverlay" class="settings-overlay"></div>
     <div id="settingsPanel" class="settings-panel">
         <div class="settings-header"><span>设置</span><i class="fas fa-times" id="settingsClose"></i></div>
@@ -554,7 +554,7 @@
         <button class="nav-item" data-tab="mine">我的</button>
     </nav>
 </div>
-<button class="calculator-float-btn" id="calculatorFloatBtn" title="计算器"><i class="fas fa-calculator"></i></button>
+<button class="calculator-float-btn" id="calculatorFloatBtn" title="计算器"><i class="fas fa-calculator" style="color:#fff;"></i></button>
 <div class="calculator-panel" id="calculatorPanel">
     <div class="calculator-header"><span>计算器</span><i class="fas fa-times" id="closeCalculatorBtn"></i></div>
     <div class="calculator-body">
@@ -570,7 +570,7 @@
             <button class="calc-btn" data-value="3">3</button><button class="calc-btn" data-value="-">−</button>
             <button class="calc-btn" data-value="0">0</button><button class="calc-btn" data-value=".">.</button>
             <button class="calc-btn calc-equal" data-value="=">=</button><button class="calc-btn" data-value="+">+</button>
-            <button class="calc-btn calc-fill" data-value="fill" style="grid-column: span 2;">填入</button>
+            <button class="calc-btn calc-fill" data-value="fill" style="grid-column: span 4;">填入</button>
         </div>
     </div>
 </div>
@@ -1997,6 +1997,37 @@ const saved=JSON.parse(localStorage.getItem('wms_remember')||'null');if(saved){d
         showPage('home'); renderStock(); updateDaily(); updateMarquee(); updateMine(); loadCustomStyles(); loadProfileBg(); updateShelfUI();
         const saved=JSON.parse(localStorage.getItem('wms_remember')||'null');if(saved&&Date.now()-saved.time<7200000){document.getElementById('loginUsername').value=saved.u;document.getElementById('loginPassword').value=saved.p;document.getElementById('rememberMe').checked=true;}
     } else showPage('login');
+    // 键盘弹起时计算器按钮上移（focus/blur 方案）
+const calcFloatBtn = document.getElementById('calculatorFloatBtn');
+const originalBottom = 120;
+let keyboardUp = false;
+
+function adjustCalcBtnForKeyboard() {
+  if (!calcFloatBtn) return;
+  const currentHeight = window.innerHeight;
+  const screenHeight = window.screen.availHeight || window.screen.height;
+  // 可视高度明显变小说明键盘弹出
+  if (currentHeight < screenHeight * 0.8) {
+    calcFloatBtn.style.bottom = (screenHeight - currentHeight + 50) + 'px';
+    keyboardUp = true;
+  } else if (keyboardUp) {
+    calcFloatBtn.style.bottom = originalBottom + 'px';
+    keyboardUp = false;
+  }
+}
+
+// 监听所有输入框的聚焦
+document.addEventListener('focusin', function(e) {
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+    // 延迟检测，等键盘弹起后可视区域变化
+    setTimeout(adjustCalcBtnForKeyboard, 300);
+    setTimeout(adjustCalcBtnForKeyboard, 600);
+  }
+});
+
+document.addEventListener('focusout', function() {
+  setTimeout(adjustCalcBtnForKeyboard, 200);
+});
     document.onkeydown=e=>{if(e.key==='Escape'&&currentPage!=='home'&&currentUser) showPage('home');};
 });
 </script>
