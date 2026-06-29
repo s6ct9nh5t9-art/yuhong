@@ -252,6 +252,10 @@
         .home-card:nth-child(5){animation-delay:1.20s}
         .home-card:nth-child(6){animation-delay:1.45s}
         @keyframes cardBounceIn{0%{opacity:0;transform:translateY(30px) scale(0.9)}100%{opacity:1;transform:translateY(0) scale(1)}}
+        @keyframes blink{
+    0%,100%{opacity:1;}
+    50%{opacity:0.2;}
+}
     </style>
 </head>
 <body>
@@ -920,7 +924,7 @@ const saved=JSON.parse(localStorage.getItem('wms_remember')||'null');if(saved){d
         const track = document.getElementById('marqueeTrack');
         const summaryAlerts = getSummaryAlerts();
         const lowItems = summaryAlerts.filter(a => !hiddenAlerts.has('LOW:'+a.id)).map(a =>
-            '<div class="marquee-item '+(a.total===0?'red':'')+'"><i class="fas fa-exclamation-triangle"></i> '+a.id+' 库存 '+a.total+'</div>'
+            '<div class="marquee-item '+(a.total===0?'red':'')+'"><i class="fas fa-exclamation-triangle" style="color:#ef4444;animation:blink 0.8s ease-in-out infinite;"></i> '+a.id+' 库存 '+a.total+'</div>'
         );
         const customItems = userMessages.filter(m => !hiddenAlerts.has('MSG:'+m.text)).map(m =>
             '<div class="marquee-item"><i class="fas fa-bullhorn"></i> '+m.text+'</div>'
@@ -1998,6 +2002,7 @@ const saved=JSON.parse(localStorage.getItem('wms_remember')||'null');if(saved){d
         const saved=JSON.parse(localStorage.getItem('wms_remember')||'null');if(saved&&Date.now()-saved.time<7200000){document.getElementById('loginUsername').value=saved.u;document.getElementById('loginPassword').value=saved.p;document.getElementById('rememberMe').checked=true;}
     } else showPage('login');
     // 键盘弹起时计算器按钮上移（focus/blur 方案）
+// 键盘弹起时计算器按钮上移
 const calcFloatBtn = document.getElementById('calculatorFloatBtn');
 const originalBottom = 120;
 let keyboardUp = false;
@@ -2006,9 +2011,12 @@ function adjustCalcBtnForKeyboard() {
   if (!calcFloatBtn) return;
   const currentHeight = window.innerHeight;
   const screenHeight = window.screen.availHeight || window.screen.height;
-  // 可视高度明显变小说明键盘弹出
+  const isOutPage = document.getElementById('outHalfScanPanel')?.classList.contains('show');
+  const isInPage = document.getElementById('inHalfScanPanel')?.classList.contains('show');
   if (currentHeight < screenHeight * 0.8) {
-    calcFloatBtn.style.bottom = (screenHeight - currentHeight + 50) + 'px';
+    let offset = screenHeight - currentHeight + 50;
+    if (isOutPage || isInPage) offset += window.innerHeight * 0.5;
+    calcFloatBtn.style.bottom = offset + 'px';
     keyboardUp = true;
   } else if (keyboardUp) {
     calcFloatBtn.style.bottom = originalBottom + 'px';
@@ -2016,13 +2024,15 @@ function adjustCalcBtnForKeyboard() {
   }
 }
 
-// 监听所有输入框的聚焦
 document.addEventListener('focusin', function(e) {
   if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
-    // 延迟检测，等键盘弹起后可视区域变化
-    setTimeout(adjustCalcBtnForKeyboard, 300);
-    setTimeout(adjustCalcBtnForKeyboard, 600);
+    setTimeout(adjustCalcBtnForKeyboard, 400);
+    setTimeout(adjustCalcBtnForKeyboard, 800);
   }
+});
+
+document.addEventListener('focusout', function() {
+  setTimeout(adjustCalcBtnForKeyboard, 200);
 });
 
 document.addEventListener('focusout', function() {
