@@ -949,7 +949,7 @@ const saved=JSON.parse(localStorage.getItem('wms_remember')||'null');if(saved){d
         else { document.getElementById('settingsBtn').classList.remove('visible'); }
         if (name==='out') { document.getElementById('outCangma').value = 'B8SA'; document.getElementById('outSubmitBtn').disabled = false; }
         if(name==='stock') { document.getElementById('stockSearch').value = ''; await loadData(); renderStock(); }
-        if(name==='report') { document.getElementById('reportOutDate').value = new Date().toISOString().slice(0,10); await loadData(); document.querySelector('#page-report .tab-btn.active')?.click(); }
+        if(name==='report') { const today=new Date(); const localDate=new Date(today.getTime()-today.getTimezoneOffset()*60000).toISOString().slice(0,10); document.getElementById('reportOutDate').value=localDate; await loadData(); document.querySelector('#page-report .tab-btn.active')?.click(); }
         if(name==='home'){updateDaily();updateMarquee();}
         if(name==='count') {
             document.getElementById('countDateInput').value = countViewDate;
@@ -1423,7 +1423,7 @@ const saved=JSON.parse(localStorage.getItem('wms_remember')||'null');if(saved){d
             if (result === -1) { outSubmitBtn.disabled = false; return toast('物料不存在', 'error'); }
             if (result === -2) { outSubmitBtn.disabled = false; return toast('库存不足', 'error'); }
             
-            await saveRecordToCloud({ type:'out', materialId:id, mpn, quantity:qty, date: new Date().toISOString().slice(0,10), dest: mpn, note: cangma });
+            await saveRecordToCloud({ type:'out', materialId:id, mpn, quantity:qty, date: new Date(new Date().getTime() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0,10), dest: mpn, note: cangma });
             
             const m = findMaterial(id, mpn);
             if (m) m.stock = result;
@@ -1477,7 +1477,7 @@ const saved=JSON.parse(localStorage.getItem('wms_remember')||'null');if(saved){d
                 if (m) m.stock = result;
             }
             
-            await saveRecordToCloud({ type:'in', materialId:id, mpn, quantity:qty, date: new Date().toISOString().slice(0,10), source: mpn, note: '' });
+            await saveRecordToCloud({ type:'in', materialId:id, mpn, quantity:qty, date: new Date(new Date().getTime() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0,10), source: mpn, note: '' });
             
             toast('入库成功：'+id+' '+mpn+' x '+qty, 'success');
             document.getElementById('inMaterialInput').value = ''; 
@@ -1534,13 +1534,62 @@ const saved=JSON.parse(localStorage.getItem('wms_remember')||'null');if(saved){d
 
     // ==================== 盘点 ====================
     async function importPlan() {
-        if (!currentUser || !currentUser.id) return;
-        const date = countViewDate;
-        const { data, error } = await supabase.from('scan_records').select('part, mpn, location').eq('team_id', userTeamId || 1).eq('date', date).eq('qty', 0);
-        if (error) return;
-        countPlan = (data || []).map(d => ({ part: d.part, mpn: d.mpn || '', location: d.location || '' }));
-        countPlanDate = date; manualShelfProgress = {}; updatePlanUI(); updateShelfUI();
+    if (!currentUser || !currentUser.id) return;
+    const date = countViewDate;
+    
+    try {
+        const { data: todayData } = await supabase.from('scan_records')
+            .select('part, mpn, location')
+            .eq('team_id', userTeamId || 1)
+            .eq('date', date)
+            .eq('qty', 0);
+        
+        if (todayData && todayData.length > 0) {
+            countPlan = todayData.map(d => ({ part: d.part, mpn: d.mpn || '', location: d.location || '' }));
+        } else {
+            const { data: lastData } = await supabase.from('scan_records')
+                .select('date, part, mpn, location')
+                .eq('team_id', userTeamId || 1)
+                .eq('qty', 0)
+                .order('date', { ascending: false })
+                .limit(1000);
+            
+            if (lastData && lastData.length > 0) {
+                const lastDate = lastData[0].date;
+                const planItems = lastData.filter(d => d.date === lastDate);
+                countPlan = planItems.map(d => ({ part: d.part, mpn: d.mpn || '', location: d.location || '' }));
+                
+                // 自动复制到今天
+                const nowTime = new Date().toTimeString().slice(0, 8);
+                const toInsert = [];
+                for (const p of countPlan) {
+                    toInsert.push({
+                        user_id: Number(currentUser.id),
+                        team_id: userTeamId || 1,
+                        date: date,
+                        "time": nowTime,
+                        part: p.part,
+                        qty: 0,
+                        mpn: p.mpn,
+                        location: p.location
+                    });
+                }
+                if (toInsert.length > 0) {
+                    await supabase.from('scan_records').insert(toInsert);
+                }
+            } else {
+                countPlan = [];
+            }
+        }
+    } catch (e) {
+        countPlan = [];
     }
+    
+    countPlanDate = date;
+    manualShelfProgress = {};
+    updatePlanUI();
+    updateShelfUI();
+}
     function updatePlanUI() { document.getElementById('planInfo').textContent = (countPlan.length > 0 && countPlanDate === countViewDate) ? '已导入 '+countPlan.length+' 条计划' : '未导入计划'; }
     document.getElementById('countDateInput').addEventListener('change', function() { countViewDate = this.value; countPlan = []; countPlanDate = countViewDate; importPlan(); renderCount(); });
     document.querySelectorAll('#countShelfRow .shelf-btn').forEach(btn => { btn.addEventListener('click', function() { document.querySelectorAll('#countShelfRow .shelf-btn').forEach(b => b.classList.remove('active')); this.classList.add('active'); countFilterShelf = this.dataset.shelf; renderCount(); }); });
@@ -1604,11 +1653,11 @@ const saved=JSON.parse(localStorage.getItem('wms_remember')||'null');if(saved){d
     document.getElementById('stockSearch').addEventListener('input',function(){clearTimeout(stockSearchTimer);stockSearchTimer=setTimeout(()=>renderStock(this.value),300);});
 
     // ==================== 出入库清单 ====================
-    document.querySelectorAll('#page-report .tab-btn').forEach(btn=>{btn.addEventListener('click',function(){const tabName=this.dataset.tab;document.querySelectorAll('#page-report .tab-btn').forEach(b=>b.classList.remove('active'));this.classList.add('active');document.querySelectorAll('#page-report .report-tab-content').forEach(c=>c.classList.remove('active'));document.getElementById(tabName).classList.add('active'); if(tabName==='tab-out') renderOutReport(); else autoRefreshInReport();});});
+    document.querySelectorAll('#page-report .tab-btn').forEach(btn=>{btn.addEventListener('click',function(){const tabName=this.dataset.tab;document.querySelectorAll('#page-report .tab-btn').forEach(b=>b.classList.remove('active'));this.classList.add('active');document.querySelectorAll('#page-report .report-tab-content').forEach(c=>c.classList.remove('active'));document.getElementById(tabName).classList.add('active'); if(tabName==='tab-out') renderOutReport(); else t();});});
     function renderOutReport(){if(!currentUser||!currentUser.id) return;const date=document.getElementById('reportOutDate').value;if(!date) return;const cangma=document.getElementById('reportOutCangma').value;const filtered=records.filter(r=>r.type==='out'&&r.date&&r.date.startsWith(date)&&(cangma===''||r.note===cangma));const tbody=document.getElementById('outReportBody');tbody.innerHTML=filtered.length?filtered.map(r=>'<tr><td>'+r.materialId+'</td><td>'+(r.mpn||'-')+'</td><td>'+r.quantity+'</td><td><button class="btn btn-sm btn-outline delete-record-btn" style="color:#ef4444;" data-id="'+r.id+'"><i class="fas fa-trash"></i></button></td></tr>').join(''):'<tr><td colspan="4" class="text-center text-muted">无出库记录</td></tr>';}
     document.getElementById('reportOutDate').addEventListener('change', renderOutReport);
     document.getElementById('reportOutCangma').addEventListener('change', renderOutReport);
-    function autoRefreshInReport(){if(!currentUser||!currentUser.id) return;const today=new Date().toISOString().slice(0,10);const filtered=records.filter(r=>r.type==='in'&&r.date&&r.date.startsWith(today));const tbody=document.getElementById('inReportBody');tbody.innerHTML=filtered.length?filtered.map(r=>'<tr><td>'+r.materialId+'</td><td>'+(r.mpn||'-')+'</td><td>'+r.quantity+'</td><td>'+(r.date?.slice(0,10)||'')+'</td><td><button class="btn btn-sm btn-outline delete-record-btn" style="color:#ef4444;" data-id="'+r.id+'"><i class="fas fa-trash"></i></button></td></tr>').join(''):'<tr><td colspan="5" class="text-center text-muted">当天无入库记录</td></tr>';}
+    function autoRefreshInReport(){if(!currentUser||!currentUser.id) return;const today=new Date();const localToday=new Date(today.getTime()-today.getTimezoneOffset()*60000).toISOString().slice(0,10);const filtered=records.filter(r=>r.type==='in'&&r.date&&r.date.startsWith(localToday));const tbody=document.getElementById('inReportBody');tbody.innerHTML=filtered.length?filtered.map(r=>'<tr><td>'+r.materialId+'</td><td>'+(r.mpn||'-')+'</td><td>'+r.quantity+'</td><td>'+(r.date?.slice(0,10)||'')+'</td><td><button class="btn btn-sm btn-outline delete-record-btn" style="color:#ef4444;" data-id="'+r.id+'"><i class="fas fa-trash"></i></button></td></tr>').join(''):'<tr><td colspan="5" class="text-center text-muted">当天无入库记录</td></tr>';}
     document.getElementById('queryInBtn').addEventListener('click',()=>{if(!currentUser||!currentUser.id) return;const matId=document.getElementById('reportInMaterialId').value.trim();let filtered=records.filter(r=>r.type==='in');if(matId) filtered=filtered.filter(r=>r.materialId===matId);const tbody=document.getElementById('inReportBody');tbody.innerHTML=filtered.length?filtered.map(r=>'<tr><td>'+r.materialId+'</td><td>'+(r.mpn||'-')+'</td><td>'+r.quantity+'</td><td>'+(r.date?.slice(0,10)||'')+'</td><td><button class="btn btn-sm btn-outline delete-record-btn" style="color:#ef4444;" data-id="'+r.id+'"><i class="fas fa-trash"></i></button></td></tr>').join(''):'<tr><td colspan="5" class="text-center text-muted">无入库记录</td></tr>';});
 
     // ==================== 储位查找 ====================
@@ -1667,24 +1716,40 @@ const saved=JSON.parse(localStorage.getItem('wms_remember')||'null');if(saved){d
     function showDeletePasswordModal(recordId) { pendingDeleteRecordId = recordId; document.getElementById('deletePasswordInput').value = ''; document.getElementById('deletePasswordModal').classList.add('show'); }
     document.getElementById('deletePasswordCancel').addEventListener('click', () => { pendingDeleteRecordId = null; document.getElementById('deletePasswordModal').classList.remove('show'); });
     document.getElementById('deletePasswordConfirm').addEventListener('click', async () => {
-        const password = document.getElementById('deletePasswordInput').value.trim();
-        if (password !== '927521') { toast('密码错误', 'error'); return; }
-        document.getElementById('deletePasswordModal').classList.remove('show');
-        if (!pendingDeleteRecordId) return;
-        const recordId = pendingDeleteRecordId; pendingDeleteRecordId = null;
-        try {
-            const record = records.find(r => r.id === recordId);
-            if (record) {
-                const mat = materials.find(m => m.id === record.materialId && m.mpn === record.mpn);
-                if (mat) { if (record.type === 'out') mat.stock += record.quantity; else if (record.type === 'in') mat.stock -= record.quantity; await saveMaterialsToCloud(); }
+    const password = document.getElementById('deletePasswordInput').value.trim();
+    if (password !== '927521') { toast('密码错误', 'error'); return; }
+    document.getElementById('deletePasswordModal').classList.remove('show');
+    if (!pendingDeleteRecordId) return;
+    const recordId = pendingDeleteRecordId; pendingDeleteRecordId = null;
+    try {
+        const record = records.find(r => r.id === recordId);
+        if (record) {
+            if (record.type === 'out') {
+                await supabase.rpc('increase_stock', {
+                    p_user_id: Number(currentUser.id),
+                    p_team_id: userTeamId || 1,
+                    p_material_id: record.materialId,
+                    p_mpn: record.mpn,
+                    p_quantity: record.quantity
+                });
+            } else if (record.type === 'in') {
+                await supabase.rpc('decrease_stock', {
+                    p_user_id: Number(currentUser.id),
+                    p_team_id: userTeamId || 1,
+                    p_material_id: record.materialId,
+                    p_mpn: record.mpn,
+                    p_quantity: record.quantity
+                });
             }
-            await supabase.from('records').delete().eq('id', recordId);
-            records = records.filter(r => r.id !== recordId);
-            toast('记录已删除', 'success');
-            if (currentPage === 'report') { const activeTab = document.querySelector('#page-report .tab-btn.active'); if (activeTab && activeTab.dataset.tab === 'tab-out') renderOutReport(); else autoRefreshInReport(); }
-            renderStock(); updateDaily();
-        } catch(e) { toast('删除失败: '+e.message, 'error'); }
-    });
+        }
+        await supabase.from('records').delete().eq('id', recordId);
+        records = records.filter(r => r.id !== recordId);
+        await loadData();
+        toast('记录已删除，库存已恢复', 'success');
+        renderStock(); updateDaily();
+        if (currentPage === 'report') { const activeTab = document.querySelector('#page-report .tab-btn.active'); if (activeTab && activeTab.dataset.tab === 'tab-out') renderOutReport(); else autoRefreshInReport(); }
+    } catch(e) { toast('删除失败: '+e.message, 'error'); }
+});
 
     // ==================== 系统维护 ====================
     document.getElementById('systemMaintenanceBtn').addEventListener('click', () => { document.getElementById('systemMaintenanceModal').classList.add('show'); });
