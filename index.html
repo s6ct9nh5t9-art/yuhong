@@ -2070,38 +2070,44 @@ const saved=JSON.parse(localStorage.getItem('wms_remember')||'null');if(saved){d
 // 键盘弹起时计算器按钮上移
 const calcFloatBtn = document.getElementById('calculatorFloatBtn');
 const originalBottom = 120;
-let keyboardUp = false;
 
 function adjustCalcBtnForKeyboard() {
-  if (!calcFloatBtn) return;
-  const currentHeight = window.innerHeight;
-  const screenHeight = window.screen.availHeight || window.screen.height;
-  const isOutPage = document.getElementById('outHalfScanPanel')?.classList.contains('show');
-  const isInPage = document.getElementById('inHalfScanPanel')?.classList.contains('show');
-  if (currentHeight < screenHeight * 0.8) {
-    let offset = screenHeight - currentHeight + 10;
-    if (isOutPage || isInPage) offset += window.innerHeight * 0.5;
-    calcFloatBtn.style.bottom = offset + 'px';
-    keyboardUp = true;
-  } else if (keyboardUp) {
-    calcFloatBtn.style.bottom = originalBottom + 'px';
-    keyboardUp = false;
-  }
+    if (!calcFloatBtn) return;
+    const targetPage = currentPage;
+    if (targetPage !== 'manualCount' && targetPage !== 'out' && targetPage !== 'in') return;
+    
+    if (window.visualViewport) {
+        const viewportHeight = window.visualViewport.height;
+        const windowHeight = window.innerHeight;
+        if (viewportHeight < windowHeight * 0.8) {
+            let offset = windowHeight - viewportHeight + -10;
+            if (targetPage === 'out' || targetPage === 'in') offset += windowHeight * 0;
+            calcFloatBtn.style.bottom = offset + 'px';
+        } else {
+            calcFloatBtn.style.bottom = originalBottom + 'px';
+        }
+    } else {
+        const currentHeight = window.innerHeight;
+        const screenHeight = window.screen.availHeight || window.screen.height;
+        if (currentHeight < screenHeight * 0.8) {
+            let offset = screenHeight - currentHeight + -10;
+            if (targetPage === 'out' || targetPage === 'in') offset += window.innerHeight * -0;
+            calcFloatBtn.style.bottom = offset + 'px';
+        } else {
+            calcFloatBtn.style.bottom = originalBottom + 'px';
+        }
+    }
 }
 
 document.addEventListener('focusin', function(e) {
-  if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
-    setTimeout(adjustCalcBtnForKeyboard, 400);
-    setTimeout(adjustCalcBtnForKeyboard, 800);
-  }
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+        setTimeout(adjustCalcBtnForKeyboard, 400);
+        setTimeout(adjustCalcBtnForKeyboard, 800);
+    }
 });
 
 document.addEventListener('focusout', function() {
-  setTimeout(adjustCalcBtnForKeyboard, 200);
-});
-
-document.addEventListener('focusout', function() {
-  setTimeout(adjustCalcBtnForKeyboard, 200);
+    setTimeout(adjustCalcBtnForKeyboard, 200);
 });
     document.onkeydown=e=>{if(e.key==='Escape'&&currentPage!=='home'&&currentUser) showPage('home');};
 });
