@@ -2079,7 +2079,7 @@ function adjustCalcBtnForKeyboard() {
   const isOutPage = document.getElementById('outHalfScanPanel')?.classList.contains('show');
   const isInPage = document.getElementById('inHalfScanPanel')?.classList.contains('show');
   if (currentHeight < screenHeight * 0.8) {
-    let offset = screenHeight - currentHeight + 50;
+    let offset = screenHeight - currentHeight + 10;
     if (isOutPage || isInPage) offset += window.innerHeight * 0.5;
     calcFloatBtn.style.bottom = offset + 'px';
     keyboardUp = true;
