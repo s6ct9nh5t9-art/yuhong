@@ -2080,8 +2080,8 @@ function adjustCalcBtnForKeyboard() {
         const viewportHeight = window.visualViewport.height;
         const windowHeight = window.innerHeight;
         if (viewportHeight < windowHeight * 0.8) {
-            let offset = windowHeight - viewportHeight + -10;
-            if (targetPage === 'out' || targetPage === 'in') offset += windowHeight * 0;
+            let offset = windowHeight - viewportHeight + -0;
+            if (targetPage === 'out' || targetPage === 'in') offset += windowHeight * 0.1;
             calcFloatBtn.style.bottom = offset + 'px';
         } else {
             calcFloatBtn.style.bottom = originalBottom + 'px';
@@ -2090,8 +2090,8 @@ function adjustCalcBtnForKeyboard() {
         const currentHeight = window.innerHeight;
         const screenHeight = window.screen.availHeight || window.screen.height;
         if (currentHeight < screenHeight * 0.8) {
-            let offset = screenHeight - currentHeight + -10;
-            if (targetPage === 'out' || targetPage === 'in') offset += window.innerHeight * -0;
+            let offset = screenHeight - currentHeight + -0;
+            if (targetPage === 'out' || targetPage === 'in') offset += window.innerHeight * 0.1;
             calcFloatBtn.style.bottom = offset + 'px';
         } else {
             calcFloatBtn.style.bottom = originalBottom + 'px';
