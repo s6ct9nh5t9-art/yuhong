@@ -841,38 +841,53 @@ const saved=JSON.parse(localStorage.getItem('wms_remember')||'null');if(saved){d
     }
 
     async function loadData() {
-        if (!currentUser) return;
-        const uid = Number(currentUser.id);
-        const { data: mat } = await supabase.rpc('get_my_materials', { p_user_id: uid });
-        materials = (mat || []).map(m => ({ ...m, manufacturer: m.manufacturer || '', responsible: m.responsible || '' }));
-        const { data: rec } = await supabase.rpc('get_my_records', { p_user_id: uid });
-        records = (rec || []).map(r => ({ ...r, materialId: r.materialid || r.materialId || '' }));
-        if (currentUser) {
-            const { data: msgData } = await supabase.from('messages').select('text').eq('user_id', currentUser.id).not('text', 'like', '__alert_config__%');
-            userMessages = (msgData || []).map(r => ({ text: r.text }));
-            const { data: globalMsgs } = await supabase.from('messages').select('text').is('user_id', null);
-            if (globalMsgs) globalMsgs.forEach(m => { if (!userMessages.find(u => u.text === m.text)) userMessages.push({ text: m.text }); });
-        } else {
-            userMessages = JSON.parse(localStorage.getItem('wms_messages') || '[]');
-        }
-        await loadAlertConfig();
-        const cached = getCachedLocations();
-        const { data: loc } = await supabase.from('locations').select('part, location, responsible, updated_at');
-        if (loc) {
-            const cloudData = loc.map(d => ({ part: d.part, location: d.location, responsible: d.responsible || '', updated_at: d.updated_at }));
-            let needUpdate = !cached || !cached.data;
-            if (!needUpdate) {
-                const cloudMax = cloudData.reduce((max, d) => d.updated_at > max ? d.updated_at : max, '1970-01-01T00:00:00Z');
-                const cacheMax = cached.updated_at || '1970-01-01T00:00:00Z';
-                if (cloudData.length !== cached.data.length || cloudMax > cacheMax) needUpdate = true;
-            }
-            if (needUpdate) { setCachedLocations(cloudData); locationData = cloudData.map(d => ({ part: d.part, location: d.location, responsible: d.responsible })); }
-            else locationData = cached.data;
-        } else if (cached && cached.data.length) {
-            locationData = cached.data;
-        }
-        if (countPlanDate !== countViewDate) { countPlan = []; countPlanDate = countViewDate; }
+    if (!currentUser) return;
+    const uid = Number(currentUser.id);
+    
+    // 并行加载所有数据
+    const [matResult, recResult, locResult, msgResult, globalMsgResult] = await Promise.all([
+        supabase.rpc('get_my_materials', { p_user_id: uid }),
+        supabase.rpc('get_my_records', { p_user_id: uid }),
+        supabase.from('locations').select('part, location, responsible, updated_at'),
+        currentUser ? supabase.from('messages').select('text').eq('user_id', currentUser.id).not('text', 'like', '__alert_config__%') : Promise.resolve({ data: null }),
+        currentUser ? supabase.from('messages').select('text').is('user_id', null) : Promise.resolve({ data: null })
+    ]);
+    
+    const mat = matResult.data;
+    const rec = recResult.data;
+    const loc = locResult.data;
+    const msgData = msgResult.data;
+    const globalMsgs = globalMsgResult.data;
+    
+    materials = (mat || []).map(m => ({ ...m, manufacturer: m.manufacturer || '', responsible: m.responsible || '' }));
+    records = (rec || []).map(r => ({ ...r, materialId: r.materialid || r.materialId || '' }));
+    
+    if (currentUser) {
+        userMessages = (msgData || []).map(r => ({ text: r.text }));
+        if (globalMsgs) globalMsgs.forEach(m => { if (!userMessages.find(u => u.text === m.text)) userMessages.push({ text: m.text }); });
+    } else {
+        userMessages = JSON.parse(localStorage.getItem('wms_messages') || '[]');
     }
+    
+    await loadAlertConfig();
+    
+    const cached = getCachedLocations();
+    if (loc) {
+        const cloudData = loc.map(d => ({ part: d.part, location: d.location, responsible: d.responsible || '', updated_at: d.updated_at }));
+        let needUpdate = !cached || !cached.data;
+        if (!needUpdate) {
+            const cloudMax = cloudData.reduce((max, d) => d.updated_at > max ? d.updated_at : max, '1970-01-01T00:00:00Z');
+            const cacheMax = cached.updated_at || '1970-01-01T00:00:00Z';
+            if (cloudData.length !== cached.data.length || cloudMax > cacheMax) needUpdate = true;
+        }
+        if (needUpdate) { setCachedLocations(cloudData); locationData = cloudData.map(d => ({ part: d.part, location: d.location, responsible: d.responsible })); }
+        else locationData = cached.data;
+    } else if (cached && cached.data.length) {
+        locationData = cached.data;
+    }
+    
+    if (countPlanDate !== countViewDate) { countPlan = []; countPlanDate = countViewDate; }
+}
 
     async function saveMaterialsToCloud() {
         if (!currentUser || !userTeamId) return;
@@ -1814,7 +1829,14 @@ const saved=JSON.parse(localStorage.getItem('wms_remember')||'null');if(saved){d
             if(document.getElementById('rememberMe').checked){localStorage.setItem('wms_remember',JSON.stringify({u:u,p:p}));}else{localStorage.removeItem('wms_remember');}
             await fetchUserTeamId();
             toast('登录成功','success');
-            await loadData();setupAutocompletes();showPage('home');updateMine();updateMarquee();
+            showPage('home');
+loadData().then(() => {
+    setupAutocompletes();
+    updateMine();
+    updateMarquee();
+    renderStock();
+    updateDaily();
+});
         }else toast(r.message||'账号或密码错误','error');
     });
     document.getElementById('registerBtn').addEventListener('click',async()=>{
@@ -2062,8 +2084,12 @@ const saved=JSON.parse(localStorage.getItem('wms_remember')||'null');if(saved){d
     setupAutocompletes();
     setupBomAutocompletes();
     if(currentUser){
-        await fetchUserTeamId();
-        showPage('home'); renderStock(); updateDaily(); updateMarquee(); updateMine(); loadCustomStyles(); loadProfileBg(); updateShelfUI();
+    await fetchUserTeamId();
+    showPage('home');
+    loadData().then(() => {
+        renderStock(); updateDaily(); updateMarquee(); updateMine();
+        loadCustomStyles(); loadProfileBg(); updateShelfUI();
+    });
         const saved=JSON.parse(localStorage.getItem('wms_remember')||'null');if(saved&&Date.now()-saved.time<7200000){document.getElementById('loginUsername').value=saved.u;document.getElementById('loginPassword').value=saved.p;document.getElementById('rememberMe').checked=true;}
     } else showPage('login');
     // 键盘弹起时计算器按钮上移（focus/blur 方案）
@@ -2080,8 +2106,8 @@ function adjustCalcBtnForKeyboard() {
         const viewportHeight = window.visualViewport.height;
         const windowHeight = window.innerHeight;
         if (viewportHeight < windowHeight * 0.8) {
-            let offset = windowHeight - viewportHeight + -0;
-            if (targetPage === 'out' || targetPage === 'in') offset += windowHeight * 0.1;
+            let offset = windowHeight - viewportHeight + -10;
+            if (targetPage === 'out' || targetPage === 'in') offset += windowHeight * 0;
             calcFloatBtn.style.bottom = offset + 'px';
         } else {
             calcFloatBtn.style.bottom = originalBottom + 'px';
@@ -2090,8 +2116,8 @@ function adjustCalcBtnForKeyboard() {
         const currentHeight = window.innerHeight;
         const screenHeight = window.screen.availHeight || window.screen.height;
         if (currentHeight < screenHeight * 0.8) {
-            let offset = screenHeight - currentHeight + -0;
-            if (targetPage === 'out' || targetPage === 'in') offset += window.innerHeight * 0.1;
+            let offset = screenHeight - currentHeight + -10;
+            if (targetPage === 'out' || targetPage === 'in') offset += window.innerHeight * -0;
             calcFloatBtn.style.bottom = offset + 'px';
         } else {
             calcFloatBtn.style.bottom = originalBottom + 'px';
