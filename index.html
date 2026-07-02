@@ -244,19 +244,14 @@
         .checkbox-label{display:flex;align-items:center;gap:8px;font-size:14px;color:#1e293b;padding:6px 0;cursor:pointer;line-height:1.5}
         .checkbox-label input[type="checkbox"]{width:16px;height:16px;margin:0;flex-shrink:0}
         .bottom-nav .nav-item:active{transform:scale(0.85)}
-        .home-card{opacity:0;transform:translateY(30px);animation:cardBounceIn 0.5s cubic-bezier(0.34,1.56,0.64,1) forwards}
-        .home-card:nth-child(1){animation-delay:0.20s}
-        .home-card:nth-child(2){animation-delay:0.45s}
-        .home-card:nth-child(3){animation-delay:0.70s}
-        .home-card:nth-child(4){animation-delay:0.95s}
-        .home-card:nth-child(5){animation-delay:1.20s}
-        .home-card:nth-child(6){animation-delay:1.45s}
-        @keyframes cardBounceIn{0%{opacity:0;transform:translateY(30px) scale(0.9)}100%{opacity:1;transform:translateY(0) scale(1)}}
         @keyframes blink{
-    0%,100%{opacity:1;}
-    50%{opacity:0.2;}
+0%,100%{opacity:1;}
+50%{opacity:0.2;}
 }
-    </style>
+#locationModeTabs .tab-btn.active[data-mode="loc"]{background:#06b6d4;color:#fff;}
+#locationModeTabs .tab-btn.active[data-mode="bom"]{background:#ec4899;color:#fff;}
+#locationModeTabs .tab-btn.active[data-mode="wukong"]{background:#10b981;color:#fff;}
+</style>
 </head>
 <body>
 <div id="app">
@@ -439,9 +434,10 @@
         <div id="page-location" class="page">
             <div class="section-title"><i class="fas fa-search" style="color:#0ea5e9;"></i> 查找</div>
             <div class="tab-nav" id="locationModeTabs">
-                <button class="tab-btn active" data-mode="loc">储位查找</button>
-                <button class="tab-btn" data-mode="bom">BOM查找</button>
-            </div>
+    <button class="tab-btn active" data-mode="loc">储位查找</button>
+    <button class="tab-btn" data-mode="bom">BOM查找</button>
+    <button class="tab-btn" data-mode="wukong">物控查找</button>
+</div>
             <div id="loc-mode-loc" class="report-tab-content active">
                 <div class="form-group">
                     <label>输入料号关键字</label>
@@ -451,8 +447,8 @@
                     </div>
                 </div>
                 <button class="btn btn-outline btn-block" id="locationClearBtn" style="margin-bottom:16px;"><i class="fas fa-undo"></i> 清空结果</button>
-                <div id="locationResult"><div class="table-wrap"><table><thead><tr><th>料号</th><th>储位</th><th>担当</th><th>操作</th></tr></thead><tbody id="locationResultBody"><tr><td colspan="4" class="text-center text-muted">输入料号关键字搜索</td></tr></tbody></table></div><div style="margin-top:8px;text-align:right;font-size:12px;color:#94a3b8;">找到 <span id="locationResultCount">0</span> 项</div></div>
-            </div>
+<div id="locationResult"><div id="locationResultBody"><div class="text-center text-muted">输入料号关键字搜索</div></div><div style="margin-top:8px;text-align:right;font-size:12px;color:#94a3b8;">找到 <span id="locationResultCount">0</span> 项</div></div>
+</div>
             <div id="loc-mode-bom" class="report-tab-content">
                 <div class="form-row" style="margin-bottom:16px;">
                     <div class="form-group">
@@ -474,7 +470,19 @@
                 <button class="btn btn-outline btn-block" id="bomClearBtn" style="margin-top:8px;margin-bottom:16px;"><i class="fas fa-undo"></i> 清空结果</button>
                 <div id="bomResultList"></div>
             </div>
+            <div id="loc-mode-wukong" class="report-tab-content">
+    <div class="form-group">
+        <label>输入料号</label>
+        <div style="display:flex;gap:8px;">
+            <div class="autocomplete-wrapper" style="flex:1;">
+    <input type="text" class="form-control" id="wukongSearchInput" placeholder="输入料号" autocomplete="off">
+    <div class="autocomplete-dropdown" id="wukongDropdown"></div>
+</div>
+            <button class="btn btn-warning" id="wukongSearchBtn"><i class="fas fa-search"></i> 查询</button>
         </div>
+    </div>
+    <div id="wukongResultBody" style="margin-top:12px;"><div class="text-center text-muted">输入料号</div></div></div>
+</div>
         <div id="page-data" class="page">
             <div class="section-title"><i class="fas fa-cloud-upload-alt" style="color:#3b82f6;"></i> 数据导入</div>
             <div class="upload-card">
@@ -531,9 +539,19 @@
                     <div class="upload-status-text" id="modelsUploadStatus"></div>
                 </div>
             </div>
+            <div class="upload-card">
+    <div class="collapsible-header" id="headerUploadWukong">
+        <i class="fas fa-chevron-down"></i> <i class="fas fa-user-check" style="color:#f59e0b;"></i> 批量上传物控
+    </div>
+    <div class="collapsible-body" id="bodyUploadWukong">
+        <div class="file-input-wrap"><input type="file" id="wukongExcelFile" accept=".xls,.xlsx" class="form-control"><button class="btn btn-warning btn-sm" id="uploadWukongExcelBtn"><i class="fas fa-upload"></i> 导入物控</button></div>
+        <small class="text-muted">表格列：料号、物控姓名</small>
+        <div class="upload-status-text" id="wukongUploadStatus"></div>
+    </div>
+</div>
             <div class="manual-card"><div class="collapsible-header" id="countManualHeader"><i class="fas fa-chevron-down"></i> 手动添加盘点</div><div class="collapsible-body" id="countManualBody"><div class="form-row" style="margin-bottom:12px;"><div class="form-group"><label>料号 <span class="required">*</span></label><input type="text" class="form-control" id="countManId" placeholder="料号"></div><div class="form-group"><label>储位 <span class="required">*</span></label><input type="text" class="form-control" id="countManLoc" placeholder="储位"></div></div><button class="btn btn-outline btn-block" id="addCountManBtn"><i class="fas fa-plus"></i> 添加盘点计划</button></div></div>
             <div class="manual-card"><div class="collapsible-header" id="stockManualHeader"><i class="fas fa-chevron-down"></i> 手动添加库存数据</div><div class="collapsible-body" id="stockManualBody"><div class="form-row" style="margin-bottom:12px;"><div class="form-group"><label>料号 <span class="required">*</span></label><input type="text" class="form-control" id="manId" placeholder="料号"></div><div class="form-group"><label>储位</label><input type="text" class="form-control" id="manLocation" placeholder="储位"></div><div class="form-group"><label>MPN <span class="required">*</span></label><input type="text" class="form-control" id="manMpn" placeholder="MPN"></div><div class="form-group"><label>数量</label><input type="number" class="form-control" id="manStock" value="0" min="0"></div></div><button class="btn btn-success btn-block" id="saveManualBtn"><i class="fas fa-save"></i> 添加</button></div></div>
-            <div class="manual-card" style="margin-top:0;"><div class="collapsible-header" id="locManualHeader"><i class="fas fa-chevron-down"></i> 手动添加储位数据</div><div class="collapsible-body" id="locManualBody"><div class="form-row" style="margin-bottom:12px;"><div class="form-group"><label>料号 <span class="required">*</span></label><input type="text" class="form-control" id="locManId" placeholder="料号"></div><div class="form-group"><label>储位 <span class="required">*</span></label><input type="text" class="form-control" id="locManLocation" placeholder="储位"></div><div class="form-group"><label>担当</label><input type="text" class="form-control" id="locManResponsible" placeholder="担当"></div></div><button class="btn btn-info btn-block" id="saveLocationManualBtn"><i class="fas fa-save"></i> 添加</button></div></div>
+            <div class="manual-card" style="margin-top:0;"><div class="collapsible-header" id="locManualHeader"><i class="fas fa-chevron-down"></i> 手动添加储位数据</div><div class="collapsible-body" id="locManualBody"><div class="form-row" style="margin-bottom:12px;"><div class="form-group"><label>料号 <span class="required">*</span></label><input type="text" class="form-control" id="locManId" placeholder="料号"></div><div class="form-group"><label>储位 <span class="required">*</span></label><input type="text" class="form-control" id="locManLocation" placeholder="储位"></div><div class="form-group"><label>担当</label><input type="text" class="form-control" id="locManResponsible" placeholder="担当"></div></div><button class="btn btn-info btn-block" id="saveLocationManualBtn"><i class="fas fa-save"></i> 添加</button></div></div><div class="manual-card" style="margin-top:0;"><div class="collapsible-header" id="wukongManualHeader"><i class="fas fa-chevron-down"></i> 手动添加物控数据</div><div class="collapsible-body" id="wukongManualBody"><div class="form-row" style="margin-bottom:12px;"><div class="form-group"><label>料号 <span class="required">*</span></label><input type="text" class="form-control" id="wukongManId" placeholder="料号"></div><div class="form-group"><label>物控姓名</label><input type="text" class="form-control" id="wukongManResponsible" placeholder="物控姓名"></div></div><button class="btn btn-warning btn-block" id="saveWukongManualBtn"><i class="fas fa-save"></i> 添加</button></div></div>
         </div>
         <div id="page-mine" class="page">
             <div class="section-title"><i class="fas fa-user" style="color:#8b5cf6;"></i> 我的</div>
@@ -541,7 +559,7 @@
             <div class="my-info-grid"><div class="my-info-item"><div class="num" id="myLowStockCount">0</div><div class="label">预警料号</div></div><div class="my-info-item"><div class="num" id="myTotalLocations">0</div><div class="label">储位总数</div></div><div class="my-info-item"><div class="num" id="myCheckedLocations">0</div><div class="label">已盘储位</div></div></div>
             <button class="btn btn-block" style="margin-top:20px;background:linear-gradient(135deg,#f0f9ff,#e0e7ff);color:#4338ca;border:1px solid #c7d2fe;" id="goCustomMsgBtn"><i class="fas fa-bullhorn"></i> 滚动预警设置</button>
             <div style="margin-top:20px;background:linear-gradient(135deg,#eff6ff,#f0fdf4);border-radius:16px;padding:16px;">
-            <div style="font-weight:600;margin-bottom:8px;"><i class="fas fa-info-circle" style="color:#3b82f6;"></i> 系统信息</div><div style="display:flex;justify-content:space-between;font-size:13px;color:#475569;padding:4px 0;"><span>版本</span><span>v24.1</span></div><div style="display:flex;justify-content:space-between;font-size:13px;color:#475569;padding:4px 0;"><span>开发者</span><span>于洪章</span></div><div style="display:flex;justify-content:space-between;font-size:13px;color:#475569;padding:4px 0;"><span>运行时间</span><span id="sysUptime">--</span></div><div style="display:flex;justify-content:space-between;font-size:13px;color:#475569;padding:4px 0;"><span>版本更新</span><span id="lastUpdateTime">2026-06-27</span></div></div>
+            <div style="font-weight:600;margin-bottom:8px;"><i class="fas fa-info-circle" style="color:#3b82f6;"></i> 系统信息</div><div style="display:flex;justify-content:space-between;font-size:13px;color:#475569;padding:4px 0;"><span>版本</span><span>v24.1</span></div><div style="display:flex;justify-content:space-between;font-size:13px;color:#475569;padding:4px 0;"><span>开发者</span><span>于洪章</span></div><div style="display:flex;justify-content:space-between;font-size:13px;color:#475569;padding:4px 0;"><span>运行时间</span><span id="sysUptime">--</span></div><div style="display:flex;justify-content:space-between;font-size:13px;color:#475569;padding:4px 0;"><span>版本更新</span><span id="lastUpdateTime" style="color:#3b82f6;cursor:pointer;text-decoration:underline;">2026-07-03</span></div></div>
             <button class="btn btn-block" style="margin-top:16px;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;border:none;" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> 退出登录</button>
         </div>
         <div id="page-custom-msg" class="page" style="padding-top:20px;">
@@ -587,7 +605,7 @@
 <div class="modal-overlay" id="errorLogModal"><div class="modal-box" style="max-width:90%; width:400px;"><h3>错误日志</h3><div class="error-log-list" id="errorLogList"></div><div class="modal-actions"><button class="btn-modal-warning" id="clearErrorLogBtn"><i class="fas fa-trash"></i> 清空</button><button class="btn-modal-cancel" id="closeErrorLogBtn">关闭</button></div></div></div>
 <div class="modal-overlay" id="systemMaintenanceModal"><div class="modal-box"><h3>🛠️ 系统维护</h3><div class="modal-actions" style="flex-direction:column;gap:10px;"><button class="btn btn-outline btn-block" id="maintainErrorLogBtn"><i class="fas fa-bug"></i> 错误日志</button><button class="btn-modal-cancel btn-block" style="margin-top:8px;" id="maintainCancelBtn">取消</button></div></div></div> <script>
 const APP_VERSION = '24.1';
-const LAST_UPDATE_DATE = '2026-06-28';
+const LAST_UPDATE_DATE = '2026-07-03';
 
 document.addEventListener('DOMContentLoaded', async () => {
 const saved=JSON.parse(localStorage.getItem('wms_remember')||'null');if(saved){document.getElementById('loginUsername').value=saved.u;document.getElementById('loginPassword').value=saved.p;document.getElementById('rememberMe').checked=true;}  
@@ -974,16 +992,24 @@ const saved=JSON.parse(localStorage.getItem('wms_remember')||'null');if(saved){d
             updatePlanUI(); renderCount();
             if (countPlan.length === 0 || countPlanDate !== countViewDate) { importPlan(); }
         }
-        if(name==='location') clearLocationResult();
-        if(name==='manualCount') { updateShelfUI(); document.getElementById('manualShelfLabel').textContent = ' - ' + (shelfNames[currentShelf]||('架'+(currentShelf+1))); loadManualPartList(currentShelf); }
-        if(name==='mine'){updateMine();loadCustomStyles();loadProfileBg();}
-        if(name==='customMsg') renderSubCustomMsgs();
-        if(name==='countList') { document.getElementById('countListDateInput').value = countViewDate; document.getElementById('countListModeTabs').querySelector('.tab-btn.active')?.click(); }
-        window.scrollTo({top:0,behavior:'smooth'});
-        if (name === 'out' && document.getElementById('outHalfScanPanel').classList.contains('show')) { document.getElementById('outFormContainer').classList.add('shift-down'); }
-        if (name === 'in' && document.getElementById('inHalfScanPanel').classList.contains('show')) { document.getElementById('inFormContainer').classList.add('shift-down'); }
-        if (name === 'scan' && scanSettings.autoOpen && !scanning) { startCam(); }
-        updateCalcFillButton();
+        if(name==='location'){
+    clearLocationResult();
+    document.getElementById('wukongSearchInput').value = '';
+    document.getElementById('wukongResultBody').innerHTML = '<div class="text-center text-muted">输入料号查询</div>';
+    document.querySelectorAll('#locationModeTabs .tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelector('#locationModeTabs .tab-btn[data-mode="loc"]').classList.add('active');
+    document.querySelectorAll('#page-location .report-tab-content').forEach(c => c.classList.remove('active'));
+    document.getElementById('loc-mode-loc').classList.add('active');
+}
+if(name==='manualCount') { updateShelfUI(); document.getElementById('manualShelfLabel').textContent = ' - ' + (shelfNames[currentShelf]||('架'+(currentShelf+1))); loadManualPartList(currentShelf); }
+if(name==='mine'){updateMine();loadCustomStyles();loadProfileBg();}
+if(name==='customMsg') renderSubCustomMsgs();
+if(name==='countList') { document.getElementById('countListDateInput').value = countViewDate; document.getElementById('countListModeTabs').querySelector('.tab-btn.active')?.click(); }
+window.scrollTo({top:0,behavior:'smooth'});
+if (name === 'out' && document.getElementById('outHalfScanPanel').classList.contains('show')) { document.getElementById('outFormContainer').classList.add('shift-down'); }
+if (name === 'in' && document.getElementById('inHalfScanPanel').classList.contains('show')) { document.getElementById('inFormContainer').classList.add('shift-down'); }
+if (name === 'scan' && scanSettings.autoOpen && !scanning) { startCam(); }
+updateCalcFillButton();
     }
 
     // ==================== 计算器 ====================
@@ -1136,6 +1162,42 @@ data.forEach(item => {
     '</div>'
         ).join('');
     }
+    (function(){
+    const input=document.getElementById('wukongSearchInput');
+    const dropdown=document.getElementById('wukongDropdown');
+    if(!input||!dropdown)return;
+    let timer;
+    input.addEventListener('input',function(){
+        clearTimeout(timer);
+        const val=this.value.trim().toUpperCase();
+        dropdown.style.display='none';dropdown.innerHTML='';
+        if(!val)return;
+        timer=setTimeout(async()=>{
+            const { data } = await supabase.from('locations').select('part,responsible').like('part', '%' + val).limit(20);
+            if (!data || !data.length) return;
+            data.reverse();
+            data.forEach(item => {
+                const div=document.createElement('div');
+                div.innerHTML='<strong>'+item.part+'</strong>'+(item.responsible?' - '+item.responsible:'');
+                div.addEventListener('click',()=>{input.value=item.part;dropdown.style.display='none';document.getElementById('wukongSearchBtn').click();});
+                dropdown.appendChild(div);
+            });
+            dropdown.style.display='block';
+        },300);
+    });
+    document.addEventListener('click',function(e){if(e.target!==input)dropdown.style.display='none';});
+})();
+    // ==================== 物控查询 ====================
+document.getElementById('wukongSearchBtn').addEventListener('click', async () => {
+    const val = document.getElementById('wukongSearchInput').value.trim();
+    if (!val) return toast('请输入搜索内容', 'info');
+    const tbody = document.getElementById('wukongResultBody');
+    tbody.innerHTML = '<div class="text-center text-muted">查询中...</div>';
+    const { data, error } = await supabase.from('wukong').select('part, responsible').ilike('part', '%' + val + '%').limit(100);
+    if (error) { tbody.innerHTML = '<div class="text-center text-muted">查询失败</div>'; return; }
+    if (!data || data.length === 0) { tbody.innerHTML = '<div class="text-center text-muted">未找到匹配项</div>'; return; }
+    tbody.innerHTML = data.map(d => '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px 14px;background:linear-gradient(135deg,#f0f9ff,#fef3c7);border-radius:16px;margin-bottom:10px;border:1px solid #e2e8f0;"><div style="font-weight:700;font-size:30px;color:#1e293b;">' + d.part + '</div><div style="color:#f59e0b;font-size:30px;margin-top:26px;font-weight:600;">' + (d.responsible || '-') + '</div></div>').join('');
+});
 
     // ==================== 导航 ====================
     document.getElementById('bottomNav').onclick=e=>{const btn=e.target.closest('.nav-item');if(btn&&pages[btn.dataset.tab]) showPage(btn.dataset.tab);};
@@ -1691,23 +1753,33 @@ data.forEach(item => {
     document.getElementById('queryInBtn').addEventListener('click',()=>{if(!currentUser||!currentUser.id) return;const matId=document.getElementById('reportInMaterialId').value.trim();let filtered=records.filter(r=>r.type==='in');if(matId) filtered=filtered.filter(r=>r.materialId===matId);const tbody=document.getElementById('inReportBody');tbody.innerHTML=filtered.length?filtered.map(r=>'<tr><td>'+r.materialId+'</td><td>'+(r.mpn||'-')+'</td><td>'+r.quantity+'</td><td>'+(r.date?.slice(0,10)||'')+'</td><td><button class="btn btn-sm btn-outline delete-record-btn" style="color:#ef4444;" data-id="'+r.id+'"><i class="fas fa-trash"></i></button></td></tr>').join(''):'<tr><td colspan="5" class="text-center text-muted">无入库记录</td></tr>';});
 
     // ==================== 储位查找 ====================
-    function clearLocationResult(){document.getElementById('locationResultBody').innerHTML='<tr><td colspan="4" class="text-center text-muted">输入料号关键字搜索</td></tr>';document.getElementById('locationResultCount').textContent='0';document.getElementById('locationSearchInput').value='';}
-    async function performLocationSearch(){
-        const val=document.getElementById('locationSearchInput').value.trim().toUpperCase();if(!val) return toast('请输入搜索关键字','info');
-        document.getElementById('locationResultBody').innerHTML='<tr><td colspan="4" class="text-center text-muted">搜索中...</td></tr>';document.getElementById('locationResultCount').textContent='...';
-        let res=locationData.filter(d=>d.part.includes(val));
-        if(res.length===0){const {data}=await supabase.from('locations').select('part,location,responsible').ilike('part','%'+val+'%');if(data){data.forEach(d=>{if(!locationData.find(item=>item.part===d.part)) locationData.push({part:d.part,location:d.location,responsible:d.responsible||''});});res=data.map(d=>({part:d.part,location:d.location,responsible:d.responsible||''}));}}
-        document.getElementById('locationResultBody').innerHTML=res.length?res.map(d=>'<tr id="loc-row-'+d.part+'"><td>'+d.part+'</td><td><span class="display-loc">'+(d.location||'-')+'</span><input class="form-control edit-loc" value="'+(d.location||'')+'" style="display:none;width:80px;font-size:12px;padding:4px;"></td><td>'+(d.responsible||'-')+'</td><td><button class="btn btn-sm btn-outline btn-edit-loc" data-part="'+d.part+'"><i class="fas fa-pen"></i></button><button class="btn btn-sm btn-success btn-save-loc" data-part="'+d.part+'" style="display:none;"><i class="fas fa-check"></i></button></td></tr>').join(''):'<tr><td colspan="4" class="text-center text-muted">未找到匹配项</td></tr>';
-        document.getElementById('locationResultCount').textContent=res.length;
-    }
-    document.getElementById('locationSearchBtn').addEventListener('click',performLocationSearch);
-    document.getElementById('locationSearchInput').addEventListener('keydown',e=>{if(e.key==='Enter') performLocationSearch();});
-    document.getElementById('locationClearBtn').addEventListener('click',clearLocationResult);
-    document.getElementById('locationResult').addEventListener('click',e=>{
-        const btn=e.target.closest('button');if(!btn) return;const part=btn.dataset.part;if(!part) return;
-        if(btn.classList.contains('btn-edit-loc')){const row=document.getElementById('loc-row-'+part);row.querySelector('.display-loc').style.display='none';row.querySelector('.edit-loc').style.display='inline-block';row.querySelector('.btn-edit-loc').style.display='none';row.querySelector('.btn-save-loc').style.display='inline-flex';row.querySelector('.edit-loc').focus();}
-        else if(btn.classList.contains('btn-save-loc')){const row=document.getElementById('loc-row-'+part);const newLoc=row.querySelector('.edit-loc').value.trim();const d=locationData.find(d=>d.part===part);if(d){d.location=newLoc;saveLocationDataToCloud();}row.querySelector('.display-loc').textContent=newLoc||'-';row.querySelector('.display-loc').style.display='inline';row.querySelector('.edit-loc').style.display='none';row.querySelector('.btn-edit-loc').style.display='inline-flex';row.querySelector('.btn-save-loc').style.display='none';}
-    });
+    function clearLocationResult(){document.getElementById('locationResultBody').innerHTML='<div class="text-center text-muted">输入料号关键字搜索</div>';document.getElementById('locationResultCount').textContent='0';document.getElementById('locationSearchInput').value='';}
+async function performLocationSearch(){
+    const val=document.getElementById('locationSearchInput').value.trim().toUpperCase();if(!val) return toast('请输入搜索关键字','info');
+    document.getElementById('locationResultBody').innerHTML='<div class="text-center text-muted">搜索中...</div>';document.getElementById('locationResultCount').textContent='...';
+    let res=locationData.filter(d=>d.part.includes(val));
+    if(res.length===0){const {data}=await supabase.from('locations').select('part,location,responsible').ilike('part','%'+val+'%');if(data){data.forEach(d=>{if(!locationData.find(item=>item.part===d.part)) locationData.push({part:d.part,location:d.location,responsible:d.responsible||''});});res=data.map(d=>({part:d.part,location:d.location,responsible:d.responsible||''}));}}
+    document.getElementById('locationResultBody').innerHTML = res.length ? res.map(d =>
+    '<div id="loc-row-' + d.part + '" style="display:flex;flex-direction:column;align-items:center;width:100%;padding:16px;background:#fff;border-radius:14px;margin-bottom:10px;border:1px solid #e2e8f0;box-shadow:0 2px 6px rgba(0,0,0,0.04);">' +
+    '<div style="font-weight:700;font-size:16px;color:#0f172a;margin-bottom:8px;"><i class="fas fa-barcode" style="color:#3b82f6;margin-right:6px;"></i>' + d.part + '</div>' +
+    '<div style="color:#475569;font-size:14px;margin-bottom:6px;"><i class="fas fa-map-marker-alt" style="color:#0ea5e9;margin-right:6px;"></i>储位: <span class="display-loc">' + (d.location || '-') + '</span>' +
+    '<input class="form-control edit-loc" value="' + (d.location || '') + '" style="display:none;width:100px;font-size:12px;padding:4px;"></div>' +
+    '<div style="display:flex;align-items:center;width:100%;color:#475569;font-size:14px;position:relative;">' +
+    '<span style="flex:1;text-align:center;"><i class="fas fa-user" style="color:#f59e0b;margin-right:6px;"></i>担当: ' + (d.responsible || '-') + '</span>' +
+    '<button class="btn btn-sm btn-outline btn-edit-loc" data-part="' + d.part + '" style="position:absolute;right:0;"><i class="fas fa-pen"></i> 修改</button>' +
+    '<button class="btn btn-sm btn-success btn-save-loc" data-part="' + d.part + '" style="display:none;position:absolute;right:0;"><i class="fas fa-check"></i> 保存</button>' +
+    '</div></div>'
+).join('') : '<div class="text-center text-muted">未找到匹配项</div>';
+    document.getElementById('locationResultCount').textContent=res.length;
+}
+document.getElementById('locationSearchBtn').addEventListener('click',performLocationSearch);
+document.getElementById('locationSearchInput').addEventListener('keydown',e=>{if(e.key==='Enter') performLocationSearch();});
+document.getElementById('locationClearBtn').addEventListener('click',clearLocationResult);
+document.getElementById('locationResult').addEventListener('click',e=>{
+    const btn=e.target.closest('button');if(!btn) return;const part=btn.dataset.part;if(!part) return;
+    if(btn.classList.contains('btn-edit-loc')){const row=document.getElementById('loc-row-'+part);row.querySelector('.display-loc').style.display='none';row.querySelector('.edit-loc').style.display='inline-block';row.querySelector('.btn-edit-loc').style.display='none';row.querySelector('.btn-save-loc').style.display='inline-flex';row.querySelector('.edit-loc').focus();}
+    else if(btn.classList.contains('btn-save-loc')){const row=document.getElementById('loc-row-'+part);const newLoc=row.querySelector('.edit-loc').value.trim();const d=locationData.find(d=>d.part===part);if(d){d.location=newLoc;saveLocationDataToCloud();}row.querySelector('.display-loc').textContent=newLoc||'-';row.querySelector('.display-loc').style.display='inline';row.querySelector('.edit-loc').style.display='none';row.querySelector('.btn-edit-loc').style.display='inline-flex';row.querySelector('.btn-save-loc').style.display='none';}
+});
 
     // ==================== 出入库自动完成 ====================
     function setupAutocompletes(){
@@ -1898,7 +1970,18 @@ loadData().then(() => {
         locationData.push({ part, location, responsible }); toast('储位数据添加成功', 'success');
         document.getElementById('locManId').value = ''; document.getElementById('locManLocation').value = ''; document.getElementById('locManResponsible').value = '';
         setCachedLocations(locationData); refreshAll();
-    });
+    });document.getElementById('saveWukongManualBtn').addEventListener('click', async function() {
+    setLoading(this, true);
+    const part = document.getElementById('wukongManId').value.trim().toUpperCase();
+    const responsible = document.getElementById('wukongManResponsible').value.trim();
+    if (!part) { setLoading(this, false); return toast('请输入料号', 'error'); }
+    const { error } = await supabase.from('wukong').upsert({ part, responsible }, { onConflict: 'part' });
+    setLoading(this, false);
+    if (error) { toast('添加失败: ' + error.message, 'error'); return; }
+    toast('物控数据添加成功', 'success');
+    document.getElementById('wukongManId').value = '';
+    document.getElementById('wukongManResponsible').value = '';
+});
     document.getElementById('addCountManBtn').addEventListener('click', async function() {
         if (!currentUser || !currentUser.id) { toast('请先登录', 'error'); return; }
         setLoading(this, true);
@@ -2043,14 +2126,17 @@ loadData().then(() => {
             document.getElementById('modelsUploadStatus').textContent = '已导入 '+toUpsert.length+' 个';
         });
     });
-
+     
     // ==================== BOM 页 Tab 切换 ====================
     document.querySelectorAll('#locationModeTabs .tab-btn').forEach(btn => {
         btn.addEventListener('click', function() {
             document.querySelectorAll('#locationModeTabs .tab-btn').forEach(b => b.classList.remove('active'));
             this.classList.add('active');
             document.querySelectorAll('#page-location .report-tab-content').forEach(c => c.classList.remove('active'));
-            document.getElementById(this.dataset.mode === 'loc' ? 'loc-mode-loc' : 'loc-mode-bom').classList.add('active');
+            const mode = this.dataset.mode;
+if (mode === 'loc') document.getElementById('loc-mode-loc').classList.add('active');
+else if (mode === 'bom') document.getElementById('loc-mode-bom').classList.add('active');
+else if (mode === 'wukong') document.getElementById('loc-mode-wukong').classList.add('active');
         });
     });
 
@@ -2164,6 +2250,13 @@ document.addEventListener('focusout', function() {
     setTimeout(adjustCalcBtnForKeyboard, 200);
 });
     document.onkeydown=e=>{if(e.key==='Escape'&&currentPage!=='home'&&currentUser) showPage('home');};
+});
+document.getElementById('lastUpdateTime').addEventListener('click', () => {
+    document.getElementById('modalIcon').className = 'fas fa-history';
+    document.getElementById('modalIcon').style.color = '#3b82f6';
+    document.getElementById('modalText').innerHTML = 'v24.1 (2026-07-03)<br><br>· 物控查找页面上线<br>· 储位结果改为卡片样式<br>· BOM删除功能<br>· 盘点计划自动延续<br>· 删除记录恢复库存';
+    document.getElementById('modalOk').style.display = 'none';
+    document.getElementById('confirmModal').classList.add('show');
 });
 </script>
 </body>
