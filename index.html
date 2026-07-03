@@ -2092,7 +2092,7 @@ loadData().then(() => {
             progressBg.style.display = 'block'; progressFill.style.width = '0%'; progressText.style.display = 'block'; progressText.className = 'bom-progress-text';
             let uploadedCount = 0;
             for (let i = 0; i < toUpsert.length; i += 1000) {
-                const batch = toUpsert.slice(i, i + 50);
+    const batch = toUpsert.slice(i, i + 1000);
                 const { error } = await supabase.rpc('upsert_boms_batch', { p_data: batch });
                 if (error) { setLoading(this, false); progressText.className = 'bom-progress-text error'; progressText.innerHTML = '上传失败: '+error.message; toast('上传失败: '+error.message, 'error'); return; }
                 uploadedCount += batch.length;
@@ -2126,6 +2126,36 @@ loadData().then(() => {
             document.getElementById('modelsUploadStatus').textContent = '已导入 '+toUpsert.length+' 个';
         });
     });
+    // ==================== 上传物控 ====================
+document.getElementById('uploadWukongExcelBtn').addEventListener('click', async function() {
+    const file = document.getElementById('wukongExcelFile').files[0]; if (!file) { toast('请选择Excel文件', 'error'); return; }
+    setLoading(this, true);
+    readExcel(file, async (err, rows) => {
+        if (err) { setLoading(this, false); return toast('解析失败: '+err.message, 'error'); }
+        if (!rows || rows.length < 2) { setLoading(this, false); return toast('表格数据不足', 'error'); }
+        const toUpsert = [];
+        for (let i = 1; i < rows.length; i++) {
+            const part = String(rows[i][0] || '').trim().toUpperCase();
+            const responsible = String(rows[i][1] || '').trim();
+            if (part) toUpsert.push({ part, responsible });
+        }
+        const seen = new Set();
+        const unique = [];
+        for (const item of toUpsert) {
+            if (!seen.has(item.part)) {
+                seen.add(item.part);
+                unique.push(item);
+            }
+        }
+        if (unique.length === 0) { setLoading(this, false); return toast('无有效数据', 'error'); }
+        const { error } = await supabase.from('wukong').upsert(unique, { onConflict: 'part' });
+        setLoading(this, false);
+        if (error) { toast('上传失败: '+error.message, 'error'); return; }
+        toast('成功导入 '+unique.length+' 条物控', 'success');
+        document.getElementById('wukongUploadStatus').style.display = 'block';
+        document.getElementById('wukongUploadStatus').textContent = '已导入 '+unique.length+' 条';
+    });
+});
      
     // ==================== BOM 页 Tab 切换 ====================
     document.querySelectorAll('#locationModeTabs .tab-btn').forEach(btn => {
