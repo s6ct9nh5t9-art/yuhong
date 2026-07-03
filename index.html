@@ -1,0 +1,2294 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="仓库管理">
+    <link rel="apple-touch-icon" href="icon.png">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>仓库管理系统 v24.1</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+    <style>
+        :root {
+            --scan-line-color: #3b82f6;
+            --scan-window-size: 45%;
+            --camera-preview-height: 50vh;
+        }
+        *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+        html,body{height:100%;width:100%;overflow:hidden;touch-action:manipulation}
+        body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC',Roboto,sans-serif;background:#f0f4f8;color:#1e293b;display:flex;justify-content:center;align-items:flex-start;padding:0}
+        #app{width:100%;max-width:480px;background:#fff;box-shadow:0 20px 60px rgba(0,0,0,0.12);position:relative;height:100%;display:flex;flex-direction:column;padding-top:env(safe-area-inset-top);padding-bottom:40px}
+        @media(min-width:481px){#app{border-radius:32px;margin:16px;height:calc(100% - 32px)}}
+        .page-container{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:20px 20px 60px}
+        .page{display:none;animation:fadeUp 0.3s ease}
+        .page.active{display:block}
+        @keyframes fadeUp{0%{opacity:0;transform:translateY(12px)}100%{opacity:1;transform:translateY(0)}}
+        .auth-wrap{display:flex;flex-direction:column;justify-content:center;align-items:center;min-height:70vh;padding:20px}
+        .auth-card{background:#fff;border-radius:24px;padding:32px 24px;width:100%;max-width:360px;box-shadow:0 10px 40px rgba(0,0,0,0.08)}
+        .auth-card h2{font-size:24px;font-weight:700;color:#0f172a;text-align:center;margin-bottom:24px}
+        .auth-card .form-group{margin-bottom:18px}
+        .auth-card .form-group label{display:block;font-size:13px;font-weight:600;color:#475569;margin-bottom:5px}
+        .auth-card .form-control{width:100%;padding:10px 14px;border:1.5px solid #e2e8f0;border-radius:12px;font-size:14px;background:#f8fafc;transition:border-color 0.2s;outline:none;font-family:inherit}
+        .auth-card .form-control:focus{border-color:#3b82f6;box-shadow:0 0 0 3px rgba(59,130,246,0.15);background:#fff}
+        .auth-card .btn{width:100%;padding:12px;border:none;border-radius:12px;font-size:16px;font-weight:600;cursor:pointer;transition:background 0.2s,transform 0.15s;margin-top:8px}
+        .auth-card .btn:active{transform:scale(0.97)}
+        .auth-card .btn-primary{background:#3b82f6;color:#fff}
+        .auth-card .btn-success{background:#22c55e;color:#fff}
+        .auth-link{text-align:center;margin-top:16px;font-size:14px;color:#64748b}
+        .auth-link a{color:#3b82f6;font-weight:600;cursor:pointer;text-decoration:none}
+        .alert-marquee{background:#fff;border:1px solid #e2e8f0;border-radius:14px;margin-bottom:16px;padding:16px 20px;overflow:hidden;height:25vh;max-height:220px;min-height:140px;position:relative}
+        .alert-marquee .marquee-track{display:flex;flex-direction:column;animation:scroll-up 12s linear infinite;animation-play-state:running}
+        .alert-marquee.paused .marquee-track{animation-play-state:paused}
+        .alert-marquee .marquee-item{font-size:14px;color:#1e293b;white-space:normal;word-wrap:break-word;padding:8px 0;display:flex;align-items:center;gap:8px;line-height:1.6}
+        .alert-marquee .marquee-item i{font-size:18px}
+        .alert-marquee .marquee-item i.fa-exclamation-triangle{color:#e67e22}
+        .alert-marquee .marquee-item i.fa-bullhorn{color:#3b82f6}
+        .alert-marquee .marquee-item i.fa-check-circle{color:#22c55e}
+        .marquee-item.red{color:#ef4444;font-weight:bold}
+        @keyframes scroll-up{0%{transform:translateY(0)}100%{transform:translateY(-50%)}}
+        .home-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;padding-top:8px}
+        .home-card{background:#fff;border-radius:16px;padding:14px 6px 12px;text-align:center;cursor:pointer;transition:transform 0.2s,box-shadow 0.2s;box-shadow:0 4px 12px rgba(0,0,0,0.04);border:1px solid #f1f5f9;position:relative;overflow:hidden}
+        .home-card::after{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--card-color);border-radius:0 0 4px 4px}
+        .home-card:active{transform:scale(0.96)}
+        .home-card .icon-wrap{width:48px;height:48px;border-radius:14px;display:flex;align-items:center;justify-content:center;margin:0 auto 8px;font-size:22px;color:#fff;background:var(--card-color)}
+        .home-card .card-label{font-size:13px;font-weight:600;color:#1e293b}
+        .home-card .card-badge{font-size:10px;color:#94a3b8;margin-top:2px}
+        .card-scan{--card-color:#8b5cf6}.card-out{--card-color:#ef4444}.card-in{--card-color:#22c55e}
+        .card-count{--card-color:#f59e0b}.card-stock{--card-color:#3b82f6}.card-report{--card-color:#ec4899}
+        .daily-stats{margin-top:16px;background:#f8fafc;border-radius:16px;padding:12px 12px 10px;border:1px solid #e9eef3;box-shadow:inset 0 1px 3px rgba(0,0,0,0.02)}
+        .stats-title{font-size:12px;font-weight:600;color:#475569;display:flex;align-items:center;gap:6px;margin-bottom:8px}
+        .stats-title i{color:#3b82f6;font-size:14px}
+        .stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+        .stat-item{background:#fff;border-radius:12px;padding:8px 6px;text-align:center;box-shadow:0 2px 6px rgba(0,0,0,0.02);border:1px solid #f1f5f9}
+        .stat-value{font-size:18px;font-weight:700;line-height:1.2}.stat-label{font-size:11px;color:#94a3b8;margin-top:2px}
+        .in{color:#22c55e}.out{color:#ef4444}.total{color:#3b82f6}.count{color:#8b5cf6}
+        .section-title{font-size:18px;font-weight:700;color:#0f172a;margin-bottom:16px;display:flex;align-items:center;justify-content:center}
+        .section-title i{font-size:20px}
+        .form-group{margin-bottom:16px}
+        .form-group label{display:block;font-size:13px;font-weight:600;color:#475569;margin-bottom:5px}
+        .required{color:#ef4444;margin-left:2px}
+        .form-control{width:100%;padding:10px 14px;border:1.5px solid #e2e8f0;border-radius:12px;font-size:14px;color:#1e293b;background:#f8fafc;transition:border-color 0.2s;outline:none;font-family:inherit}
+        .form-control:focus{border-color:#3b82f6;box-shadow:0 0 0 3px rgba(59,130,246,0.15);background:#fff}
+        select.form-control{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2364748b' d='M6 8L1 3h10z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center;padding-right:36px}
+        .btn{padding:10px 24px;border:none;border-radius:12px;font-size:14px;font-weight:600;cursor:pointer;transition:background 0.2s,transform 0.15s;display:inline-flex;align-items:center;justify-content:center;gap:8px;font-family:inherit}
+        .btn:active{transform:scale(0.96)}.btn:disabled{opacity:0.6;pointer-events:none}
+        .btn-primary{background:#3b82f6;color:#fff}.btn-success{background:#22c55e;color:#fff}
+        .btn-danger{background:#ef4444;color:#fff}.btn-warning{background:#f59e0b;color:#fff}
+        .btn-info{background:#0ea5e9;color:#fff}.btn-outline{background:transparent;color:#475569;border:1.5px solid #e2e8f0}
+        .btn-sm{padding:6px 14px;font-size:12px;border-radius:8px}.btn-block{width:100%;justify-content:center}
+        .table-wrap{overflow-x:auto;border-radius:14px;border:1px solid #f1f5f9;background:#fff;margin-top:4px}
+        table{width:100%;border-collapse:collapse;font-size:13px;min-width:400px}
+        table th{background:#f8fafc;font-weight:600;color:#475569;padding:10px 12px;text-align:left;border-bottom:2px solid #e2e8f0;white-space:nowrap}
+        table td{padding:10px 12px;border-bottom:1px solid #f1f5f9;vertical-align:middle}
+        table tr:last-child td{border-bottom:none}table tr:hover td{background:#f8fafc}
+        .text-center{text-align:center}.text-muted{color:#94a3b8;font-size:13px}
+        .stock-low{color:#ef4444;font-weight:600}
+        .editable-stock{cursor:pointer;border-bottom:1px dashed #94a3b8}
+        .editable-stock input{width:60px;padding:2px 6px;border:1px solid #3b82f6;border-radius:6px;text-align:center;font-size:13px;font-weight:600}
+        .scan-result{background:#fff;border-radius:16px;padding:16px 20px;border:1px solid #e2e8f0;margin-top:12px;display:none}
+        .scan-result.show{display:block;animation:fadeUp 0.3s ease}
+        .result-item{display:flex;justify-content:space-between;padding:4px 0;font-size:14px;border-bottom:1px solid #f1f5f9}
+        .result-item:last-child{border-bottom:none}.result-label{color:#64748b}.result-value{font-weight:600;color:#0f172a}
+        .count-item{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:#f8fafc;border-radius:12px;margin-bottom:8px;border:1px solid #f1f5f9}
+        .count-item.changed{border-left:3px solid #f59e0b;background:#fffbeb}
+        .info{flex:1;min-width:0}.info .name{font-weight:600;font-size:14px}.info .spec{font-size:12px;color:#94a3b8}
+        .qty-control{display:flex;align-items:center;gap:8px}
+        .qty-control input{width:70px;padding:4px 6px;border:1.5px solid #e2e8f0;border-radius:8px;text-align:center;font-size:14px;font-weight:600;outline:none;background:#fff}
+        .form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+        .my-profile{background:#f8fafc;border-radius:20px;padding:20px;text-align:center;border:1px solid #f1f5f9;margin-bottom:20px;background-size:cover;background-position:center}
+        .my-profile .avatar{font-size:64px;color:#3b82f6;margin-bottom:8px;cursor:pointer}
+        .my-profile .username{font-size:18px;font-weight:700;color:#0f172a}
+        .my-profile .user-role{font-size:14px;color:#64748b}
+        .my-info-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-top:16px}
+        .my-info-item{background:#fff;border-radius:14px;padding:14px 6px;text-align:center;border:1px solid #f1f5f9}
+        .my-info-item .num{font-size:22px;font-weight:700;color:#1e293b}
+        .my-info-item .label{font-size:12px;color:#94a3b8;margin-top:2px}
+        .custom-msg-item{display:fl#42445Aex;align-items:center;justify-content:space-between;padding:8px 12px;background:#fff;border-radius:10px;margin-bottom:6px;border:1px solid #f1f5f9}
+        .btn-remove{color:#ef4444;cursor:pointer;padding:4px 8px;border-radius:6px;background:none;border:none;font-size:14px}
+        .upload-card{background:#f8fafc;border-radius:16px;padding:16px;margin-bottom:16px;border:1px solid #e9eef3}
+        .file-input-wrap{display:flex;align-items:center;gap:8px}
+        .empty-state{text-align:center;padding:32px 16px;color:#94a3b8}
+        .empty-state i{font-size:40px;margin-bottom:12px;opacity:0.5}
+        .bottom-nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;height:40px;background:#fff;border-top:1px solid #f1f5f9;display:flex;align-items:flex-end;justify-content:space-around;z-index:100}
+        .bottom-nav .nav-item{display:flex;align-items:center;justify-content:center;padding:0 12px;margin-bottom:0;cursor:pointer;color:#94a3b8;font-size:18px;font-weight:500;border:none;background:transparent;font-family:inherit;transition:color 0.2s,transform 0.2s cubic-bezier(0.34,1.56,0.64,1);border-bottom:2px solid transparent}
+        .bottom-nav .nav-item.active{color:#3b82f6;font-weight:700;border-bottom-color:#3b82f6}
+        .toast-container{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:999;display:flex;flex-direction:column;align-items:center;gap:8px;pointer-events:none;max-width:420px;width:90%}
+        .toast{background:#0f172a;color:#fff;padding:12px 24px;border-radius:14px;font-size:18px;font-weight:600;box-shadow:0 8px 32px rgba(0,0,0,0.3);animation:toastIn 0.35s ease,toastOut 0.35s ease 2.5s forwards;width:100%;text-align:center;pointer-events:auto;display:flex;align-items:center;justify-content:center;gap:10px}
+        .toast-success{background:#16a34a}.toast-error{background:#dc2626}.toast-info{background:#2563eb}
+        @keyframes toastIn{0%{opacity:0;transform:translateY(20px)}100%{opacity:1;transform:translateY(0)}}
+        @keyframes toastOut{0%{opacity:1;transform:translateY(0)}100%{opacity:0;transform:translateY(-12px)}}
+        @media(max-width:400px){.home-grid{gap:8px}.home-card{padding:12px 4px 10px}.home-card .icon-wrap{width:40px;height:40px;font-size:18px}.home-card .card-label{font-size:12px}}
+        .autocomplete-wrapper{position:relative}
+        .autocomplete-dropdown{position:absolute;top:100%;left:0;right:0;background:#fff;border:1px solid #e2e8f0;border-radius:0 0 12px 12px;max-height:180px;overflow-y:auto;z-index:10;display:none;box-shadow:0 8px 16px rgba(0,0,0,0.1)}
+        .autocomplete-dropdown div{padding:10px 14px;cursor:pointer;font-size:13px;border-bottom:1px solid #f1f5f9}
+        .autocomplete-dropdown div:hover,.autocomplete-dropdown div.autocomplete-active{background:#eff6ff}
+        .tab-nav{display:flex;gap:8px;margin-bottom:16px}
+        .tab-btn{flex:1;padding:8px;border-radius:12px;background:#f1f5f9;color:#64748b;font-weight:600;text-align:center;cursor:pointer;border:none;font-family:inherit;font-size:14px}
+        .tab-btn.active{background:#3b82f6;color:#fff}
+        .report-tab-content{display:none}.report-tab-content.active{display:block}
+        .btn-inline{padding:8px 20px;font-size:15px;width:auto}
+        .back-header{display:flex;align-items:center;gap:12px;margin-bottom:20px}
+        .back-header button{background:none;border:none;font-size:20px;color:#3b82f6;cursor:pointer}
+        .upload-status-text{font-size:13px;color:#64748b;margin-top:8px;display:none}
+        .modal-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.4);z-index:1000;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
+        .modal-overlay.show{display:flex}
+        .modal-box{background:#fff;border-radius:20px;padding:28px 24px;width:85%;max-width:320px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,0.2);animation:modalIn 0.3s ease}
+        @keyframes modalIn{from{opacity:0;transform:scale(0.9)}to{opacity:1;transform:scale(1)}}
+        .modal-box i{font-size:48px;margin-bottom:16px}
+        .modal-box p{font-size:16px;font-weight:600;color:#1e293b;margin-bottom:20px}
+        .modal-box .modal-actions{display:flex;gap:12px}
+        .modal-box .modal-actions button{flex:1;padding:10px;border-radius:12px;font-size:14px;font-weight:600;border:none;cursor:pointer}
+        .modal-box .btn-modal-cancel{background:#f1f5f9;color:#475569}
+        .modal-box .btn-modal-danger{background:#ef4444;color:#fff}
+        .settings-btn{position:fixed;top:calc(20px + env(safe-area-inset-top));right:calc(15px + env(safe-area-inset-right));z-index:110;width:40px;height:40px;background:rgba(255,255,255,0.9);backdrop-filter:blur(10px);border-radius:50%;box-shadow:0 2px 10px rgba(0,0,0,0.15);display:none;align-items:center;justify-content:center;font-size:20px;color:#475569;cursor:pointer}
+        .settings-btn.visible{display:flex}.settings-btn:active{transform:scale(0.92)}
+        .settings-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.3);z-index:120;opacity:0;visibility:hidden;transition:opacity 0.3s}
+        .settings-overlay.show{opacity:1;visibility:visible}
+        .settings-panel{position:fixed;top:0;right:-280px;width:260px;height:100%;background:#fff;z-index:130;box-shadow:-5px 0 20px rgba(0,0,0,0.15);transition:right 0.3s ease;padding:calc(20px + env(safe-area-inset-top)) calc(16px + env(safe-area-inset-right)) calc(20px + env(safe-area-inset-bottom)) 16px}
+        .settings-panel.show{right:0}
+        .settings-header{display:flex;justify-content:space-between;align-items:center;font-size:18px;font-weight:700;margin-bottom:24px}
+        .settings-header i{font-size:22px;cursor:pointer}
+        .setting-item{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid #f1f5f9}
+        .setting-label{font-size:14px;color:#475569}
+        .switch-track{width:44px;height:24px;background:#ccc;border-radius:12px;position:relative;cursor:pointer}
+        .switch-track.on{background:#3b82f6}
+        .switch-thumb{width:20px;height:20px;background:white;border-radius:50%;position:absolute;top:2px;left:2px;transition:0.2s}
+        .switch-track.on .switch-thumb{left:22px}
+        .scanner-container{display:flex;flex-direction:column;gap:16px}
+        .scanner-wrapper{position:relative;width:100%;aspect-ratio:1/1;max-height:var(--camera-preview-height,50vh);background:#000;border-radius:16px;overflow:hidden;box-shadow:0 4px 16px rgba(0,0,0,0.12)}
+        .scanner-wrapper video{width:100%;height:100%;object-fit:cover;display:block}
+        .scanner-placeholder{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#64748b;z-index:5;gap:10px;background:rgba(0,0,0,0.7);border-radius:16px}
+        .scanner-placeholder i{font-size:40px;color:#3b82f6}.scanner-placeholder p{color:#cbd5e1;font-size:14px}
+        .overlay{position:absolute;inset:0;pointer-events:none;z-index:10;display:none}
+        .scan-window{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:var(--scan-window-size,45%);aspect-ratio:1/1;border-radius:14px;box-shadow:0 0 0 9999px rgba(0,0,0,0.65);z-index:11}
+        .corner{position:absolute;width:28px;height:28px;z-index:12}
+        .corner::before,.corner::after{content:'';position:absolute;background:#3b82f6;border-radius:2px}
+        .corner-tl{top:-2px;left:-2px}.corner-tl::before{top:0;left:0;width:28px;height:4px}.corner-tl::after{top:0;left:0;width:4px;height:28px}
+        .corner-tr{top:-2px;right:-2px}.corner-tr::before{top:0;right:0;width:28px;height:4px}.corner-tr::after{top:0;right:0;width:4px;height:28px}
+        .corner-bl{bottom:-2px;left:-2px}.corner-bl::before{bottom:0;left:0;width:28px;height:4px}.corner-bl::after{bottom:0;left:0;width:4px;height:28px}
+        .corner-br{bottom:-2px;right:-2px}.corner-br::before{bottom:0;right:0;width:28px;height:4px}.corner-br::after{bottom:0;right:0;width:4px;height:28px}
+        .scan-line{position:absolute;left:6%;width:88%;height:2.5px;background:linear-gradient(90deg,transparent 0%,var(--scan-line-color) 20%,var(--scan-line-color) 80%,transparent 100%);border-radius:4px;z-index:13;pointer-events:none;box-shadow:0 0 16px 4px rgba(59,130,246,0.7);animation:scanMove 2.2s cubic-bezier(0.45,0,0.55,1) infinite}
+        .scan-line.cooling{background:linear-gradient(90deg,transparent 0%,#ef476f 20%,#ef476f 80%,transparent 100%);box-shadow:0 0 16px 4px rgba(239,71,111,0.7);animation-duration:1.2s}
+        @keyframes scanMove{0%{top:8%;opacity:0.3}15%{opacity:1}50%{top:88%;opacity:1}65%{opacity:0.3}100%{top:8%;opacity:0.3}}
+        .hint-text{position:absolute;bottom:14%;left:50%;transform:translateX(-50%);color:rgba(255,255,255,0.85);font-size:13px;z-index:14}
+        .controls-row{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;align-items:center;margin-bottom:4px}
+        .result-card,.fields-card{background:#fff;border-radius:14px;padding:14px 16px;border:1.5px solid #e2e8f0;color:#1e293b;box-shadow:0 2px 8px rgba(0,0,0,0.04)}
+        .result-content{background:#f8fafc;padding:8px 10px;border-radius:8px;font-family:monospace;margin-bottom:10px;max-height:80px;overflow-y:auto;color:#1e293b}
+        .field-item{flex:1 1 30%;min-width:100px;display:flex;flex-direction:column;gap:4px}
+        .field-item input{background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:8px 10px;color:#1e293b;font-size:14px;outline:none}
+        .field-item label{color:#475569;font-weight:600;font-size:13px}
+        .save-btn-row{margin-top:8px;display:flex;gap:8px}
+        .multiplier-group{display:flex;align-items:center;gap:6px;margin-bottom:10px}
+        .multiplier-group label{font-size:0.75rem;font-weight:600;color:#64748b}
+        .multiplier-group select{padding:8px 10px;border-radius:8px;background:#f8fafc;border:1px solid #e2e8f0;color:#1e293b;font-size:14px;outline:none;width:100%}
+        .count-search-row{display:flex;gap:8px;margin-bottom:12px;align-items:center}.count-search-row input{flex:1}
+        .plan-row{display:flex;align-items:center;justify-content:space-between;background:#f0fdf4;border-radius:12px;padding:10px 14px;margin-bottom:12px;border:1px solid #bbf7d0}
+        .plan-row .plan-info{font-size:14px;color:#166534}.plan-row .btn{padding:6px 14px}
+        .shelf-row{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap}
+        .shelf-btn{flex:1;min-width:48px;padding:8px 4px;border-radius:10px;background:#f1f5f9;border:1.5px solid transparent;font-size:12px;font-weight:600;color:#475569;cursor:pointer;text-align:center}
+        .shelf-btn.active{background:#3b82f6;color:#fff;border-color:#3b82f6}
+        .mpn-dropdown-wrapper{position:relative}
+        .mpn-dropdown{position:absolute;top:100%;left:0;right:0;background:#fff;border:1px solid #e2e8f0;border-radius:12px;max-height:160px;overflow-y:auto;z-index:10;display:none;box-shadow:0 8px 16px rgba(0,0,0,0.1)}
+        .mpn-dropdown div{padding:10px 14px;cursor:pointer;font-size:14px;border-bottom:1px solid #f1f5f9}
+        .mpn-dropdown div:hover{background:#eff6ff}
+        .modal-input-group{margin-bottom:12px}
+        .modal-input-group label{display:block;font-size:13px;font-weight:600;margin-bottom:4px;color:#475569}
+        .modal-input-group input{width:100%;padding:8px 12px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:14px}
+        .range-inputs{display:flex;align-items:center;gap:6px}.range-inputs span{margin:0 2px;color:#64748b}.range-inputs input{flex:1}
+        .error-log-list{max-height:60vh;overflow-y:auto;text-align:left;padding:10px;background:#f8fafc;border-radius:8px;font-size:13px;color:#1e293b;margin-bottom:16px}
+        .error-log-item{border-bottom:1px solid #f1f5f9;padding:4px 0}.error-log-item:last-child{border-bottom:none}
+        .calculator-float-btn{position:fixed;right:16px;bottom:120px;width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,#06b6d4,#3b82f6,#8b5cf6,#ec4899);color:#fff;font-size:20px;border:none;box-shadow:none;z-index:150;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:transform 0.2s, bottom 0.25s ease}
+        .calculator-float-btn:active{transform:scale(0.9)}
+        .calculator-panel{position:fixed;bottom:0;left:50%;transform:translate(-50%,100%);width:100%;max-width:480px;height:50vh;background:#fff;z-index:200;border-radius:20px 20px 0 0;box-shadow:0 -10px 25px rgba(0,0,0,0.15);transition:transform 0.35s ease;display:flex;flex-direction:column}
+        .calculator-panel.show{transform:translate(-50%,0)}
+        .calculator-header{display:flex;align-items:center;justify-content:space-between;padding:10px 20px;border-bottom:1px solid #e2e8f0;font-weight:600}
+        .calculator-header i{font-size:18px;cursor:pointer;color:#475569}
+        .calculator-body{flex:1;display:flex;flex-direction:column;padding:12px;gap:8px;overflow-y:auto}
+        .calc-display{background:#f1f5f9;border-radius:12px;padding:12px 16px;font-size:24px;font-weight:600;text-align:right;min-height:48px;display:flex;align-items:center;justify-content:flex-end;word-break:break-all}
+        .calc-buttons{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+        .calc-btn{padding:10px 4px;font-size:18px;font-weight:600;border-radius:10px;border:1px solid #e2e8f0;background:#fff;color:#1e293b;cursor:pointer;transition:background 0.1s}
+        .calc-btn:active{background:#e2e8f0}
+        .calc-equal{background:#3b82f6;color:#fff;border-color:#3b82f6}
+        .calc-fill{background:#22c55e;color:#fff;border-color:#22c55e;width:100%;grid-column:1/-1}
+        .calc-fill.disabled{background:#94a3b8;border-color:#94a3b8;pointer-events:none;opacity:0.6}
+        .bom-card{background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:14px 16px;margin-bottom:12px;box-shadow:0 2px 6px rgba(0,0,0,0.04)}
+        .bom-top-row,.bom-mid-row,.bom-bottom-row{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;color:#1e293b}
+        .bom-top-row{margin-bottom:8px}.bom-mid-row{margin-bottom:8px;font-size:15px;font-weight:700;color:#0f172a}
+        .bom-bottom-row{color:#475569;font-size:13px}
+        .bom-part-editable,.bom-mpn-editable,.bom-manufacturer-editable{cursor:pointer;border-bottom:1px dashed transparent;transition:0.2s}
+        .bom-part-editable:hover,.bom-mpn-editable:hover,.bom-manufacturer-editable:hover{border-bottom-color:#94a3b8}
+        .bom-mid-row i{color:#3b82f6;font-size:14px}
+        .bom-progress-wrap{margin-top:10px;width:100%}
+        .bom-progress-bg{width:100%;height:8px;background:#e2e8f0;border-radius:6px;overflow:hidden;display:none}
+        .bom-progress-fill{height:100%;width:0%;background:#3b82f6;border-radius:6px;transition:width 0.3s ease}
+        .bom-progress-text{font-size:13px;font-weight:500;color:#1e293b;margin-top:6px;display:none}
+        .bom-progress-text.success{color:#16a34a}.bom-progress-text.error{color:#dc2626}
+        .scan-half-panel{position:fixed;top:0;left:50%;transform:translate(-50%,-100%);width:100%;max-width:480px;height:50vh;background:#000;z-index:200;border-radius:0 0 20px 20px;display:flex;flex-direction:column;transition:transform 0.35s ease;box-shadow:0 10px 30px rgba(0,0,0,0.3)}
+        .scan-half-panel.show{transform:translate(-50%,0)}
+        .scan-half-header{display:flex;align-items:center;justify-content:flex-end;padding:12px 16px 8px;color:#fff}
+        .scan-half-header i{cursor:pointer;color:#fff;font-size:22px}
+        .scan-half-body{flex:1;position:relative;overflow:hidden}
+        .scan-half-body video{width:100%;height:100%;object-fit:cover}
+        .scan-half-body canvas{display:none}
+        .scan-half-footer{display:flex;justify-content:center;padding:12px;background:#000}
+        .shift-down{margin-top:50vh;transition:margin-top 0.35s ease}
+        .collapsible-body{display:none}
+        .collapsible-body.show{display:block}
+        .collapsible-header .fa-chevron-down{transition:transform 0.3s ease}
+        .collapsible-header.expanded .fa-chevron-down{transform:rotate(180deg)}
+        .collapsible-header{cursor:pointer;display:flex;align-items:center;gap:8px;font-weight:600;font-size:14px;color:#1e293b;padding:8px 0}
+        .checkbox-label{display:flex;align-items:center;gap:8px;font-size:14px;color:#1e293b;padding:6px 0;cursor:pointer;line-height:1.5}
+        .checkbox-label input[type="checkbox"]{width:16px;height:16px;margin:0;flex-shrink:0}
+        .bottom-nav .nav-item:active{transform:scale(0.85)}
+        @keyframes blink{
+0%,100%{opacity:1;}
+50%{opacity:0.2;}
+}
+#locationModeTabs .tab-btn.active[data-mode="loc"]{background:#06b6d4;color:#fff;}
+#locationModeTabs .tab-btn.active[data-mode="bom"]{background:#ec4899;color:#fff;}
+#locationModeTabs .tab-btn.active[data-mode="wukong"]{background:#10b981;color:#fff;}
+</style>
+</head>
+<body>
+<div id="app">
+    <div id="settingsBtn" class="settings-btn"><i class="fas fa-cog" style="background:linear-gradient(135deg,#f59e0b,#ec4899);-webkit-background-clip:text;-webkit-text-fill-color:transparent;"></i></div>
+    <div id="settingsOverlay" class="settings-overlay"></div>
+    <div id="settingsPanel" class="settings-panel">
+        <div class="settings-header"><span>设置</span><i class="fas fa-times" id="settingsClose"></i></div>
+        <div class="settings-body" style="display:flex;flex-direction:column;gap:12px;overflow-y:auto;flex:1;">
+            <div class="setting-item"><span class="setting-label">预警阈值</span><select id="thresholdSelect"><option value="2000">2000</option><option value="5000">5000</option><option value="10000">10000</option></select></div>
+            <div class="setting-item"><span class="setting-label">摄像头预览大小</span><div class="setting-value"><input type="range" id="cameraPreviewHeightRange" min="30" max="80" value="50" step="1"><span id="cameraPreviewHeightValue">50%</span></div></div>
+            <div class="setting-item"><span class="setting-label">扫码窗口大小</span><div class="setting-value"><input type="range" id="scanWindowSizeRange" min="20" max="80" value="45" step="1"><span id="scanWindowSizeValue">45%</span></div></div>
+            <div class="setting-item"><span class="setting-label">扫码冷却时间</span><select id="scanCooldownSelect"><option value="1">1秒</option><option value="2">2秒</option><option value="2.5" selected>2.5秒</option><option value="3">3秒</option></select></div>
+            <div class="setting-item"><span class="setting-label">自动打开摄像头</span><select id="autoOpenCameraSelect"><option value="manual">手动打开</option><option value="auto">自动打开</option></select></div>
+            <div class="setting-item"><span class="setting-label">提示音</span><div class="switch-track" id="soundSwitchTrack"><div class="switch-thumb"></div></div></div>
+            <div class="setting-item"><span class="setting-label">货架名称</span><button class="btn btn-outline btn-sm" id="editShelfNamesBtn"><i class="fas fa-pen"></i> 编辑</button></div>
+            <div class="setting-item"><span class="setting-label">储位分类</span><button class="btn btn-outline btn-sm" id="editShelfRangesBtn"><i class="fas fa-pen"></i> 编辑</button></div>
+            <div class="setting-item"><span class="setting-label">字体大小</span><div class="setting-value"><button class="btn btn-outline btn-sm" id="fontSizeDown" style="width:36px;height:36px;padding:0;">−</button><span id="fontSizeValue" style="margin:0 10px;font-weight:600;min-width:36px;text-align:center;">100%</span><button class="btn btn-outline btn-sm" id="fontSizeUp" style="width:36px;height:36px;padding:0;">+</button></div></div>
+            <button id="systemMaintenanceBtn" class="btn btn-outline btn-block" style="margin-top:8px;"><i class="fas fa-tools"></i> 系统维护</button>
+        </div>
+    </div>    <div class="page-container" id="pageContainer">
+        <div id="page-login" class="page active">
+            <div class="auth-wrap"><div class="auth-card"><h2><i class="fas fa-warehouse" style="color:#3b82f6;"></i> 仓库管理</h2><div class="form-group"><label>账号</label><input type="text" class="form-control" id="loginUsername" placeholder="请输入账号"></div><div class="form-group"><label>密码</label><input type="password" class="form-control" id="loginPassword" placeholder="请输入密码"></div><div class="form-group" style="display:flex;align-items:center;gap:8px;margin-bottom:12px;"><input type="checkbox" id="rememberMe" style="width:16px;height:16px;"><label for="rememberMe" style="margin-bottom:0;font-size:13px;cursor:pointer;">记住账号密码</label></div><button class="btn btn-primary" id="loginBtn"><i class="fas fa-sign-in-alt"></i> 登录</button><div class="auth-link">还没有账号？<a id="goRegisterLink">立即注册</a></div></div></div>
+        </div>
+        <div id="page-register" class="page">
+            <div class="auth-wrap"><div class="auth-card"><h2><i class="fas fa-user-plus" style="color:#22c55e;"></i> 注册新账号</h2><div class="form-group"><label>账号</label><input type="text" class="form-control" id="regUsername" placeholder="请输入账号"></div><div class="form-group"><label>密码</label><input type="password" class="form-control" id="regPassword" placeholder="请输入密码"></div><div class="form-group"><label>真实姓名</label><input type="text" class="form-control" id="regRealName" placeholder="请输入姓名"></div><button class="btn btn-success" id="registerBtn"><i class="fas fa-check"></i> 注册</button><div class="auth-link">已有账号？<a id="goLoginLink">返回登录</a></div></div></div>
+        </div>
+        <div id="page-home" class="page">
+            <div class="section-title">首页</div>
+            <div class="alert-marquee" id="alertMarquee"><div class="marquee-track" id="marqueeTrack"></div></div>
+            <div class="home-grid">
+                <div class="home-card card-scan" data-page="scan"><div class="icon-wrap"><i class="fas fa-qrcode"></i></div><div class="card-label">扫码</div></div>
+                <div class="home-card card-out" data-page="out"><div class="icon-wrap"><i class="fas fa-sign-out-alt"></i></div><div class="card-label">出库</div></div>
+                <div class="home-card card-in" data-page="in"><div class="icon-wrap"><i class="fas fa-sign-in-alt"></i></div><div class="card-label">入库</div></div>
+                <div class="home-card card-count" data-page="count"><div class="icon-wrap"><i class="fas fa-clipboard-list"></i></div><div class="card-label">盘点</div></div>
+                <div class="home-card card-stock" data-page="stock"><div class="icon-wrap"><i class="fas fa-boxes"></i></div><div class="card-label">库存</div></div>
+                <div class="home-card card-report" data-page="report"><div class="icon-wrap"><i class="fas fa-list"></i></div><div class="card-label">出入库清单</div></div>
+            </div>
+            <div class="daily-stats" id="dailyStats"><div class="stats-title"><i class="fas fa-calendar-day"></i> 今日数据</div><div class="stats-grid" style="grid-template-columns:1fr 1fr 1fr;"><div class="stat-item"><div class="stat-value in" id="todayIn">0</div><div class="stat-label">入库总量</div></div><div class="stat-item"><div class="stat-value in" id="todayInCount">0</div><div class="stat-label">入库笔数</div></div><div class="stat-item"><div class="stat-value total" id="todayTotalStock">0</div><div class="stat-label">当前总库存</div></div><div class="stat-item"><div class="stat-value out" id="todayOut">0</div><div class="stat-label">出库总量</div></div><div class="stat-item"><div class="stat-value out" id="todayOutCount">0</div><div class="stat-label">出库笔数</div></div><div class="stat-item"><div class="stat-value count" id="todayOps">0</div><div class="stat-label">总笔数</div></div></div></div>
+        </div>
+        <div id="page-scan" class="page">
+            <div class="scanner-container">
+                <div class="scanner-wrapper" id="scannerWrapper">
+                    <video id="scanVideo" autoplay playsinline muted></video>
+                    <canvas id="scanCanvas"></canvas>
+                    <div class="scanner-placeholder" id="placeholder"><i class="fas fa-camera"></i><p>点击下方按钮启动摄像头</p></div>
+                    <div class="overlay" id="overlay" style="display:none;">
+                        <div class="scan-window" id="scanWindow">
+                            <div class="corner corner-tl"></div><div class="corner corner-tr"></div>
+                            <div class="corner corner-bl"></div><div class="corner corner-br"></div>
+                        </div>
+                        <div class="scan-line" id="scanLine"></div>
+                        <div class="hint-text">将二维码放入框内</div>
+                    </div>
+                </div>
+                <div class="controls-row">
+                    <button class="btn btn-primary" id="btnStart"><i class="fas fa-video"></i> 开始扫描</button>
+                    <button class="btn btn-outline btn-sm" id="btnUpload"><i class="fas fa-image"></i> 选图</button>
+                    <button class="btn btn-outline" id="btnTorch" disabled><i class="fas fa-lightbulb"></i> 补光</button>
+                    <button class="btn btn-outline btn-sm" id="btnManualCount"><i class="fas fa-clipboard-list"></i> 手动盘点</button>
+                    <div style="display:flex;align-items:center;gap:4px;">
+                        <span style="font-size:0.75rem;">自动保存</span>
+                        <div class="switch-track" id="autoSaveSwitchTrack"><div class="switch-thumb"></div></div>
+                    </div>
+                    <input type="file" id="imgFile" accept="image/*" style="display:none">
+                </div>
+                <div class="fields-card">
+                    <div><i class="fas fa-edit" style="color:#3b82f6;"></i> 解析字段 (数量×倍数)</div>
+                    <div style="display:flex;flex-wrap:wrap;gap:10px;">
+                        <div class="field-item"><label>料号</label><input type="text" id="scanPartNumber" placeholder="扫码自动填入"></div>
+                        <div class="field-item"><label>数量</label><input type="number" id="scanQuantity" placeholder="数量" value="1" min="1"></div>
+                    </div>
+                    <div class="multiplier-group">
+                        <label>数量倍数</label>
+                        <select id="multiplierSelect">
+                            <option value="1">1</option><option value="2">2</option><option value="3">3</option>
+                            <option value="4">4</option><option value="5">5</option><option value="6">6</option>
+                            <option value="7">7</option><option value="8">8</option><option value="9">9</option>
+                            <option value="10">10</option>
+                        </select>
+                    </div>
+                    <div class="field-item"><label>MPN/备注</label><input type="text" id="scanMpn" placeholder="自动填入或手动"></div>
+                    <div class="save-btn-row">
+                        <button class="btn btn-outline" id="btnCancelSave" style="flex:1;"><i class="fas fa-times"></i> 取消</button>
+                        <button class="btn btn-primary" id="btnConfirmSave" style="flex:1;"><i class="fas fa-check"></i> 确认保存</button>
+                    </div>
+                </div>
+                <div class="result-card" id="resultCard" style="display:none;">
+                    <div>✅ 最新扫码内容</div>
+                    <div class="result-content" id="resultContent"></div>
+                    <div class="result-actions">
+                        <button class="btn btn-outline btn-sm" id="btnCopy"><i class="fas fa-copy"></i> 复制</button>
+                        <button class="btn btn-outline btn-sm" id="btnClearResult"><i class="fas fa-times"></i> 清除</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div id="page-manual-count" class="page">
+            <div class="back-header"><button id="backFromManualCount"><i class="fas fa-arrow-left"></i></button><h2 style="font-size:18px;font-weight:700;">手动盘点 <span id="manualShelfLabel" style="color:#3b82f6;"></span></h2></div>
+            <span id="manualProgress" style="font-size:14px;color:#64748b;display:block;margin-bottom:12px;"></span>
+            <div class="shelf-row" id="manualShelfRow">
+                <button class="shelf-btn active" data-shelf="0">架1</button><button class="shelf-btn" data-shelf="1">架2</button><button class="shelf-btn" data-shelf="2">架3</button>
+                <button class="shelf-btn" data-shelf="3">架4</button><button class="shelf-btn" data-shelf="4">架5</button><button class="shelf-btn" data-shelf="5">架6</button><button class="shelf-btn" data-shelf="6">架7</button>
+            </div>
+            <div class="form-group" style="display:flex;gap:8px;align-items:center;">
+                <label style="white-space:nowrap;">起始料号</label>
+                <select class="form-control" id="manualJumpSelect" style="flex:1;"><option value="">顺序盘点</option></select>
+                <button class="btn btn-outline btn-sm" id="manualPrevBtn"><i class="fas fa-step-backward"></i> 上一步</button>
+            </div>
+            <div class="form-group"><label>料号 <span class="required">*</span></label><div style="display:flex;gap:8px;align-items:center;"><input type="text" class="form-control" id="manualCountPart" style="flex:1;" placeholder="请输入料号"><button class="btn btn-outline" id="skipManualBtn" style="white-space:nowrap;"><i class="fas fa-forward"></i> 跳过</button></div></div>
+            <div class="form-group" id="manualCountMpnGroup"><label>MPN</label><div class="mpn-dropdown-wrapper"><input type="text" class="form-control" id="manualCountMpn" placeholder="选择 MPN" readonly><div class="mpn-dropdown" id="manualMpnDropdown"></div></div><div style="display:flex;align-items:center;gap:8px;margin-top:6px;"><div class="switch-track" id="manualMpnSwitch"><div class="switch-thumb"></div></div><span style="font-size:12px;color:#94a3b8;">关闭时 MPN 不保存</span></div></div>
+            <div class="form-group"><label>数量 <span class="required">*</span></label><input type="number" class="form-control" id="manualCountQty" value="1" min="1"></div>
+            <div style="margin-top:8px;"><button class="btn btn-primary btn-block" id="saveManualCountBtn"><i class="fas fa-save"></i> 保存盘点</button></div>
+        </div>        <div id="page-out" class="page">
+            <div class="section-title"><i class="fas fa-sign-out-alt" style="color:#ef4444;"></i> 出库</div>
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+                <button class="btn btn-outline" id="outScanBtn"><i class="fas fa-qrcode"></i> 扫码</button>
+                <div style="display:flex;align-items:center;gap:4px;">
+                    <span style="font-size:0.8rem;">连续扫码</span>
+                    <div class="switch-track" id="outContinuousSwitch"><div class="switch-thumb"></div></div>
+                </div>
+            </div>
+            <div id="outFormContainer">
+                <form id="outForm" style="margin-top:12px;">
+                    <div class="form-group"><label>料号 <span class="required">*</span></label><div class="autocomplete-wrapper"><input type="text" class="form-control" id="outMaterialInput" placeholder="输入料号任意位数搜索" autocomplete="off"><input type="hidden" id="outMaterialId"><div class="autocomplete-dropdown" id="outMaterialDropdown"></div></div></div>
+                    <div class="form-group"><label>MPN <span class="required">*</span></label><select class="form-control" id="outMpn" disabled><option value="">请先选择料号</option></select></div>
+                    <div class="form-group"><label>数量 <span class="required">*</span></label><input type="number" class="form-control" id="outQty" placeholder="请输入数量" min="1" required><small style="color:#94a3b8;" id="outStockHint"></small></div>
+                    <div class="form-group"><label>仓码 <span class="required">*</span></label><select class="form-control" id="outCangma"><option value="">请选择</option><option value="B8SA">B8SA</option><option value="B909">B909</option><option value="B907">B907</option></select></div>
+                    <button type="submit" class="btn btn-danger btn-block" id="outSubmitBtn" disabled><i class="fas fa-arrow-right"></i> 确认出库</button>
+                </form>
+            </div>
+            <div class="scan-half-panel" id="outHalfScanPanel"><div class="scan-half-header"><i class="fas fa-times" id="closeOutHalfScan"></i></div><div class="scan-half-body"><video id="outHalfScanVideo" autoplay playsinline muted></video><canvas id="outHalfScanCanvas"></canvas></div><div class="scan-half-footer"><button class="btn btn-primary btn-sm" id="outHalfScanBtn"><i class="fas fa-video"></i> 开始扫描</button></div></div>
+        </div>
+        <div id="page-in" class="page">
+            <div class="section-title"><i class="fas fa-sign-in-alt" style="color:#22c55e;"></i> 入库</div>
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+                <button class="btn btn-outline" id="inScanBtn"><i class="fas fa-qrcode"></i> 扫码</button>
+                <div style="display:flex;align-items:center;gap:4px;">
+                    <span style="font-size:0.8rem;">连续扫码</span>
+                    <div class="switch-track" id="inContinuousSwitch"><div class="switch-thumb"></div></div>
+                </div>
+            </div>
+            <div id="inFormContainer">
+                <form id="inForm" style="margin-top:12px;">
+                    <div class="form-group"><label>料号 <span class="required">*</span></label><div class="autocomplete-wrapper"><input type="text" class="form-control" id="inMaterialInput" placeholder="输入料号任意位数搜索" autocomplete="off"><input type="hidden" id="inMaterialId"><div class="autocomplete-dropdown" id="inMaterialDropdown"></div></div></div>
+                    <div class="form-group"><label>MPN <span class="required">*</span></label><select class="form-control" id="inMpn" disabled><option value="">请先选择料号</option></select></div>
+                    <div class="form-group"><label>数量 <span class="required">*</span></label><input type="number" class="form-control" id="inQty" placeholder="请输入数量" min="1" required></div>
+                    <button type="submit" class="btn btn-success btn-block" id="inSubmitBtn"><i class="fas fa-arrow-left"></i> 确认入库</button>
+                </form>
+            </div>
+            <div class="scan-half-panel" id="inHalfScanPanel"><div class="scan-half-header"><i class="fas fa-times" id="closeInHalfScan"></i></div><div class="scan-half-body"><video id="inHalfScanVideo" autoplay playsinline muted></video><canvas id="inHalfScanCanvas"></canvas></div><div class="scan-half-footer"><button class="btn btn-primary btn-sm" id="inHalfScanBtn"><i class="fas fa-video"></i> 开始扫描</button></div></div>
+        </div>
+        <div id="page-count" class="page">
+            <div class="section-title"><i class="fas fa-clipboard-list" style="color:#f59e0b;"></i> 盘点</div>
+            <div class="count-search-row"><input type="date" class="form-control date-sm" id="countDateInput"><input type="text" class="form-control" id="countSearchInput" placeholder="搜索料号后四位..." style="flex:1;"><button class="btn btn-warning btn-sm" id="clearTodayBtn"><i class="fas fa-trash-alt"></i> 清空今日</button></div>
+            <div class="plan-row" id="planRow"><span class="plan-info" id="planInfo">未导入计划</span><div style="display:flex; gap:8px;"><button class="btn btn-outline btn-sm" id="goCountListBtn"><i class="fas fa-list"></i> 清单</button></div></div>
+            <div class="shelf-row" id="countShelfRow">
+                <button class="shelf-btn active" data-shelf="all">全部</button><button class="shelf-btn" data-shelf="0">架1</button><button class="shelf-btn" data-shelf="1">架2</button><button class="shelf-btn" data-shelf="2">架3</button>
+                <button class="shelf-btn" data-shelf="3">架4</button><button class="shelf-btn" data-shelf="4">架5</button><button class="shelf-btn" data-shelf="5">架6</button><button class="shelf-btn" data-shelf="6">架7</button>
+            </div>
+            <div class="tab-nav"><button class="tab-btn" data-mode="plan">计划</button><button class="tab-btn active" data-mode="detail">明细</button><button class="tab-btn" data-mode="part">料号汇总</button></div>
+            <div id="countList"></div>
+        </div>
+        <div id="page-count-list" class="page">
+            <div class="back-header"><button id="backFromCountList"><i class="fas fa-arrow-left"></i></button><h2 style="font-size:18px;font-weight:700; flex:1;">盘点清单</h2><button class="btn btn-outline btn-sm" id="exportCountListBtn"><i class="fas fa-download"></i> 导出</button></div>
+            <div class="form-row" style="margin-bottom:12px;"><div class="form-group"><label>日期</label><input type="date" class="form-control date-sm" id="countListDateInput"></div><div class="form-group"><label>&nbsp;</label><button class="btn btn-primary btn-block" id="refreshCountListBtn"><i class="fas fa-sync-alt"></i> 刷新</button></div></div>
+            <div class="tab-nav" id="countListModeTabs"><button class="tab-btn active" data-mode="part">按料号汇总</button><button class="tab-btn" data-mode="mpn">按 MPN 汇总</button></div>
+            <div class="table-wrap"><table><thead id="countListTableHead"><tr><th>料号</th><th>盘点数量</th><th>系统数量</th><th>差异</th></tr></thead><tbody id="countListBody"><tr><td colspan="4" class="text-center text-muted">点击刷新查看数据</td></tr></tbody></table></div>
+        </div>        <div id="page-stock" class="page">
+            <div class="section-title"><i class="fas fa-boxes" style="color:#3b82f6;"></i> 库存</div>
+            <div class="form-group" style="margin-bottom:12px;"><input type="text" class="form-control" id="stockSearch" placeholder="🔍 搜索料号 / MPN ..."></div>
+            <div class="table-wrap"><table><thead><tr><th>料号</th><th>MPN</th><th>库存</th></tr></thead><tbody id="stockBody"></tbody></table></div>
+            <div style="margin-top:12px;text-align:right;font-size:12px;color:#94a3b8;">共 <span id="stockCount">0</span> 项 · <small>点击库存数字可修改</small></div>
+        </div>
+        <div id="page-report" class="page">
+            <div class="section-title"><i class="fas fa-list" style="color:#ec4899;"></i> 出入库清单</div>
+            <div class="tab-nav"><button class="tab-btn active" data-tab="tab-out">出库</button><button class="tab-btn" data-tab="tab-in">入库</button></div>
+            <div class="report-tab-content active" id="tab-out"><div class="form-row" style="margin-bottom:12px;"><div class="form-group"><label>日期</label><input type="date" class="form-control date-sm" id="reportOutDate"></div><div class="form-group"><label>仓码</label><select class="form-control" id="reportOutCangma"><option value="">全部</option><option value="B8SA">B8SA</option><option value="B909">B909</option><option value="B907">B907</option></select></div></div><div class="table-wrap" style="margin-top:12px;"><table><thead><tr><th>料号</th><th>MPN</th><th>出库总数</th><th>操作</th></tr></thead><tbody id="outReportBody"><tr><td colspan="4" class="text-center text-muted">请选择日期查询</td></tr></tbody></table></div></div>
+            <div class="report-tab-content" id="tab-in"><div class="form-group"><label>料号（选填）</label><div class="autocomplete-wrapper"><input type="text" class="form-control" id="reportInMaterialInput" placeholder="输入料号任意位数搜索" autocomplete="off"><input type="hidden" id="reportInMaterialId"><div class="autocomplete-dropdown" id="reportInMaterialDropdown"></div></div></div><button class="btn btn-primary btn-inline" id="queryInBtn"><i class="fas fa-search"></i> 查询</button><div class="table-wrap" style="margin-top:12px;"><table><thead><tr><th>料号</th><th>MPN</th><th>入库总数</th><th>日期</th><th>操作</th></tr></thead><tbody id="inReportBody"><tr><td colspan="5" class="text-center text-muted">查询当天入库记录</td></tr></tbody></table></div></div>
+        </div>
+        <div id="page-location" class="page">
+            <div class="section-title"><i class="fas fa-search" style="color:#0ea5e9;"></i> 查找</div>
+            <div class="tab-nav" id="locationModeTabs">
+    <button class="tab-btn active" data-mode="loc">储位查找</button>
+    <button class="tab-btn" data-mode="bom">BOM查找</button>
+    <button class="tab-btn" data-mode="wukong">物控查找</button>
+</div>
+            <div id="loc-mode-loc" class="report-tab-content active">
+                <div class="form-group">
+                    <label>输入料号关键字</label>
+                    <div style="display:flex;gap:8px;">
+                        <input type="text" class="form-control" id="locationSearchInput" placeholder="输入料号任意位数">
+                        <button class="btn btn-info" id="locationSearchBtn"><i class="fas fa-search"></i> 查找</button>
+                    </div>
+                </div>
+                <button class="btn btn-outline btn-block" id="locationClearBtn" style="margin-bottom:16px;"><i class="fas fa-undo"></i> 清空结果</button>
+<div id="locationResult"><div id="locationResultBody"><div class="text-center text-muted">输入料号关键字搜索</div></div><div style="margin-top:8px;text-align:right;font-size:12px;color:#94a3b8;">找到 <span id="locationResultCount">0</span> 项</div></div>
+</div>
+            <div id="loc-mode-bom" class="report-tab-content">
+                <div class="form-row" style="margin-bottom:16px;">
+                    <div class="form-group">
+                        <label>机种号</label>
+                        <div class="autocomplete-wrapper">
+                            <input type="text" class="form-control" id="bomModelInput" placeholder="输入机种号" autocomplete="off">
+                            <div class="autocomplete-dropdown" id="bomModelDropdown"></div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>料号</label>
+                        <div class="autocomplete-wrapper">
+                            <input type="text" class="form-control" id="bomPartInput" placeholder="输入料号后四位" autocomplete="off">
+                            <div class="autocomplete-dropdown" id="bomPartDropdown"></div>
+                        </div>
+                    </div>
+                </div>
+                <button class="btn btn-primary btn-block" id="bomSearchBtn"><i class="fas fa-search"></i> 查询 BOM</button>
+                <button class="btn btn-outline btn-block" id="bomClearBtn" style="margin-top:8px;margin-bottom:16px;"><i class="fas fa-undo"></i> 清空结果</button>
+                <div id="bomResultList"></div>
+            </div>
+            <div id="loc-mode-wukong" class="report-tab-content">
+    <div class="form-group">
+        <label>输入料号</label>
+        <div style="display:flex;gap:8px;">
+            <div class="autocomplete-wrapper" style="flex:1;">
+    <input type="text" class="form-control" id="wukongSearchInput" placeholder="输入料号" autocomplete="off">
+    <div class="autocomplete-dropdown" id="wukongDropdown"></div>
+</div>
+            <button class="btn btn-warning" id="wukongSearchBtn"><i class="fas fa-search"></i> 查询</button>
+        </div>
+    </div>
+    <div id="wukongResultBody" style="margin-top:12px;"><div class="text-center text-muted">输入料号</div></div></div>
+</div>
+        <div id="page-data" class="page">
+            <div class="section-title"><i class="fas fa-cloud-upload-alt" style="color:#3b82f6;"></i> 数据导入</div>
+            <div class="upload-card">
+                <div class="collapsible-header" id="headerUploadStock">
+                    <i class="fas fa-chevron-down"></i> <i class="fas fa-file-excel" style="color:#22c55e;"></i> 批量上传库存 Excel
+                </div>
+                <div class="collapsible-body" id="bodyUploadStock">
+                    <div class="file-input-wrap"><input type="file" id="excelFile" accept=".xls,.xlsx" class="form-control"><button class="btn btn-primary btn-sm" id="uploadExcelBtn"><i class="fas fa-upload"></i> 导入</button></div>
+                    <small class="text-muted">表格列：料号、储位、MPN、数量</small>
+                    <div class="upload-status-text" id="excelUploadStatus"></div>
+                </div>
+            </div>
+            <div class="upload-card">
+                <div class="collapsible-header" id="headerUploadLocation">
+                    <i class="fas fa-chevron-down"></i> <i class="fas fa-map-marker-alt" style="color:#0ea5e9;"></i> 批量上传储位 Excel
+                </div>
+                <div class="collapsible-body" id="bodyUploadLocation">
+                    <div class="file-input-wrap"><input type="file" id="locationExcelFile" accept=".xls,.xlsx" class="form-control"><button class="btn btn-info btn-sm" id="uploadLocationExcelBtn"><i class="fas fa-upload"></i> 导入储位</button></div>
+                    <small class="text-muted">表格列：料号、储位、担当</small>
+                    <div class="upload-status-text" id="locationUploadStatus"></div>
+                </div>
+            </div>
+            <div class="upload-card">
+                <div class="collapsible-header" id="headerUploadCount">
+                    <i class="fas fa-chevron-down"></i> <i class="fas fa-clipboard-check" style="color:#f59e0b;"></i> 上传盘点 Excel
+                </div>
+                <div class="collapsible-body" id="bodyUploadCount">
+                    <div class="file-input-wrap"><input type="file" id="countExcelFile" accept=".xls,.xlsx" class="form-control"><button class="btn btn-warning btn-sm" id="uploadCountExcelBtn"><i class="fas fa-upload"></i> 导入盘点</button></div>
+                    <small class="text-muted">表格列：料号、储位（基准计划）</small>
+                    <div class="upload-status-text" id="countUploadStatus"></div>
+                </div>
+            </div>
+            <div class="upload-card">
+                <div class="collapsible-header" id="headerUploadBom">
+                    <i class="fas fa-chevron-down"></i> <i class="fas fa-tasks" style="color:#f59e0b;"></i> 批量上传 BOM
+                </div>
+                <div class="collapsible-body" id="bodyUploadBom">
+                    <div class="file-input-wrap"><input type="file" id="bomExcelFile" accept=".xls,.xlsx" class="form-control"><button class="btn btn-warning btn-sm" id="uploadBomExcelBtn"><i class="fas fa-upload"></i> 导入 BOM</button></div>
+                    <small class="text-muted">表格列要求：工单号、机种号、料号、厂商、MPN</small>
+                    <div class="bom-progress-wrap">
+                        <div class="bom-progress-bg" id="bomProgressBg"><div class="bom-progress-fill" id="bomProgressFill"></div></div>
+                        <div class="bom-progress-text" id="bomProgressText"></div>
+                    </div>
+                    <div class="upload-status-text" id="bomUploadStatus"></div>
+                </div>
+            </div>
+            <div class="upload-card">
+                <div class="collapsible-header" id="headerUploadModels">
+                    <i class="fas fa-chevron-down"></i> <i class="fas fa-microchip" style="color:#8b5cf6;"></i> 批量上传机种号
+                </div>
+                <div class="collapsible-body" id="bodyUploadModels">
+                    <div class="file-input-wrap"><input type="file" id="modelsExcelFile" accept=".xls,.xlsx" class="form-control"><button class="btn btn-primary btn-sm" id="uploadModelsExcelBtn"><i class="fas fa-upload"></i> 导入机种号</button></div>
+                    <small class="text-muted">表格第一列：机种号（如 JC94-WF0123）</small>
+                    <div class="upload-status-text" id="modelsUploadStatus"></div>
+                </div>
+            </div>
+            <div class="upload-card">
+    <div class="collapsible-header" id="headerUploadWukong">
+        <i class="fas fa-chevron-down"></i> <i class="fas fa-user-check" style="color:#f59e0b;"></i> 批量上传物控
+    </div>
+    <div class="collapsible-body" id="bodyUploadWukong">
+        <div class="file-input-wrap"><input type="file" id="wukongExcelFile" accept=".xls,.xlsx" class="form-control"><button class="btn btn-warning btn-sm" id="uploadWukongExcelBtn"><i class="fas fa-upload"></i> 导入物控</button></div>
+        <small class="text-muted">表格列：料号、物控姓名</small>
+        <div class="upload-status-text" id="wukongUploadStatus"></div>
+    </div>
+</div>
+            <div class="manual-card"><div class="collapsible-header" id="countManualHeader"><i class="fas fa-chevron-down"></i> 手动添加盘点</div><div class="collapsible-body" id="countManualBody"><div class="form-row" style="margin-bottom:12px;"><div class="form-group"><label>料号 <span class="required">*</span></label><input type="text" class="form-control" id="countManId" placeholder="料号"></div><div class="form-group"><label>储位 <span class="required">*</span></label><input type="text" class="form-control" id="countManLoc" placeholder="储位"></div></div><button class="btn btn-outline btn-block" id="addCountManBtn"><i class="fas fa-plus"></i> 添加盘点计划</button></div></div>
+            <div class="manual-card"><div class="collapsible-header" id="stockManualHeader"><i class="fas fa-chevron-down"></i> 手动添加库存数据</div><div class="collapsible-body" id="stockManualBody"><div class="form-row" style="margin-bottom:12px;"><div class="form-group"><label>料号 <span class="required">*</span></label><input type="text" class="form-control" id="manId" placeholder="料号"></div><div class="form-group"><label>储位</label><input type="text" class="form-control" id="manLocation" placeholder="储位"></div><div class="form-group"><label>MPN <span class="required">*</span></label><input type="text" class="form-control" id="manMpn" placeholder="MPN"></div><div class="form-group"><label>数量</label><input type="number" class="form-control" id="manStock" value="0" min="0"></div></div><button class="btn btn-success btn-block" id="saveManualBtn"><i class="fas fa-save"></i> 添加</button></div></div>
+            <div class="manual-card" style="margin-top:0;"><div class="collapsible-header" id="locManualHeader"><i class="fas fa-chevron-down"></i> 手动添加储位数据</div><div class="collapsible-body" id="locManualBody"><div class="form-row" style="margin-bottom:12px;"><div class="form-group"><label>料号 <span class="required">*</span></label><input type="text" class="form-control" id="locManId" placeholder="料号"></div><div class="form-group"><label>储位 <span class="required">*</span></label><input type="text" class="form-control" id="locManLocation" placeholder="储位"></div><div class="form-group"><label>担当</label><input type="text" class="form-control" id="locManResponsible" placeholder="担当"></div></div><button class="btn btn-info btn-block" id="saveLocationManualBtn"><i class="fas fa-save"></i> 添加</button></div></div><div class="manual-card" style="margin-top:0;"><div class="collapsible-header" id="wukongManualHeader"><i class="fas fa-chevron-down"></i> 手动添加物控数据</div><div class="collapsible-body" id="wukongManualBody"><div class="form-row" style="margin-bottom:12px;"><div class="form-group"><label>料号 <span class="required">*</span></label><input type="text" class="form-control" id="wukongManId" placeholder="料号"></div><div class="form-group"><label>物控姓名</label><input type="text" class="form-control" id="wukongManResponsible" placeholder="物控姓名"></div></div><button class="btn btn-warning btn-block" id="saveWukongManualBtn"><i class="fas fa-save"></i> 添加</button></div></div>
+        </div>
+        <div id="page-mine" class="page">
+            <div class="section-title"><i class="fas fa-user" style="color:#8b5cf6;"></i> 我的</div>
+            <div class="my-profile" id="myProfileCard"><div class="avatar" id="avatarBtn"><i class="fas fa-user-circle" id="avatarIcon"></i></div><div class="username" id="profileName">仓库管理员</div><div class="user-role" id="profileRole">WMS 系统</div><div class="bg-actions" style="display:flex;gap:8px;justify-content:center;margin-top:8px;"><button class="btn btn-outline btn-sm" id="changeAvatarBtn"><i class="fas fa-camera"></i> 头像</button><button class="btn btn-outline btn-sm" id="changeBgBtn"><i class="fas fa-image"></i> 背景</button><button class="btn btn-outline btn-sm" id="resetBgBtn"><i class="fasfa-undo"></i> 重置</button></div></div>
+            <div class="my-info-grid"><div class="my-info-item"><div class="num" id="myLowStockCount">0</div><div class="label">预警料号</div></div><div class="my-info-item"><div class="num" id="myTotalLocations">0</div><div class="label">储位总数</div></div><div class="my-info-item"><div class="num" id="myCheckedLocations">0</div><div class="label">已盘储位</div></div></div>
+            <button class="btn btn-block" style="margin-top:20px;background:linear-gradient(135deg,#f0f9ff,#e0e7ff);color:#4338ca;border:1px solid #c7d2fe;" id="goCustomMsgBtn"><i class="fas fa-bullhorn"></i> 滚动预警设置</button>
+            <div style="margin-top:20px;background:linear-gradient(135deg,#eff6ff,#f0fdf4);border-radius:16px;padding:16px;">
+            <div style="font-weight:600;margin-bottom:8px;"><i class="fas fa-info-circle" style="color:#3b82f6;"></i> 系统信息</div><div style="display:flex;justify-content:space-between;font-size:13px;color:#475569;padding:4px 0;"><span>版本</span><span>v24.1</span></div><div style="display:flex;justify-content:space-between;font-size:13px;color:#475569;padding:4px 0;"><span>开发者</span><span>于洪章</span></div><div style="display:flex;justify-content:space-between;font-size:13px;color:#475569;padding:4px 0;"><span>运行时间</span><span id="sysUptime">--</span></div><div style="display:flex;justify-content:space-between;font-size:13px;color:#475569;padding:4px 0;"><span>版本更新</span><span id="lastUpdateTime" style="color:#3b82f6;cursor:pointer;text-decoration:underline;">2026-07-03</span></div></div>
+            <button class="btn btn-block" style="margin-top:16px;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;border:none;" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> 退出登录</button>
+        </div>
+        <div id="page-custom-msg" class="page" style="padding-top:20px;">
+            <div class="back-header"><button id="backFromMsgBtn"><i class="fas fa-arrow-left"></i></button><h2 style="font-size:18px;font-weight:700;">滚动预警设置</h2></div>
+            <div style="display:flex;gap:8px;margin-bottom:16px;"><input type="text" class="form-control" id="subCustomMsgInput" placeholder="输入要显示的文字..."><button class="btn btn-primary btn-sm" id="subAddCustomMsgBtn"><i class="fas fa-plus"></i> 添加</button></div>
+            <label style="display:flex;align-items:center;gap:8px;margin-bottom:12px;"><input type="checkbox" id="globalMsgCheck"> 全局公告（所有用户可见）</label>
+            <div id="subCustomMsgList"></div>
+        </div>
+    </div>
+    <nav class="bottom-nav" id="bottomNav" style="display:none;">
+        <button class="nav-item active" data-tab="home">首页</button>
+        <button class="nav-item" data-tab="location">查找</button>
+        <button class="nav-item" data-tab="data">数据</button>
+        <button class="nav-item" data-tab="mine">我的</button>
+    </nav>
+</div>
+<button class="calculator-float-btn" id="calculatorFloatBtn" title="计算器"><i class="fas fa-calculator" style="color:#fff;"></i></button>
+<div class="calculator-panel" id="calculatorPanel">
+    <div class="calculator-header"><span>计算器</span><i class="fas fa-times" id="closeCalculatorBtn"></i></div>
+    <div class="calculator-body">
+        <div class="calc-display" id="calcDisplay">0</div>
+        <div class="calc-buttons">
+            <button class="calc-btn" data-value="C">C</button><button class="calc-btn" data-value="⌫">⌫</button>
+            <button class="calc-btn" data-value="(">(</button><button class="calc-btn" data-value=")">)</button>
+            <button class="calc-btn" data-value="7">7</button><button class="calc-btn" data-value="8">8</button>
+            <button class="calc-btn" data-value="9">9</button><button class="calc-btn" data-value="/">÷</button>
+            <button class="calc-btn" data-value="4">4</button><button class="calc-btn" data-value="5">5</button>
+            <button class="calc-btn" data-value="6">6</button><button class="calc-btn" data-value="*">×</button>
+            <button class="calc-btn" data-value="1">1</button><button class="calc-btn" data-value="2">2</button>
+            <button class="calc-btn" data-value="3">3</button><button class="calc-btn" data-value="-">−</button>
+            <button class="calc-btn" data-value="0">0</button><button class="calc-btn" data-value=".">.</button>
+            <button class="calc-btn calc-equal" data-value="=">=</button><button class="calc-btn" data-value="+">+</button>
+            <button class="calc-btn calc-fill" data-value="fill" style="grid-column: span 4;">填入</button>
+        </div>
+    </div>
+</div>
+<div class="modal-overlay" id="confirmModal"><div class="modal-box"><i id="modalIcon" class="fas fa-question-circle" style="color:#3b82f6;"></i><p id="modalText">确定执行此操作吗？</p><div class="modal-actions"><button class="btn-modal-cancel" id="modalCancel">取消</button><button class="btn-modal-danger" id="modalOk">确认</button></div></div></div>
+<div class="toast-container" id="toastContainer"></div>
+<div class="modal-overlay" id="exportChoiceModal" style="display:none;"><div class="modal-box"><h3><i class="fas fa-file-export"></i> 导出 Excel</h3><div class="modal-message">选择导出方式</div><div class="modal-actions" style="justify-content:space-around;"><button class="modal-btn modal-btn-confirm" id="exportShareBtn"><i class="fas fa-share-alt"></i> 分享</button><button class="modal-btn modal-btn-confirm" id="exportDownloadBtn"><i class="fas fa-download"></i> 下载</button><button class="modal-btn modal-btn-cancel" id="exportCancelBtn">取消</button></div></div></div>
+<div class="modal-overlay" id="shelfNamesModal"><div class="modal-box"><h3>自定义货架名称</h3><div id="shelfNameInputs"><div class="modal-input-group"><label>架1</label><input type="text" class="shelf-name-input" data-shelf="0"></div><div class="modal-input-group"><label>架2</label><input type="text" class="shelf-name-input" data-shelf="1"></div><div class="modal-input-group"><label>架3</label><input type="text" class="shelf-name-input" data-shelf="2"></div><div class="modal-input-group"><label>架4</label><input type="text" class="shelf-name-input" data-shelf="3"></div><div class="modal-input-group"><label>架5</label><input type="text" class="shelf-name-input" data-shelf="4"></div><div class="modal-input-group"><label>架6</label><input type="text" class="shelf-name-input" data-shelf="5"></div><div class="modal-input-group"><label>架7</label><input type="text" class="shelf-name-input" data-shelf="6"></div></div><div class="modal-actions"><button class="btn-modal-cancel" id="shelfNamesCancel">取消</button><button class="btn-modal-danger" id="shelfNamesSave">保存</button></div></div></div>
+<div class="modal-overlay" id="shelfRangesModal"><div class="modal-box" style="max-width:360px;"><h3>储位分类 (开始 - 结束)</h3><small class="text-muted">例如: SG0101-0101 到 SG0104-0605</small><div id="shelfRangeInputs"><div class="modal-input-group"><label>架1</label><div class="range-inputs"><input type="text" class="shelf-range-start" data-shelf="0" placeholder="开始"><span>-</span><input type="text" class="shelf-range-end" data-shelf="0" placeholder="结束"></div></div><div class="modal-input-group"><label>架2</label><div class="range-inputs"><input type="text" class="shelf-range-start" data-shelf="1" placeholder="开始"><span>-</span><input type="text" class="shelf-range-end" data-shelf="1" placeholder="结束"></div></div><div class="modal-input-group"><label>架3</label><div class="range-inputs"><input type="text" class="shelf-range-start" data-shelf="2" placeholder="开始"><span>-</span><input type="text" class="shelf-range-end" data-shelf="2" placeholder="结束"></div></div><div class="modal-input-group"><label>架4</label><div class="range-inputs"><input type="text" class="shelf-range-start" data-shelf="3" placeholder="开始"><span>-</span><input type="text" class="shelf-range-end" data-shelf="3" placeholder="结束"></div></div><div class="modal-input-group"><label>架5</label><div class="range-inputs"><input type="text" class="shelf-range-start" data-shelf="4" placeholder="开始"><span>-</span><input type="text" class="shelf-range-end" data-shelf="4" placeholder="结束"></div></div><div class="modal-input-group"><label>架6</label><div class="range-inputs"><input type="text" class="shelf-range-start" data-shelf="5" placeholder="开始"><span>-</span><input type="text" class="shelf-range-end" data-shelf="5" placeholder="结束"></div></div><div class="modal-input-group"><label>架7</label><div class="range-inputs"><input type="text" class="shelf-range-start" data-shelf="6" placeholder="开始"><span>-</span><input type="text" class="shelf-range-end" data-shelf="6" placeholder="结束"></div></div></div><div class="modal-actions"><button class="btn-modal-cancel" id="shelfRangesCancel">取消</button><button class="btn-modal-danger" id="shelfRangesSave">保存</button></div></div></div>
+<div class="modal-overlay" id="deletePasswordModal"><div class="modal-box"><h3>🔒 请输入管理密码</h3><div class="modal-input-group"><input type="password" id="deletePasswordInput" placeholder="请输入密码"></div><div class="modal-actions"><button class="btn-modal-cancel" id="deletePasswordCancel">取消</button><button class="btn-modal-danger" id="deletePasswordConfirm">确认删除</button></div></div></div>
+<div class="modal-overlay" id="errorLogModal"><div class="modal-box" style="max-width:90%; width:400px;"><h3>错误日志</h3><div class="error-log-list" id="errorLogList"></div><div class="modal-actions"><button class="btn-modal-warning" id="clearErrorLogBtn"><i class="fas fa-trash"></i> 清空</button><button class="btn-modal-cancel" id="closeErrorLogBtn">关闭</button></div></div></div>
+<div class="modal-overlay" id="systemMaintenanceModal"><div class="modal-box"><h3>🛠️ 系统维护</h3><div class="modal-actions" style="flex-direction:column;gap:10px;"><button class="btn btn-outline btn-block" id="maintainErrorLogBtn"><i class="fas fa-bug"></i> 错误日志</button><button class="btn-modal-cancel btn-block" style="margin-top:8px;" id="maintainCancelBtn">取消</button></div></div></div> <script>
+const APP_VERSION = '24.1';
+const LAST_UPDATE_DATE = '2026-07-03';
+
+document.addEventListener('DOMContentLoaded', async () => {
+const saved=JSON.parse(localStorage.getItem('wms_remember')||'null');if(saved){document.getElementById('loginUsername').value=saved.u;document.getElementById('loginPassword').value=saved.p;document.getElementById('rememberMe').checked=true;}  
+    const SUPABASE_URL = 'https://nrnncqeopxwbhbfecgpa.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5ybm5jcWVvcHh3YmhiZmVjZ3BhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA4NDAyMzQsImV4cCI6MjA5NjQxNjIzNH0.II_DML0biZ_6OMRi9GZY7TEI3y8IKbyOvUwgX7GhB8s';
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    let LOW = parseInt(localStorage.getItem('wms_threshold') || '2000');
+    const MAX_STOCK_DISPLAY = 1000;
+    let currentUser = null;
+    let userTeamId = null;
+    try { currentUser = JSON.parse(localStorage.getItem('wms_user')); } catch(e){}
+    let materials = [], records = [], userMessages = [];
+    let countPlan = [];
+    let countPlanDate = '';
+    let locationData = [];
+    let hiddenAlerts = new Set();
+    let countViewMode = 'detail';
+    let countViewDate = new Date().toISOString().slice(0, 10);
+    let currentShelf = 0;
+    let shelfNames = ['架1','架2','架3','架4','架5','架6','架7'];
+    let shelfRanges = [];
+    let countFilterShelf = 'all';
+    let manualPartList = [];
+    let manualPartIndex = 0;
+    let manualShelfProgress = {};
+    let outContinuous = false;
+    let inContinuous = false;
+    let errorLogs = [];
+    let pendingDeleteRecordId = null;
+    try { errorLogs = JSON.parse(localStorage.getItem('wms_error_logs') || '[]'); } catch(e){ errorLogs = []; }
+
+    function logError(message, detail = '') {
+        const time = new Date().toTimeString().slice(0,8);
+        errorLogs.unshift({ time, message, detail });
+        if (errorLogs.length > 50) errorLogs = errorLogs.slice(0,50);
+        localStorage.setItem('wms_error_logs', JSON.stringify(errorLogs));
+    }
+
+    window.addEventListener('error', function(e) { logError('全局错误', e.message + ' at ' + e.filename + ':' + e.lineno); });
+    window.addEventListener('unhandledrejection', function(e) { logError('未捕获 Promise 错误', e.reason?.message || String(e.reason)); });
+
+    const savedNames = localStorage.getItem('wms_shelf_names');
+    if (savedNames) try { shelfNames = JSON.parse(savedNames); } catch(e){}
+    const savedRanges = localStorage.getItem('wms_shelf_ranges');
+    if (savedRanges) try { shelfRanges = JSON.parse(savedRanges); } catch(e){}
+    if (!Array.isArray(shelfRanges) || shelfRanges.length < 7) {
+        shelfRanges = Array(7).fill({start:'', end:''});
+    } else {
+        shelfRanges = shelfRanges.map(r => ({ start: r?.start || '', end: r?.end || '' }));
+    }
+
+    const startTime = new Date();
+    const $ = s => document.querySelector(s);
+    const pages = {
+        login: $('#page-login'), register: $('#page-register'),
+        home: $('#page-home'), scan: $('#page-scan'), out: $('#page-out'), in: $('#page-in'),
+        count: $('#page-count'), stock: $('#page-stock'), report: $('#page-report'),
+        location: $('#page-location'), data: $('#page-data'), mine: $('#page-mine'),
+        customMsg: $('#page-custom-msg'), manualCount: $('#page-manual-count'),
+        countList: $('#page-count-list')
+    };
+
+    let scanSettings = {
+        previewHeight: parseInt(localStorage.getItem('scan_preview_height') || '50'),
+        windowSize: parseInt(localStorage.getItem('scan_window_size') || '45'),
+        cooldown: parseFloat(localStorage.getItem('scan_cooldown') || '2.5'),
+        autoOpen: localStorage.getItem('scan_auto_open') !== 'false',
+        sound: localStorage.getItem('scan_sound') !== 'false',
+        autoSave: localStorage.getItem('scan_auto_save') === 'true'
+    };
+    let scanStream = null, scanAnimId = null, scanning = false, lastScanData = null, cooldownUntil = 0;
+    let torchState = false;
+    let halfScanStream = null, halfScanAnimId = null, halfScanning = false, halfScanMode = null;
+
+    async function fetchUserTeamId() {
+        if (!currentUser || !currentUser.id) return;
+        try {
+            const { data, error } = await supabase.rpc('get_user_teams', { p_user_id: Number(currentUser.id) });
+            if (!error && data && data.length > 0) {
+                userTeamId = data[0].team_id;
+            } else {
+                userTeamId = 1;
+            }
+        } catch(e) {
+            userTeamId = 1;
+        }
+    }
+
+    async function saveRecordToCloud(r) {
+        if (!currentUser) { throw new Error('请先登录'); }
+        const record = {
+            type: r.type, materialid: r.materialId, mpn: r.mpn || '', quantity: r.quantity,
+            date: r.date, source: r.source || null, dest: r.dest || null, note: r.note || '',
+            user_id: Number(currentUser.id), team_id: userTeamId || 1
+        };
+        const { error } = await supabase.from('records').insert(record);
+        if (error) throw error;
+    }
+
+    // ==================== 字体大小调节 ====================
+    let currentFontSize = parseInt(localStorage.getItem('wms_font_size') || '100');
+    function applyFontSize(size) {
+        document.documentElement.style.fontSize = size + '%';
+        document.getElementById('fontSizeValue').textContent = size + '%';
+        localStorage.setItem('wms_font_size', size);
+    }
+    applyFontSize(currentFontSize);
+    document.getElementById('fontSizeDown').addEventListener('click', () => {
+        if (currentFontSize > 70) { currentFontSize -= 10; applyFontSize(currentFontSize); }
+    });
+    document.getElementById('fontSizeUp').addEventListener('click', () => {
+        if (currentFontSize < 150) { currentFontSize += 10; applyFontSize(currentFontSize); }
+    });
+
+    // ==================== 设置面板初始化 ====================
+    const cameraPreviewHeightRange = document.getElementById('cameraPreviewHeightRange');
+    if (cameraPreviewHeightRange) {
+        cameraPreviewHeightRange.value = scanSettings.previewHeight;
+        document.getElementById('cameraPreviewHeightValue').textContent = scanSettings.previewHeight + '%';
+        document.documentElement.style.setProperty('--camera-preview-height', scanSettings.previewHeight + 'vh');
+        cameraPreviewHeightRange.addEventListener('input', () => {
+            const val = parseInt(cameraPreviewHeightRange.value);
+            document.documentElement.style.setProperty('--camera-preview-height', val + 'vh');
+            document.getElementById('cameraPreviewHeightValue').textContent = val + '%';
+            scanSettings.previewHeight = val;
+            localStorage.setItem('scan_preview_height', val);
+        });
+    }
+    const scanWindowSizeRange = document.getElementById('scanWindowSizeRange');
+    if (scanWindowSizeRange) {
+        scanWindowSizeRange.value = scanSettings.windowSize;
+        document.getElementById('scanWindowSizeValue').textContent = scanSettings.windowSize + '%';
+        document.documentElement.style.setProperty('--scan-window-size', scanSettings.windowSize + '%');
+        scanWindowSizeRange.addEventListener('input', () => {
+            const val = parseInt(scanWindowSizeRange.value);
+            document.documentElement.style.setProperty('--scan-window-size', val + '%');
+            document.getElementById('scanWindowSizeValue').textContent = val + '%';
+            scanSettings.windowSize = val;
+            localStorage.setItem('scan_window_size', val);
+        });
+    }
+    document.getElementById('scanCooldownSelect').value = String(scanSettings.cooldown);
+    document.getElementById('scanCooldownSelect').addEventListener('change', function() {
+        scanSettings.cooldown = parseFloat(this.value);
+        localStorage.setItem('scan_cooldown', scanSettings.cooldown);
+    });
+    document.getElementById('autoOpenCameraSelect').value = scanSettings.autoOpen ? 'auto' : 'manual';
+    document.getElementById('autoOpenCameraSelect').addEventListener('change', function() {
+        scanSettings.autoOpen = this.value === 'auto';
+        localStorage.setItem('scan_auto_open', scanSettings.autoOpen);
+    });
+
+    // ==================== 确认弹窗 ====================
+    let currentConfirmCallback = null;
+    function showConfirm(title, icon, color, btnClass, onConfirm) {
+        currentConfirmCallback = onConfirm;
+        document.getElementById('modalIcon').className = 'fas ' + icon;
+        document.getElementById('modalIcon').style.color = color;
+        document.getElementById('modalText').textContent = title;
+        document.getElementById('modalOk').className = btnClass;
+        document.getElementById('confirmModal').classList.add('show');
+    }
+    document.getElementById('modalOk').addEventListener('click', () => {
+        document.getElementById('confirmModal').classList.remove('show');
+        if (currentConfirmCallback) { const cb = currentConfirmCallback; currentConfirmCallback = null; cb(); }
+    });
+    document.getElementById('modalCancel').addEventListener('click', () => {
+        document.getElementById('confirmModal').classList.remove('show');
+        currentConfirmCallback = null;
+    });
+
+    // ==================== 货架 UI ====================
+    function updateShelfUI() {
+        document.querySelectorAll('#manualShelfRow .shelf-btn').forEach(b => {
+            const idx = parseInt(b.dataset.shelf);
+            if (isNaN(idx)) return;
+            b.textContent = shelfNames[idx] || ('架'+(idx+1));
+            b.classList.toggle('active', idx === currentShelf);
+        });
+        document.querySelectorAll('#countShelfRow .shelf-btn').forEach(b => {
+            const shelf = b.dataset.shelf;
+            if (shelf === 'all') return;
+            const idx = parseInt(shelf);
+            b.textContent = shelfNames[idx] || ('架'+(idx+1));
+        });
+    }
+
+    function classifyLocation(loc) {
+        if (!loc) return -1;
+        loc = loc.toUpperCase().replace(/\s/g, '');
+        for (let i = 0; i < 7; i++) {
+            const range = shelfRanges[i];
+            if (!range || !range.start || !range.end) continue;
+            const start = range.start.toUpperCase().replace(/\s/g, '');
+            const end = range.end.toUpperCase().replace(/\s/g, '');
+            if (loc >= start && loc <= end) return i;
+        }
+        return -1;
+    }
+
+    // ==================== Toast ====================
+    function toast(msg, type='info') {
+        if (type === 'error') logError(msg);
+        const icons = { success:'fa-check-circle', error:'fa-exclamation-circle', info:'fa-info-circle' };
+        const el = document.createElement('div');
+        el.className = 'toast toast-' + type;
+        el.innerHTML = '<i class="fas ' + icons[type] + '"></i> ' + msg;
+        document.getElementById('toastContainer').appendChild(el);
+        setTimeout(() => el.remove(), 3000);
+    }
+
+    // ==================== 数据加载 ====================
+    async function loadAlertConfig() {
+        if (!currentUser) { 
+            hiddenAlerts = new Set(JSON.parse(localStorage.getItem('wms_hidden_alerts')||'[]')); 
+            return; 
+        }
+        const teamId = userTeamId || 1;
+        const { data } = await supabase.from('team_settings')
+            .select('value')
+            .eq('team_id', teamId)
+            .eq('key', 'alert_hidden')
+            .maybeSingle();
+        if (data && data.value) {
+            try { hiddenAlerts = new Set(data.value.hidden || []); } catch { hiddenAlerts = new Set(); }
+        } else {
+            hiddenAlerts = new Set();
+        }
+    }
+
+    async function saveAlertConfig() {
+    const config = { hidden: [...hiddenAlerts] };
+    localStorage.setItem('wms_hidden_alerts', JSON.stringify([...hiddenAlerts]));
+    if (!currentUser) return;
+    try {
+        const teamId = userTeamId || 1;
+        await supabase.from('team_settings').upsert({
+            team_id: teamId,
+            key: 'alert_hidden',
+            value: config
+        }, { onConflict: 'team_id, key' });
+    } catch (e) {}
+}
+
+    function getCachedLocations() { try { return JSON.parse(localStorage.getItem('wms_locations')); } catch { return null; } }
+    function setCachedLocations(data) {
+        localStorage.setItem('wms_locations', JSON.stringify({
+            updated_at: new Date().toISOString(),
+            data: data.map(d => ({ part: d.part, location: d.location, responsible: d.responsible || '' }))
+        }));
+    }
+
+    async function loadData() {
+    if (!currentUser) return;
+    const uid = Number(currentUser.id);
+    
+    // 并行加载所有数据
+    const [matResult, recResult, locResult, msgResult, globalMsgResult] = await Promise.all([
+        supabase.rpc('get_my_materials', { p_user_id: uid }),
+        supabase.rpc('get_my_records', { p_user_id: uid }),
+        supabase.from('locations').select('part, location, responsible, updated_at'),
+        currentUser ? supabase.from('messages').select('text').eq('user_id', currentUser.id).not('text', 'like', '__alert_config__%') : Promise.resolve({ data: null }),
+        currentUser ? supabase.from('messages').select('text').is('user_id', null) : Promise.resolve({ data: null })
+    ]);
+    
+    const mat = matResult.data;
+    const rec = recResult.data;
+    const loc = locResult.data;
+    const msgData = msgResult.data;
+    const globalMsgs = globalMsgResult.data;
+    
+    materials = (mat || []).map(m => ({ ...m, manufacturer: m.manufacturer || '', responsible: m.responsible || '' }));
+    records = (rec || []).map(r => ({ ...r, materialId: r.materialid || r.materialId || '' }));
+    
+    if (currentUser) {
+        userMessages = (msgData || []).map(r => ({ text: r.text }));
+        if (globalMsgs) globalMsgs.forEach(m => { if (!userMessages.find(u => u.text === m.text)) userMessages.push({ text: m.text }); });
+    } else {
+        userMessages = JSON.parse(localStorage.getItem('wms_messages') || '[]');
+    }
+    
+    await loadAlertConfig();
+    
+    const cached = getCachedLocations();
+    if (loc) {
+        const cloudData = loc.map(d => ({ part: d.part, location: d.location, responsible: d.responsible || '', updated_at: d.updated_at }));
+        let needUpdate = !cached || !cached.data;
+        if (!needUpdate) {
+            const cloudMax = cloudData.reduce((max, d) => d.updated_at > max ? d.updated_at : max, '1970-01-01T00:00:00Z');
+            const cacheMax = cached.updated_at || '1970-01-01T00:00:00Z';
+            if (cloudData.length !== cached.data.length || cloudMax > cacheMax) needUpdate = true;
+        }
+        if (needUpdate) { setCachedLocations(cloudData); locationData = cloudData.map(d => ({ part: d.part, location: d.location, responsible: d.responsible })); }
+        else locationData = cached.data;
+    } else if (cached && cached.data.length) {
+        locationData = cached.data;
+    }
+    
+    if (countPlanDate !== countViewDate) { countPlan = []; countPlanDate = countViewDate; }
+}
+
+    async function saveMaterialsToCloud() {
+        if (!currentUser || !userTeamId) return;
+        await supabase.from('materials').upsert(
+            materials.map(m => ({ ...m, user_id: Number(currentUser.id), team_id: userTeamId })),
+            { onConflict: 'team_id, user_id, id, mpn' }
+        );
+    }
+
+    async function syncMessagesToCloud() {
+        if (!currentUser) return;
+        await supabase.from('messages').delete().eq('user_id', currentUser.id).not('text', 'like', '__alert_config__%');
+        if (userMessages.length > 0) {
+            await supabase.from('messages').insert(userMessages.map(m => ({ text: m.text, user_id: currentUser.id, team_id: userTeamId || 1 })));
+        }
+        localStorage.setItem('wms_messages', JSON.stringify(userMessages));
+    }
+
+    async function saveLocationDataToCloud() {
+        if (locationData.length === 0) return;
+        const rows = locationData.map(d => ({ part: d.part, location: d.location, responsible: d.responsible || '' }));
+        const { error } = await supabase.from('locations').upsert(rows, { onConflict: 'part' });
+        if (error) { toast('储位保存失败: ' + error.message, 'error'); throw error; }
+        setCachedLocations(locationData);
+    }
+
+    async function refreshAll() {
+        await saveMaterialsToCloud();
+        await saveLocationDataToCloud();
+        renderStock();
+        updateDaily();
+        updateMarquee();
+        if (currentPage==='count') renderCount();
+        if (currentPage==='customMsg') renderSubCustomMsgs();
+        if (currentPage==='mine') updateMine();
+        setupAutocompletes();
+    }
+
+    function findMaterial(id, mpn) { return materials.find(m => m.id===id && m.mpn===mpn); }
+    function isToday(d) { return d && new Date(d).toDateString()===new Date().toDateString(); }
+
+    function getSummaryAlerts() {
+        const sums = {};
+        materials.forEach(m => { if (!sums[m.id]) sums[m.id] = 0; sums[m.id] += m.stock; });
+        return Object.entries(sums).filter(([id, total]) => total < LOW).map(([id, total]) => ({ id, total }));
+    }
+
+    function updateMarquee() {
+        const track = document.getElementById('marqueeTrack');
+        const summaryAlerts = getSummaryAlerts();
+        const lowItems = summaryAlerts.filter(a => !hiddenAlerts.has('LOW:'+a.id)).map(a =>
+            '<div class="marquee-item '+(a.total===0?'red':'')+'"><i class="fas fa-exclamation-triangle" style="color:#ef4444;animation:blink 0.8s ease-in-out infinite;"></i> '+a.id+' 库存 '+a.total+'</div>'
+        );
+        const customItems = userMessages.filter(m => !hiddenAlerts.has('MSG:'+m.text)).map(m =>
+            '<div class="marquee-item"><i class="fas fa-bullhorn"></i> '+m.text+'</div>'
+        );
+        const items = [...lowItems, ...customItems];
+        track.innerHTML = items.length ? items.join('') + items.join('') : '<div class="marquee-item"><i class="fas fa-check-circle"></i> 库存充足</div>';
+    }
+
+    let currentPage='home';
+
+    async function showPage(name) {
+        if (!currentUser && name!=='login' && name!=='register') { showPage('login'); return; }
+        if (currentPage === 'scan' && name !== 'scan') { stopCam(); }
+        if (currentPage === 'out' || currentPage === 'in') { stopHalfScan(); }
+        if (name === 'location') { document.getElementById('bomModelInput').value=''; document.getElementById('bomPartInput').value=''; document.getElementById('bomResultList').innerHTML='<div class="empty-state"><i class="fas fa-search"></i><p>输入机种号或料号查询 BOM</p></div>'; }
+        Object.values(pages).forEach(p=>p.classList.remove('active'));
+        if(pages[name]) pages[name].classList.add('active');
+        currentPage = name;
+        document.getElementById('bottomNav').style.display = (name==='customMsg'||name==='manualCount'||name==='countList'||!currentUser||name==='login'||name==='register')?'none':'flex';
+        document.querySelectorAll('.bottom-nav .nav-item').forEach(n=>n.classList.toggle('active',n.dataset.tab===name));
+        if (name==='mine') { document.getElementById('settingsBtn').classList.add('visible'); }
+        else { document.getElementById('settingsBtn').classList.remove('visible'); }
+        if (name==='out') { document.getElementById('outCangma').value = 'B8SA'; document.getElementById('outSubmitBtn').disabled = false; }
+        if(name==='stock') { document.getElementById('stockSearch').value = ''; await loadData(); renderStock(); }
+        if(name==='report') { const today=new Date(); const localDate=new Date(today.getTime()-today.getTimezoneOffset()*60000).toISOString().slice(0,10); document.getElementById('reportOutDate').value=localDate; await loadData(); document.querySelector('#page-report .tab-btn.active')?.click(); }
+        if(name==='home'){updateDaily();updateMarquee();}
+        if(name==='count') {
+            document.getElementById('countDateInput').value = countViewDate;
+            document.querySelectorAll('#page-count .tab-btn').forEach(b => b.classList.remove('active'));
+            const detailTab = document.querySelector('#page-count .tab-btn[data-mode="detail"]');
+            if (detailTab) detailTab.classList.add('active');
+            updatePlanUI(); renderCount();
+            if (countPlan.length === 0 || countPlanDate !== countViewDate) { importPlan(); }
+        }
+        if(name==='location'){
+    clearLocationResult();
+    document.getElementById('wukongSearchInput').value = '';
+    document.getElementById('wukongResultBody').innerHTML = '<div class="text-center text-muted">输入料号查询</div>';
+    document.querySelectorAll('#locationModeTabs .tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelector('#locationModeTabs .tab-btn[data-mode="loc"]').classList.add('active');
+    document.querySelectorAll('#page-location .report-tab-content').forEach(c => c.classList.remove('active'));
+    document.getElementById('loc-mode-loc').classList.add('active');
+}
+if(name==='manualCount') { updateShelfUI(); document.getElementById('manualShelfLabel').textContent = ' - ' + (shelfNames[currentShelf]||('架'+(currentShelf+1))); loadManualPartList(currentShelf); }
+if(name==='mine'){updateMine();loadCustomStyles();loadProfileBg();}
+if(name==='customMsg') renderSubCustomMsgs();
+if(name==='countList') { document.getElementById('countListDateInput').value = countViewDate; document.getElementById('countListModeTabs').querySelector('.tab-btn.active')?.click(); }
+window.scrollTo({top:0,behavior:'smooth'});
+if (name === 'out' && document.getElementById('outHalfScanPanel').classList.contains('show')) { document.getElementById('outFormContainer').classList.add('shift-down'); }
+if (name === 'in' && document.getElementById('inHalfScanPanel').classList.contains('show')) { document.getElementById('inFormContainer').classList.add('shift-down'); }
+if (name === 'scan' && scanSettings.autoOpen && !scanning) { startCam(); }
+updateCalcFillButton();
+    }
+
+    // ==================== 计算器 ====================
+    function getFillTargetPage() {
+        if (currentPage === 'manualCount') return 'manualCount';
+        if (currentPage === 'out') return 'out';
+        if (currentPage === 'in') return 'in';
+        return null;
+    }
+    function updateCalcFillButton() {
+        const fillBtn = document.querySelector('.calc-fill');
+        if (!fillBtn) return;
+        fillBtn.classList.toggle('disabled', !getFillTargetPage());
+    }
+
+    (function initCalculator() {
+        const floatBtn = document.getElementById('calculatorFloatBtn');
+        const panel = document.getElementById('calculatorPanel');
+        const display = document.getElementById('calcDisplay');
+        let expression = '';
+        floatBtn.style.display = 'flex';
+        function resetCalculator() { expression = ''; display.textContent = '0'; }
+        function updateDisplay() { display.textContent = expression || '0'; }
+        function calculate(expr) {
+            try {
+                let safeExpr = expr.replace(/×/g, '*').replace(/÷/g, '/').replace(/−/g, '-');
+                let result = Function('"use strict"; return (' + safeExpr + ')')();
+                if (isNaN(result) || !isFinite(result)) return 'Error';
+                return Math.round((result + Number.EPSILON) * 1000000) / 1000000;
+            } catch { return 'Error'; }
+        }
+        function handleInput(value) {
+            if (value === 'C') { resetCalculator(); return; }
+            if (value === '⌫') { expression = expression.slice(0, -1); updateDisplay(); return; }
+            if (value === 'fill') {
+                const target = getFillTargetPage();
+                if (!target) { toast('当前页面无法填入数量', 'info'); return; }
+                const result = calculate(expression);
+                if (result === 'Error') { toast('计算结果无效', 'error'); return; }
+                expression = String(result); updateDisplay();
+                if (target === 'manualCount') { const qtyInput = document.getElementById('manualCountQty'); if (qtyInput) qtyInput.value = Number(result); }
+                else if (target === 'out') { const qtyInput = document.getElementById('outQty'); if (qtyInput) qtyInput.value = Number(result); }
+                else if (target === 'in') { const qtyInput = document.getElementById('inQty'); if (qtyInput) qtyInput.value = Number(result); }
+                panel.classList.remove('show'); return;
+            }
+            if (value === '=') { expression = String(calculate(expression)); updateDisplay(); return; }
+            if (expression.length > 50) return;
+            expression += value; updateDisplay();
+        }
+        floatBtn.addEventListener('click', () => { resetCalculator(); updateCalcFillButton(); panel.classList.add('show'); });
+        document.getElementById('closeCalculatorBtn').addEventListener('click', () => { panel.classList.remove('show'); });
+        document.querySelectorAll('.calc-btn').forEach(btn => { btn.addEventListener('click', function() { handleInput(this.dataset.value); }); });
+        document.addEventListener('click', function(e) {
+            if (!panel.contains(e.target) && e.target !== floatBtn && !floatBtn.contains(e.target) && panel.classList.contains('show')) { panel.classList.remove('show'); }
+        });
+    })();
+
+    // ==================== BOM 联想 - 后端实时查询 ====================
+    function setupBomAutocompletes() {
+        const modelInput = document.getElementById('bomModelInput');
+        const partInput = document.getElementById('bomPartInput');
+        const modelDropdown = document.getElementById('bomModelDropdown');
+        const partDropdown = document.getElementById('bomPartDropdown');
+        if (!modelInput || !partInput) return;
+
+        let modelTimer;
+        modelInput.addEventListener('input', function() {
+            clearTimeout(modelTimer);
+            const val = this.value.trim();
+            modelDropdown.style.display = 'none';
+            modelDropdown.innerHTML = '';
+            if (!val) return;
+            modelTimer = setTimeout(async () => {
+                const { data } = await supabase.from('models_dict').select('model').ilike('model', '%' + val + '%').limit(50);
+                if (!data || data.length === 0) return;
+                data.forEach(item => {
+                    const div = document.createElement('div');
+                    div.textContent = item.model;
+                    div.addEventListener('click', () => { modelInput.value = item.model; modelDropdown.style.display = 'none'; renderBomResult(); });
+                    modelDropdown.appendChild(div);
+                });
+                modelDropdown.style.display = 'block';
+            }, 300);
+        });
+
+        let partTimer;
+        partInput.addEventListener('input', function() {
+            clearTimeout(partTimer);
+            const val = this.value.trim();
+            partDropdown.style.display = 'none';
+            partDropdown.innerHTML = '';
+            if (!val) return;
+            partTimer = setTimeout(async () => {
+                const { data } = await supabase.from('locations')
+    .select('part')
+    .or('part.eq.' + val + ',part.ilike.%' + val)
+    .order('part', { ascending: true })
+    .limit(50);
+                if (!data || data.length === 0) return;
+data.sort((a, b) => {
+    const aExact = a.part === val;
+    const bExact = b.part === val;
+    if (aExact && !bExact) return -1;
+    if (!aExact && bExact) return 1;
+    const aStarts = a.part.startsWith(val);
+    const bStarts = b.part.startsWith(val);
+    if (aStarts && !bStarts) return -1;
+    if (!aStarts && bStarts) return 1;
+    return a.part.localeCompare(b.part);
+});
+data.forEach(item => {
+    const div = document.createElement('div');
+    div.textContent = item.part;
+    div.addEventListener('click', () => { partInput.value = item.part; partDropdown.style.display = 'none'; renderBomResult(); });
+    partDropdown.appendChild(div);
+});
+                partDropdown.style.display = 'block';
+            }, 300);
+        });
+
+        document.addEventListener('click', function(e) {
+            if (e.target !== modelInput) modelDropdown.style.display = 'none';
+            if (e.target !== partInput) partDropdown.style.display = 'none';
+        });
+    }
+
+    async function renderBomResult() {
+        const container = document.getElementById('bomResultList');
+        const modelVal = document.getElementById('bomModelInput').value.trim();
+        const partVal = document.getElementById('bomPartInput').value.trim();
+        if (!modelVal && !partVal) { container.innerHTML = '<div class="empty-state"><i class="fas fa-search"></i><p>输入机种号或料号查询 BOM</p></div>'; return; }
+        container.innerHTML = '<div class="empty-state"><i class="fas fa-spinner fa-spin"></i><p>查询中...</p></div>';
+        let query = supabase.from('boms').select('*');
+        if (modelVal) query = query.eq('model', modelVal);
+        if (partVal) query = query.eq('part', partVal);
+        const { data, error } = await query;
+        if (error) { container.innerHTML = '<div class="empty-state"><p>查询失败: '+error.message+'</p></div>'; return; }
+        if (!data || data.length === 0) { container.innerHTML = '<div class="empty-state"><i class="fas fa-search"></i><p>未找到匹配的 BOM 记录</p></div>'; return; }
+        container.innerHTML = data.map(b =>
+            '<div class="bom-top-row">' +
+'<span><i class="fas fa-file-alt"></i> <span style="color:#2563eb;font-weight:700;">' + (b.wo || '-') + '</span></span>' +
+'<span><i class="fas fa-microchip"></i> <span style="color:#7c3aed;font-weight:700;">' + (b.model || '-') + '</span></span>' +
+'</div>' +
+'<div class="bom-mid-row"><i class="fas fa-barcode"></i> <span class="bom-part-editable" data-id="' + b.id + '" style="color:#0f172a;font-weight:700;">' + b.part + '</span></div>' +
+    '<div class="bom-bottom-row">' +
+    '<span><i class="fas fa-building"></i> 厂商: <span class="bom-manufacturer-editable" data-id="' + b.id + '" style="color:#dc2626;font-weight:600;">' + (b.manufacturer || '-') + '</span></span>' +
+    '<span><i class="fas fa-tag"></i> MPN: <span class="bom-mpn-editable" data-id="' + b.id + '" style="color:#059669;font-weight:600;">' + b.mpn + '</span></span>' +
+    '<button class="btn btn-sm btn-outline bom-delete-btn" data-id="' + b.id + '" style="color:#ef4444;margin-left:auto;"><i class="fas fa-trash"></i></button>' +
+    '</div>' +
+    '</div>'
+        ).join('');
+    }
+    (function(){
+    const input=document.getElementById('wukongSearchInput');
+    const dropdown=document.getElementById('wukongDropdown');
+    if(!input||!dropdown)return;
+    let timer;
+    input.addEventListener('input',function(){
+        clearTimeout(timer);
+        const val=this.value.trim().toUpperCase();
+        dropdown.style.display='none';dropdown.innerHTML='';
+        if(!val)return;
+        timer=setTimeout(async()=>{
+            const { data } = await supabase.from('locations').select('part,responsible').like('part', '%' + val).limit(20);
+            if (!data || !data.length) return;
+            data.reverse();
+            data.forEach(item => {
+                const div=document.createElement('div');
+                div.innerHTML='<strong>'+item.part+'</strong>'+(item.responsible?' - '+item.responsible:'');
+                div.addEventListener('click',()=>{input.value=item.part;dropdown.style.display='none';document.getElementById('wukongSearchBtn').click();});
+                dropdown.appendChild(div);
+            });
+            dropdown.style.display='block';
+        },300);
+    });
+    document.addEventListener('click',function(e){if(e.target!==input)dropdown.style.display='none';});
+})();
+    // ==================== 物控查询 ====================
+document.getElementById('wukongSearchBtn').addEventListener('click', async () => {
+    const val = document.getElementById('wukongSearchInput').value.trim();
+    if (!val) return toast('请输入搜索内容', 'info');
+    const tbody = document.getElementById('wukongResultBody');
+    tbody.innerHTML = '<div class="text-center text-muted">查询中...</div>';
+    const { data, error } = await supabase.from('wukong').select('part, responsible').ilike('part', '%' + val + '%').limit(100);
+    if (error) { tbody.innerHTML = '<div class="text-center text-muted">查询失败</div>'; return; }
+    if (!data || data.length === 0) { tbody.innerHTML = '<div class="text-center text-muted">未找到匹配项</div>'; return; }
+    tbody.innerHTML = data.map(d => '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px 14px;background:linear-gradient(135deg,#f0f9ff,#fef3c7);border-radius:16px;margin-bottom:10px;border:1px solid #e2e8f0;"><div style="font-weight:700;font-size:30px;color:#1e293b;">' + d.part + '</div><div style="color:#f59e0b;font-size:30px;margin-top:26px;font-weight:600;">' + (d.responsible || '-') + '</div></div>').join('');
+});
+
+    // ==================== 导航 ====================
+    document.getElementById('bottomNav').onclick=e=>{const btn=e.target.closest('.nav-item');if(btn&&pages[btn.dataset.tab]) showPage(btn.dataset.tab);};
+    document.getElementById('page-home').onclick=e=>{const card=e.target.closest('.home-card[data-page]');if(card&&pages[card.dataset.page]) showPage(card.dataset.page);};
+    function updateDaily(){
+    const today=records.filter(r=>isToday(r.date));
+    let tin=0,tout=0,inCount=0,outCount=0;
+    today.forEach(r=>{
+        if(r.type==='in'){tin+=r.quantity;inCount++;}
+        else{tout+=r.quantity;outCount++;}
+    });
+    document.getElementById('todayIn').textContent=tin;
+    document.getElementById('todayInCount').textContent=inCount;
+    document.getElementById('todayOut').textContent=tout;
+    document.getElementById('todayOutCount').textContent=outCount;
+    document.getElementById('todayTotalStock').textContent=materials.reduce((s,m)=>s+m.stock,0);
+    document.getElementById('todayOps').textContent=today.length;
+}
+
+    function parseSmart(str) {
+        const parts = str.trim().split(/[ ,\t|]+/);
+        if (parts.length >= 2) { return { part: parts[0], qty: parseInt(parts[1].replace(/[^0-9]/g, '')) || 1, mpn: parts[2] || '' }; }
+        return { part: str, qty: 1, mpn: '' };
+    }
+    function fillFields(raw) {
+        let { part, qty, mpn } = parseSmart(raw);
+        part = part && part.length > 1 ? part.substring(1) : part;
+        mpn = mpn && mpn.length > 1 ? mpn.substring(1) : mpn;
+        document.getElementById('scanPartNumber').value = part;
+        document.getElementById('scanQuantity').value = qty;
+        document.getElementById('scanMpn').value = mpn;
+    }
+
+    async function performSave() {
+        if (!currentUser || !currentUser.id) { toast('请先登录', 'error'); return false; }
+        const part = document.getElementById('scanPartNumber').value.trim();
+        let baseQty = parseInt(document.getElementById('scanQuantity').value, 10) || 1;
+        const mul = parseInt(document.getElementById('multiplierSelect').value, 10) || 1;
+        const mpn = document.getElementById('scanMpn').value.trim();
+        if (!part) { toast('料号不能为空', 'error'); return false; }
+        if (countPlan.length > 0 && !countPlan.find(p => p.part === part)) { toast('该料号未在盘点计划中', 'error'); return false; }
+        const finalQty = baseQty * mul;
+        try {
+            const planEntry = countPlan.find(p => p.part === part);
+            const location = planEntry ? planEntry.location : '';
+            const today = new Date().toISOString().slice(0,10);
+            const nowTime = new Date().toTimeString().slice(0,8);
+            await supabase.from('scan_records').insert({
+                user_id: Number(currentUser.id), team_id: userTeamId || 1,
+                date: today, "time": nowTime, part: part, qty: finalQty, mpn: mpn, location: location
+            });
+            document.getElementById('scanPartNumber').value = ''; document.getElementById('scanQuantity').value = '1'; document.getElementById('scanMpn').value = '';
+            toast('已保存 ' + part + ' × ' + finalQty, 'success');
+            return true;
+        } catch(e) { toast('保存失败: ' + e.message, 'error'); return false; }
+    }
+
+    function handleScan(data) {
+        const now = Date.now();
+        if (lastScanData !== null && data === lastScanData && now < cooldownUntil) return;
+        lastScanData = data; cooldownUntil = now + (scanSettings.cooldown * 1000);
+        document.getElementById('resultContent').innerText = data;
+        document.getElementById('resultCard').style.display = 'block';
+        fillFields(data);
+        if (scanSettings.sound) {
+            try { const ac = new (window.AudioContext || window.webkitAudioContext)(); const o = ac.createOscillator(); const g = ac.createGain(); o.type = 'sine'; o.frequency.value = 880; g.gain.setValueAtTime(0.3, ac.currentTime); g.gain.exponentialRampToValueAtTime(0.0001, ac.currentTime + 0.2); o.connect(g); g.connect(ac.destination); o.start(); o.stop(ac.currentTime + 0.2); } catch(e){}
+        }
+        if (scanSettings.autoSave) { performSave().then(s => { if (s) document.getElementById('resultCard').style.display = 'none'; }); }
+        else toast('识别成功', 'success');
+    }
+
+    async function scanFrame() {
+        const video = document.getElementById('scanVideo');
+        if (!scanning || video.readyState < 2) { scanAnimId = requestAnimationFrame(scanFrame); return; }
+        let w = video.videoWidth, h = video.videoHeight;
+        if (!w || !h) { scanAnimId = requestAnimationFrame(scanFrame); return; }
+        const canvas = document.getElementById('scanCanvas');
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
+        const maxDim = 640;
+        if (w > maxDim || h > maxDim) { const r = Math.min(maxDim / w, maxDim / h); w *= r; h *= r; }
+        canvas.width = w; canvas.height = h;
+        ctx.drawImage(video, 0, 0, w, h);
+        const imgData = ctx.getImageData(0, 0, w, h);
+        const code = jsQR(imgData.data, w, h, { inversionAttempts: 'dontInvert' });
+        if (code && code.data) handleScan(code.data);
+        scanAnimId = requestAnimationFrame(scanFrame);
+    }
+
+    async function startCam() {
+        if (scanStream) await stopCam();
+        try {
+            scanStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment', width: { ideal: 640 }, height: { ideal: 480 } } });
+            document.getElementById('scanVideo').srcObject = scanStream;
+            await document.getElementById('scanVideo').play();
+            document.getElementById('placeholder').style.display = 'none';
+            document.getElementById('overlay').style.display = 'block';
+            document.getElementById('btnStart').innerHTML = '<i class="fas fa-stop"></i> 停止';
+            document.getElementById('btnStart').className = 'btn btn-danger';
+            document.getElementById('btnTorch').disabled = false;
+            scanning = true;
+            scanAnimId = requestAnimationFrame(scanFrame);
+        } catch(e) { stopCam(); }
+    }
+
+    async function stopCam() {
+        scanning = false;
+        if (scanAnimId) { cancelAnimationFrame(scanAnimId); scanAnimId = null; }
+        if (scanStream) { scanStream.getTracks().forEach(t => t.stop()); scanStream = null; }
+        document.getElementById('scanVideo').srcObject = null;
+        document.getElementById('placeholder').style.display = 'flex';
+        document.getElementById('overlay').style.display = 'none';
+        document.getElementById('btnStart').innerHTML = '<i class="fas fa-video"></i> 开始扫描';
+        document.getElementById('btnStart').className = 'btn btn-primary';
+        document.getElementById('btnTorch').disabled = true;
+        torchState = false;
+    }
+
+    // ==================== 半屏扫码 ====================
+    async function startHalfScan(mode) {
+        if (halfScanStream) await stopHalfScan();
+        halfScanMode = mode;
+        const panelId = mode === 'out' ? 'outHalfScanPanel' : 'inHalfScanPanel';
+        const videoId = mode === 'out' ? 'outHalfScanVideo' : 'inHalfScanVideo';
+        const canvasId = mode === 'out' ? 'outHalfScanCanvas' : 'inHalfScanCanvas';
+        const containerId = mode === 'out' ? 'outFormContainer' : 'inFormContainer';
+        document.getElementById(panelId).classList.add('show');
+        document.getElementById(containerId).classList.add('shift-down');
+        try {
+            halfScanStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment', width: { ideal: 640 }, height: { ideal: 480 } } });
+            document.getElementById(videoId).srcObject = halfScanStream;
+            await document.getElementById(videoId).play();
+            halfScanning = true;
+            function frame() {
+                if (!halfScanning) return;
+                const video = document.getElementById(videoId);
+                if (video.readyState >= 2) {
+                    let w = video.videoWidth, h = video.videoHeight;
+                    if (w && h) {
+                        const canvas = document.getElementById(canvasId);
+                        canvas.width = w; canvas.height = h;
+                        const ctx = canvas.getContext('2d', { willReadFrequently: true });
+                        ctx.drawImage(video, 0, 0, w, h);
+                        const imgData = ctx.getImageData(0, 0, w, h);
+                        const code = jsQR(imgData.data, w, h, { inversionAttempts: 'dontInvert' });
+                        if (code && code.data) {
+                            handleHalfScanResult(code.data, mode);
+                            if (!(mode === 'out' ? outContinuous : inContinuous)) stopHalfScan();
+                            return;
+                        }
+                    }
+                }
+                halfScanAnimId = requestAnimationFrame(frame);
+            }
+            halfScanAnimId = requestAnimationFrame(frame);
+        } catch(e) { stopHalfScan(); }
+    }
+
+    async function stopHalfScan() {
+        halfScanning = false;
+        if (halfScanAnimId) { cancelAnimationFrame(halfScanAnimId); halfScanAnimId = null; }
+        if (halfScanStream) { halfScanStream.getTracks().forEach(t => t.stop()); halfScanStream = null; }
+        document.getElementById('outHalfScanPanel')?.classList.remove('show');
+        document.getElementById('inHalfScanPanel')?.classList.remove('show');
+        document.getElementById('outFormContainer')?.classList.remove('shift-down');
+        document.getElementById('inFormContainer')?.classList.remove('shift-down');
+    }
+
+    function handleHalfScanResult(data, mode) {
+        const parsed = parseSmart(data);
+        let part = parsed.part;
+        if (part && part.length > 1) part = part.substring(1);
+        if (!part) return toast('未识别到料号', 'error');
+        const inputId = mode === 'out' ? 'outMaterialInput' : 'inMaterialInput';
+        const hiddenId = mode === 'out' ? 'outMaterialId' : 'inMaterialId';
+        document.getElementById(inputId).value = part;
+        document.getElementById(hiddenId).value = part;
+        const mat = materials.find(m => m.id === part);
+        if (mat) {
+            if (mode === 'out') onMaterialSelected(mat, 'out');
+            else onMaterialSelected(mat, 'in');
+        }
+        toast('已识别料号: ' + part, 'success');
+    }
+
+    // ==================== 连续扫码开关 ====================
+    document.getElementById('outContinuousSwitch').addEventListener('click', function() {
+        outContinuous = !outContinuous; this.classList.toggle('on', outContinuous);
+    });
+    document.getElementById('inContinuousSwitch').addEventListener('click', function() {
+        inContinuous = !inContinuous; this.classList.toggle('on', inContinuous);
+    });
+
+    // ==================== 手动盘点 ====================
+    function loadManualPartList(shelfIdx) {
+        const partInput = document.getElementById('manualCountPart');
+        const progress = document.getElementById('manualProgress');
+        const jumpSelect = document.getElementById('manualJumpSelect');
+        if (!countPlan || countPlan.length === 0 || countPlanDate !== countViewDate) {
+            manualPartList = []; partInput.readOnly = false; partInput.value = ''; progress.textContent = '未导入计划'; jumpSelect.innerHTML = '<option value="">无计划</option>'; return;
+        }
+        const range = shelfRanges[shelfIdx];
+        if (!range || !range.start || !range.end) {
+            manualPartList = []; partInput.readOnly = false; partInput.value = ''; progress.textContent = '该货架未设置储位范围'; jumpSelect.innerHTML = '<option value="">无范围</option>'; return;
+        }
+        const start = range.start.toUpperCase().replace(/\s/g, ''); const end = range.end.toUpperCase().replace(/\s/g, '');
+        const filtered = countPlan.filter(p => { const loc = (p.location || '').toUpperCase().replace(/\s/g, ''); return loc >= start && loc <= end; });
+        const seen = new Set(); manualPartList = [];
+        filtered.forEach(p => { if (!seen.has(p.part)) { seen.add(p.part); manualPartList.push({ part: p.part, location: p.location || '' }); } });
+        manualPartList.sort((a, b) => a.location.localeCompare(b.location) || a.part.localeCompare(b.part));
+        jumpSelect.innerHTML = '<option value="">顺序盘点</option>' + manualPartList.map((item, i) => '<option value="'+i+'">'+item.part+' ('+item.location+')</option>').join('');
+        if (manualPartList.length === 0) { partInput.readOnly = false; partInput.value = ''; progress.textContent = '该货架无对应盘点计划'; delete manualShelfProgress[shelfIdx]; return; }
+        manualPartIndex = manualShelfProgress[shelfIdx] || 0;
+        if (manualPartIndex >= manualPartList.length) { delete manualShelfProgress[shelfIdx]; manualPartIndex = 0; }
+        fillNextPart();
+    }
+
+    function fillNextPart() {
+        const partInput = document.getElementById('manualCountPart'); const mpnInput = document.getElementById('manualCountMpn');
+        const progress = document.getElementById('manualProgress'); const dropdown = document.getElementById('manualMpnDropdown');
+        if (manualPartList.length === 0) { partInput.readOnly = false; partInput.value = ''; mpnInput.value = ''; progress.textContent = '无盘点列表'; return; }
+        if (manualPartIndex >= manualPartList.length) { delete manualShelfProgress[currentShelf]; toast('该货架所有料号已盘点完毕', 'success'); manualPartList = []; partInput.readOnly = false; partInput.value = ''; mpnInput.value = ''; progress.textContent = '已完成'; return; }
+        const item = manualPartList[manualPartIndex]; partInput.value = item.part; partInput.readOnly = true;
+        const mpns = materials.filter(m => m.id === item.part).map(m => m.mpn).filter(Boolean);
+        dropdown.innerHTML = '';
+        if (mpns.length > 0) { mpns.forEach(mpn => { const div = document.createElement('div'); div.textContent = mpn; div.addEventListener('click', () => { mpnInput.value = mpn; dropdown.style.display = 'none'; }); dropdown.appendChild(div); }); mpnInput.value = mpns[0]; } else { mpnInput.value = ''; }
+        mpnInput.readOnly = true;
+        progress.textContent = '第 ' + (manualPartIndex + 1) + '/' + manualPartList.length + ' 个';
+    }
+
+    async function saveManualCount() {
+        if (!currentUser || !currentUser.id) { toast('请先登录', 'error'); return; }
+        const btn = document.getElementById('saveManualCountBtn'); if (btn.disabled) return;
+        btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 保存中...';
+        try {
+            const part = document.getElementById('manualCountPart').value.trim().toUpperCase();
+            const qty = parseInt(document.getElementById('manualCountQty').value) || 1;
+            const mpnSwitchOn = document.getElementById('manualMpnSwitch').classList.contains('on');
+            const mpn = mpnSwitchOn ? document.getElementById('manualCountMpn').value.trim() : '';
+            if (!part) { toast('请输入料号', 'error'); btn.disabled = false; btn.innerHTML = '<i class="fas fa-save"></i> 保存盘点'; return; }
+            const today = new Date().toISOString().slice(0,10); const nowTime = new Date().toTimeString().slice(0,8);
+            let location = manualPartList.length > 0 && manualPartIndex < manualPartList.length ? manualPartList[manualPartIndex].location : (shelfNames[currentShelf] || ('架'+(currentShelf+1)));
+            const { error } = await supabase.from('scan_records').insert({ user_id: Number(currentUser.id), team_id: userTeamId || 1, date: today, "time": nowTime, part: part, qty, mpn, location: location });
+            if (error) { toast('保存失败: ' + error.message, 'error'); btn.disabled = false; btn.innerHTML = '<i class="fas fa-save"></i> 保存盘点'; return; }
+            toast('已保存 ' + part + ' x ' + qty, 'success');
+            document.getElementById('manualCountQty').value = ''; document.getElementById('manualCountQty').focus();
+            if (manualPartList.length > 0) { manualPartIndex++; manualShelfProgress[currentShelf] = manualPartIndex; fillNextPart(); }
+            else { document.getElementById('manualCountPart').value = ''; document.getElementById('manualCountMpn').value = ''; }
+            if (countViewDate === today) { const { data: planData } = await supabase.from('scan_records').select('part, mpn, location').eq('team_id', userTeamId || 1).eq('date', today).eq('qty', 0); if (planData) { countPlan = planData.map(d => ({ part: d.part, mpn: d.mpn || '', location: d.location || '' })); countPlanDate = today; } }
+        } finally { btn.disabled = false; btn.innerHTML = '<i class="fas fa-save"></i> 保存盘点'; }
+    }
+
+    // ==================== 扫码相关按钮 ====================
+    document.getElementById('btnStart').onclick = () => scanning ? stopCam() : startCam();
+    document.getElementById('btnUpload').onclick = () => document.getElementById('imgFile').click();
+    document.getElementById('imgFile').onchange = async e => {
+        const file = e.target.files[0]; if (!file) return;
+        const img = await new Promise((r, rej) => { const rd = new FileReader(); rd.onload = ev => { const im = new Image(); im.onload = () => r(im); im.onerror = rej; im.src = ev.target.result; }; rd.onerror = rej; rd.readAsDataURL(file); });
+        const canvas = document.getElementById('scanCanvas'); const ctx = canvas.getContext('2d', { willReadFrequently: true }); canvas.width = img.width; canvas.height = img.height; ctx.drawImage(img, 0, 0);
+        const imgData = ctx.getImageData(0, 0, img.width, img.height); const code = jsQR(imgData.data, img.width, img.height);
+        if (code && code.data) handleScan(code.data); else toast('未识别到二维码', 'error'); e.target.value = '';
+    };
+    document.getElementById('btnTorch').onclick = async () => {
+        if (!scanStream) return toast('请先启动摄像头', 'info');
+        const track = scanStream.getVideoTracks()[0]; if (!track) return;
+        try { torchState = !torchState; await track.applyConstraints({ advanced: [{ torch: torchState }] }); document.getElementById('btnTorch').classList.toggle('active', torchState); }
+        catch(e) { torchState = !torchState; }
+    };
+    document.getElementById('autoSaveSwitchTrack').onclick = function() { scanSettings.autoSave = !scanSettings.autoSave; this.classList.toggle('on', scanSettings.autoSave); localStorage.setItem('scan_auto_save', scanSettings.autoSave); };
+    document.getElementById('autoSaveSwitchTrack').classList.toggle('on', scanSettings.autoSave);
+    document.getElementById('btnConfirmSave').onclick = async () => { await performSave(); document.getElementById('resultCard').style.display = 'none'; };
+    document.getElementById('btnCancelSave').onclick = () => { document.getElementById('scanPartNumber').value = ''; document.getElementById('scanQuantity').value = '1'; document.getElementById('scanMpn').value = ''; document.getElementById('resultCard').style.display = 'none'; };
+    document.getElementById('btnCopy').onclick = () => { const t = document.getElementById('resultContent').innerText; if (t) navigator.clipboard.writeText(t).then(() => toast('已复制', 'info')).catch(() => toast('复制失败', 'error')); };
+    document.getElementById('btnClearResult').onclick = () => { document.getElementById('resultCard').style.display = 'none'; document.getElementById('resultContent').innerText = ''; lastScanData = null; };
+    document.getElementById('btnManualCount').onclick = () => showPage('manualCount');
+    document.getElementById('backFromManualCount').onclick = () => showPage('scan');
+    document.getElementById('saveManualCountBtn').onclick = saveManualCount;
+    document.getElementById('skipManualBtn').onclick = () => { if (manualPartList.length > 0 && manualPartIndex < manualPartList.length) { manualPartIndex++; manualShelfProgress[currentShelf] = manualPartIndex; fillNextPart(); document.getElementById('manualCountQty').value = ''; document.getElementById('manualCountQty').focus(); } };
+    document.getElementById('manualJumpSelect').addEventListener('change', function() { const idx = parseInt(this.value); if (isNaN(idx) || idx < 0 || idx >= manualPartList.length) return; manualPartIndex = idx; manualShelfProgress[currentShelf] = idx; fillNextPart(); });
+    document.getElementById('manualPrevBtn').addEventListener('click', function() { if (manualPartList.length === 0) return; if (manualPartIndex > 0) { manualPartIndex--; manualShelfProgress[currentShelf] = manualPartIndex; fillNextPart(); document.getElementById('manualCountQty').value = ''; document.getElementById('manualCountQty').focus(); } else toast('已经是第一个料号', 'info'); });
+    document.getElementById('manualMpnSwitch').addEventListener('click', function() { this.classList.toggle('on'); });
+    document.getElementById('manualCountMpn').addEventListener('click', (e) => { e.stopPropagation(); const dropdown = document.getElementById('manualMpnDropdown'); if (dropdown.children.length > 0) dropdown.style.display = 'block'; });
+    document.addEventListener('click', (e) => { const d = document.getElementById('manualMpnDropdown'); if (d && !document.getElementById('manualCountMpn').contains(e.target)) d.style.display = 'none'; });
+    document.querySelectorAll('#manualShelfRow .shelf-btn').forEach(btn => { btn.addEventListener('click', function() { currentShelf = parseInt(this.dataset.shelf); updateShelfUI(); document.getElementById('manualShelfLabel').textContent = ' - ' + (shelfNames[currentShelf]||('架'+(currentShelf+1))); loadManualPartList(currentShelf); }); });
+    document.getElementById('outScanBtn').onclick = () => startHalfScan('out');
+    document.getElementById('inScanBtn').onclick = () => startHalfScan('in');
+    document.getElementById('closeOutHalfScan').onclick = stopHalfScan;
+    document.getElementById('closeInHalfScan').onclick = stopHalfScan;
+    document.getElementById('outHalfScanBtn').onclick = () => halfScanning ? stopHalfScan() : startHalfScan('out');
+    document.getElementById('inHalfScanBtn').onclick = () => halfScanning ? stopHalfScan() : startHalfScan('in');
+
+    // ==================== 出库 ====================
+    document.getElementById('outForm').addEventListener('submit', async function(e) {
+        if (!currentUser || !currentUser.id) return;
+        e.preventDefault();
+        const outSubmitBtn = document.getElementById('outSubmitBtn'); 
+        if (outSubmitBtn.disabled) return;
+        outSubmitBtn.disabled = true;
+        const id = document.getElementById('outMaterialId').value, 
+              mpn = document.getElementById('outMpn').value;
+        const cangma = document.getElementById('outCangma').value, 
+              qty = parseInt(document.getElementById('outQty').value);
+        if(!id||!mpn||!qty||qty<1) { 
+            outSubmitBtn.disabled = false; 
+            return toast('请完善信息','error'); 
+        }
+        try {
+            const { data: result, error } = await supabase.rpc('decrease_stock', {
+                p_user_id: Number(currentUser.id),
+                p_team_id: userTeamId || 1,
+                p_material_id: id,
+                p_mpn: mpn,
+                p_quantity: qty
+            });
+            if (error) { outSubmitBtn.disabled = false; return toast('出库失败: ' + error.message, 'error'); }
+            if (result === -1) { outSubmitBtn.disabled = false; return toast('物料不存在', 'error'); }
+            if (result === -2) { outSubmitBtn.disabled = false; return toast('库存不足', 'error'); }
+            
+            await saveRecordToCloud({ type:'out', materialId:id, mpn, quantity:qty, date: new Date(new Date().getTime() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0,10), dest: mpn, note: cangma });
+            
+            const m = findMaterial(id, mpn);
+            if (m) m.stock = result;
+            
+            toast('出库成功：'+id+' '+mpn+' x '+qty, 'success');
+            document.getElementById('outMaterialInput').value = ''; 
+            document.getElementById('outMaterialId').value = '';
+            document.getElementById('outMpn').innerHTML = '<option value="">请先选择料号</option>'; 
+            document.getElementById('outMpn').disabled = true;
+            document.getElementById('outQty').value = ''; 
+            document.getElementById('outStockHint').textContent = '';
+            renderStock(); updateDaily(); updateMarquee();
+            if (!outContinuous) stopHalfScan();
+        } catch(e) { toast('出库失败: ' + e.message, 'error'); } 
+        finally { outSubmitBtn.disabled = false; }
+    });
+
+    // ==================== 入库 ====================
+    document.getElementById('inForm').addEventListener('submit', async function(e) {
+        if (!currentUser || !currentUser.id) return;
+        e.preventDefault();
+        const inSubmitBtn = document.getElementById('inSubmitBtn'); 
+        if (inSubmitBtn.disabled) return;
+        inSubmitBtn.disabled = true;
+        const id = document.getElementById('inMaterialId').value, 
+              mpn = document.getElementById('inMpn').value;
+        const qty = parseInt(document.getElementById('inQty').value);
+        if(!id||!mpn||!qty||qty<1) { 
+            inSubmitBtn.disabled = false; 
+            return toast('请完善信息','error'); 
+        }
+        try {
+            let { data: result, error } = await supabase.rpc('increase_stock', {
+                p_user_id: Number(currentUser.id),
+                p_team_id: userTeamId || 1,
+                p_material_id: id,
+                p_mpn: mpn,
+                p_quantity: qty
+            });
+            if (error) { inSubmitBtn.disabled = false; return toast('入库失败: ' + error.message, 'error'); }
+            
+            if (result === -1) {
+                const { error: insertError } = await supabase.from('materials').insert({
+                    team_id: userTeamId || 1, id: id, mpn: mpn, stock: qty,
+                    user_id: Number(currentUser.id), location: '', manufacturer: '', responsible: ''
+                });
+                if (insertError) { inSubmitBtn.disabled = false; return toast('创建物料失败: ' + insertError.message, 'error'); }
+                materials.push({ id, mpn, stock: qty, location: '', manufacturer: '', responsible: '' });
+            } else {
+                const m = findMaterial(id, mpn);
+                if (m) m.stock = result;
+            }
+            
+            await saveRecordToCloud({ type:'in', materialId:id, mpn, quantity:qty, date: new Date(new Date().getTime() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0,10), source: mpn, note: '' });
+            
+            toast('入库成功：'+id+' '+mpn+' x '+qty, 'success');
+            document.getElementById('inMaterialInput').value = ''; 
+            document.getElementById('inMaterialId').value = '';
+            document.getElementById('inMpn').innerHTML = '<option value="">请先选择料号</option>'; 
+            document.getElementById('inMpn').disabled = true;
+            document.getElementById('inQty').value = '';
+            renderStock(); updateDaily(); updateMarquee();
+            if (!inContinuous) stopHalfScan();
+        } catch(e) { toast('入库失败: ' + e.message, 'error'); } 
+        finally { inSubmitBtn.disabled = false; }
+    });
+
+    // ==================== 盘点清单 ====================
+    async function renderCountListByMode(mode) {
+        const tbody = document.getElementById('countListBody'); const thead = document.getElementById('countListTableHead');
+        if (!currentUser || !currentUser.id) { tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted">请先登录</td></tr>'; return; }
+        const date = document.getElementById('countListDateInput').value;
+        tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted">加载中...</td></tr>';
+        try {
+            const { data, error } = await supabase.from('scan_records').select('part, mpn, qty').eq('team_id', userTeamId || 1).eq('date', date).gt('qty', 0).order('"time"', { ascending: true });
+            if (error) throw error;
+            if (!data || data.length === 0) { tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted">当天无盘点数据</td></tr>'; return; }
+            if (mode === 'part') {
+                thead.innerHTML = '<tr><th>料号</th><th>盘点数量</th><th>系统数量</th><th>差异</th></tr>';
+                const partMap = {}; data.forEach(r => { partMap[r.part] = (partMap[r.part] || 0) + r.qty; });
+                const rows = Object.entries(partMap).map(([part, countQty]) => { const sysQty = materials.filter(m => m.id === part).reduce((s, m) => s + m.stock, 0); return { part, countQty, sysQty, diff: countQty - sysQty }; });
+                tbody.innerHTML = rows.map(r => '<tr><td>'+r.part+'</td><td>'+r.countQty+'</td><td>'+r.sysQty+'</td><td style="color:'+(r.diff===0?'#22c55e':r.diff>0?'#ef4444':'#f59e0b')+'">'+r.diff+'</td></tr>').join('');
+            } else {
+                thead.innerHTML = '<tr><th>料号</th><th>MPN</th><th>盘点数量</th><th>系统数量</th><th>差异</th></tr>';
+                const comboMap = {}; data.forEach(r => { const key = r.part+'|'+(r.mpn||''); if (!comboMap[key]) comboMap[key] = { part: r.part, mpn: r.mpn || '', countQty: 0 }; comboMap[key].countQty += r.qty; });
+                const rows = Object.values(comboMap).map(item => { const m = materials.find(mat => mat.id === item.part && mat.mpn === item.mpn); const sysQty = m ? m.stock : 0; return { ...item, sysQty, diff: item.countQty - sysQty }; });
+                tbody.innerHTML = rows.map(r => '<tr><td>'+r.part+'</td><td>'+(r.mpn||'-')+'</td><td>'+r.countQty+'</td><td>'+r.sysQty+'</td><td style="color:'+(r.diff===0?'#22c55e':r.diff>0?'#ef4444':'#f59e0b')+'">'+r.diff+'</td></tr>').join('');
+            }
+        } catch(e) { tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted">加载失败</td></tr>'; }
+    }
+
+    function exportCountList() {
+        const mode = document.getElementById('countListModeTabs').querySelector('.tab-btn.active')?.dataset.mode || 'part';
+        const tbody = document.getElementById('countListBody'); const rows = tbody.querySelectorAll('tr');
+        if (rows.length === 0 || rows[0].querySelector('.text-muted')) { toast('无数据可导出', 'error'); return; }
+        const sheetData = []; if (mode === 'part') { sheetData.push(['料号','盘点数量','系统数量','差异']); rows.forEach(row => { const cells = row.querySelectorAll('td'); if (cells.length >= 4) sheetData.push([cells[0].textContent.trim(), cells[1].textContent.trim(), cells[2].textContent.trim(), cells[3].textContent.trim()]); }); }
+        else { sheetData.push(['料号','MPN','盘点数量','系统数量','差异']); rows.forEach(row => { const cells = row.querySelectorAll('td'); if (cells.length >= 5) sheetData.push([cells[0].textContent.trim(), cells[1].textContent.trim(), cells[2].textContent.trim(), cells[3].textContent.trim(), cells[4].textContent.trim()]); }); }
+        const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(sheetData), '盘点清单');
+        XLSX.writeFile(wb, '盘点清单_'+document.getElementById('countListDateInput').value+'.xlsx');
+        toast('文件已下载', 'success');
+    }
+
+    document.getElementById('goCountListBtn').addEventListener('click', () => showPage('countList'));
+    document.getElementById('backFromCountList').addEventListener('click', () => showPage('count'));
+    document.getElementById('refreshCountListBtn').addEventListener('click', () => { countViewDate = document.getElementById('countListDateInput').value; document.getElementById('countListModeTabs').querySelector('.tab-btn.active')?.click(); });
+    document.getElementById('exportCountListBtn').addEventListener('click', exportCountList);
+    document.querySelectorAll('#countListModeTabs .tab-btn').forEach(btn => { btn.addEventListener('click', function() { document.querySelectorAll('#countListModeTabs .tab-btn').forEach(b => b.classList.remove('active')); this.classList.add('active'); renderCountListByMode(this.dataset.mode); }); });
+
+    // ==================== 盘点 ====================
+    async function importPlan() {
+    if (!currentUser || !currentUser.id) return;
+    const date = countViewDate;
+    
+    try {
+        const { data: todayData } = await supabase.from('scan_records')
+            .select('part, mpn, location')
+            .eq('team_id', userTeamId || 1)
+            .eq('date', date)
+            .eq('qty', 0);
+        
+        if (todayData && todayData.length > 0) {
+            countPlan = todayData.map(d => ({ part: d.part, mpn: d.mpn || '', location: d.location || '' }));
+        } else {
+            const { data: lastData } = await supabase.from('scan_records')
+                .select('date, part, mpn, location')
+                .eq('team_id', userTeamId || 1)
+                .eq('qty', 0)
+                .order('date', { ascending: false })
+                .limit(1000);
+            
+            if (lastData && lastData.length > 0) {
+                const lastDate = lastData[0].date;
+                const planItems = lastData.filter(d => d.date === lastDate);
+                countPlan = planItems.map(d => ({ part: d.part, mpn: d.mpn || '', location: d.location || '' }));
+                
+                // 自动复制到今天
+                const nowTime = new Date().toTimeString().slice(0, 8);
+                const toInsert = [];
+                for (const p of countPlan) {
+                    toInsert.push({
+                        user_id: Number(currentUser.id),
+                        team_id: userTeamId || 1,
+                        date: date,
+                        "time": nowTime,
+                        part: p.part,
+                        qty: 0,
+                        mpn: p.mpn,
+                        location: p.location
+                    });
+                }
+                if (toInsert.length > 0) {
+                    await supabase.from('scan_records').insert(toInsert);
+                }
+            } else {
+                countPlan = [];
+            }
+        }
+    } catch (e) {
+        countPlan = [];
+    }
+    
+    countPlanDate = date;
+    manualShelfProgress = {};
+    updatePlanUI();
+    updateShelfUI();
+}
+    function updatePlanUI() { document.getElementById('planInfo').textContent = (countPlan.length > 0 && countPlanDate === countViewDate) ? '已导入 '+countPlan.length+' 条计划' : '未导入计划'; }
+    document.getElementById('countDateInput').addEventListener('change', function() { countViewDate = this.value; countPlan = []; countPlanDate = countViewDate; importPlan(); renderCount(); });
+    document.querySelectorAll('#countShelfRow .shelf-btn').forEach(btn => { btn.addEventListener('click', function() { document.querySelectorAll('#countShelfRow .shelf-btn').forEach(b => b.classList.remove('active')); this.classList.add('active'); countFilterShelf = this.dataset.shelf; renderCount(); }); });
+    document.getElementById('countSearchInput').addEventListener('input', () => renderCount());
+    document.querySelectorAll('#page-count .tab-btn').forEach(btn => { btn.addEventListener('click', function() { document.querySelectorAll('#page-count .tab-btn').forEach(b => b.classList.remove('active')); this.classList.add('active'); countViewMode = this.dataset.mode; renderCount(); }); });
+    document.getElementById('clearTodayBtn').addEventListener('click', () => {
+        if (!currentUser || !currentUser.id) return;
+        showConfirm('确定清空当日盘点数据？', 'fa-trash-alt', '#ef4444', 'btn-modal-danger', async () => {
+            await supabase.from('scan_records').delete().eq('team_id', userTeamId || 1).eq('date', countViewDate).gt('qty', 0);
+            toast('已清空', 'success'); renderCount();
+        });
+    });
+
+    async function renderCount() {
+        if (!currentUser || !currentUser.id) return;
+        const c = document.getElementById('countList'); const date = countViewDate;
+        const search = (document.getElementById('countSearchInput')?.value || '').trim().toUpperCase();
+        const { data, error } = await supabase.from('scan_records').select('*').eq('team_id', userTeamId || 1).eq('date', date).order('"time"', { ascending: true });
+        if (error) { c.innerHTML = '<div class="empty-state">加载失败</div>'; return; }
+        let items = (data || []).filter(r => !search || r.part.endsWith(search));
+        if (countFilterShelf !== 'all') { const shelfIdx = parseInt(countFilterShelf); if (!isNaN(shelfIdx)) items = items.filter(r => classifyLocation(r.location) === shelfIdx); }
+        if (countViewMode === 'plan') {
+            const planItems = items.filter(r => r.qty === 0);
+            if (planItems.length === 0) { c.innerHTML = '<div class="empty-state"><p>暂无盘点计划</p></div>'; return; }
+            c.innerHTML = planItems.map(r => '<div class="count-item"><div class="info"><div class="name">'+r.part+'</div><div class="spec">储位: '+(r.location||'-')+'</div></div><div class="qty-control">计划</div></div>').join('');
+        } else if (countViewMode === 'part') {
+            const summary = {}; items.filter(r => r.qty > 0).forEach(r => { if (!summary[r.part]) summary[r.part] = { part: r.part, qty: 0 }; summary[r.part].qty += r.qty; });
+            c.innerHTML = Object.values(summary).map(s => '<div class="count-item"><div class="info"><div class="name">'+s.part+'</div></div><div class="qty-control">'+s.qty+'</div></div>').join('');
+        } else {
+            const detailItems = items.filter(r => r.qty > 0);
+            if (detailItems.length === 0) { c.innerHTML = '<div class="empty-state"><p>当天无盘点数据</p></div>'; return; }
+            c.innerHTML = detailItems.map(r => '<div class="count-item"><div class="info"><div class="name">'+r.part+' '+(r.mpn?'('+r.mpn+')':'')+'</div><div class="spec">'+(r["time"]||'')+'</div></div><div class="qty-control"><span>'+r.qty+'</span><button class="btn btn-sm btn-outline count-delete-btn" style="color:#ef4444;margin-left:8px;" data-id="'+r.id+'"><i class="fas fa-trash"></i></button></div></div>').join('');
+            c.querySelectorAll('.count-delete-btn').forEach(btn => { btn.addEventListener('click', async function(e) { e.stopPropagation(); const id = parseInt(this.dataset.id); if (isNaN(id)) return; await supabase.from('scan_records').delete().eq('id', id); toast('已删除', 'success'); renderCount(); }); });
+        }
+    }
+
+    // ==================== 库存 ====================
+    let stockSearchTimer;
+    async function renderStock(filter=''){
+        const tbody=document.getElementById('stockBody'),countSpan=document.getElementById('stockCount');
+        if (!currentUser || !currentUser.id) return;
+        tbody.innerHTML='<tr><td colspan="3" class="text-center text-muted">搜索中...</td></tr>'; countSpan.textContent='...';
+        const kw=filter.trim().toLowerCase(); let list=kw ? materials.filter(m=>m.id.toLowerCase().includes(kw)||m.mpn.toLowerCase().includes(kw)) : [...materials];
+        const total=list.length; if(list.length>MAX_STOCK_DISPLAY) list=list.slice(0,MAX_STOCK_DISPLAY);
+        if(!list.length) tbody.innerHTML='<tr><td colspan="3" class="text-center text-muted">暂无数据</td></tr>';
+        else {
+            tbody.innerHTML=list.map(m=>{const key=m.id+'|'+m.mpn;return '<tr><td>'+m.id+'</td><td>'+(m.mpn||'-')+'</td><td class="'+(m.stock<=LOW?'stock-low':'')+'"><span class="editable-stock" data-key="'+key+'">'+m.stock+'</span></td></tr>';}).join('');
+            tbody.querySelectorAll('.editable-stock').forEach(span=>span.addEventListener('click',function(e){
+                if(this.querySelector('input')) return; const key=this.dataset.key; const cur=parseInt(this.textContent)||0;
+                const input=document.createElement('input'); input.type='number'; input.value=cur; input.min=0;
+                input.addEventListener('blur',async function(){const newVal=parseInt(this.value)||0;const [id,mpn]=key.split('|');
+                    await supabase.from('materials').update({stock:newVal}).eq('id',id).eq('mpn',mpn).eq('user_id', Number(currentUser.id)).eq('team_id', userTeamId || 1);
+                    const mat=materials.find(m=>m.id===id&&m.mpn===mpn);if(mat) mat.stock=newVal;
+                    renderStock(document.getElementById('stockSearch').value);});
+                input.addEventListener('keydown',function(e){if(e.key==='Enter')this.blur();});
+                this.innerHTML='';this.appendChild(input);input.focus();
+            }));
+        }
+        countSpan.textContent=total>MAX_STOCK_DISPLAY?MAX_STOCK_DISPLAY+'+':total;
+    }
+    document.getElementById('stockSearch').addEventListener('input',function(){clearTimeout(stockSearchTimer);stockSearchTimer=setTimeout(()=>renderStock(this.value),300);});
+
+    // ==================== 出入库清单 ====================
+    document.querySelectorAll('#page-report .tab-btn').forEach(btn=>{btn.addEventListener('click',function(){const tabName=this.dataset.tab;document.querySelectorAll('#page-report .tab-btn').forEach(b=>b.classList.remove('active'));this.classList.add('active');document.querySelectorAll('#page-report .report-tab-content').forEach(c=>c.classList.remove('active'));document.getElementById(tabName).classList.add('active'); if(tabName==='tab-out') renderOutReport(); else t();});});
+    function renderOutReport(){if(!currentUser||!currentUser.id) return;const date=document.getElementById('reportOutDate').value;if(!date) return;const cangma=document.getElementById('reportOutCangma').value;const filtered=records.filter(r=>r.type==='out'&&r.date&&r.date.startsWith(date)&&(cangma===''||r.note===cangma));const tbody=document.getElementById('outReportBody');tbody.innerHTML=filtered.length?filtered.map(r=>'<tr><td>'+r.materialId+'</td><td>'+(r.mpn||'-')+'</td><td>'+r.quantity+'</td><td><button class="btn btn-sm btn-outline delete-record-btn" style="color:#ef4444;" data-id="'+r.id+'"><i class="fas fa-trash"></i></button></td></tr>').join(''):'<tr><td colspan="4" class="text-center text-muted">无出库记录</td></tr>';}
+    document.getElementById('reportOutDate').addEventListener('change', renderOutReport);
+    document.getElementById('reportOutCangma').addEventListener('change', renderOutReport);
+    function autoRefreshInReport(){if(!currentUser||!currentUser.id) return;const today=new Date();const localToday=new Date(today.getTime()-today.getTimezoneOffset()*60000).toISOString().slice(0,10);const filtered=records.filter(r=>r.type==='in'&&r.date&&r.date.startsWith(localToday));const tbody=document.getElementById('inReportBody');tbody.innerHTML=filtered.length?filtered.map(r=>'<tr><td>'+r.materialId+'</td><td>'+(r.mpn||'-')+'</td><td>'+r.quantity+'</td><td>'+(r.date?.slice(0,10)||'')+'</td><td><button class="btn btn-sm btn-outline delete-record-btn" style="color:#ef4444;" data-id="'+r.id+'"><i class="fas fa-trash"></i></button></td></tr>').join(''):'<tr><td colspan="5" class="text-center text-muted">当天无入库记录</td></tr>';}
+    document.getElementById('queryInBtn').addEventListener('click',()=>{if(!currentUser||!currentUser.id) return;const matId=document.getElementById('reportInMaterialId').value.trim();let filtered=records.filter(r=>r.type==='in');if(matId) filtered=filtered.filter(r=>r.materialId===matId);const tbody=document.getElementById('inReportBody');tbody.innerHTML=filtered.length?filtered.map(r=>'<tr><td>'+r.materialId+'</td><td>'+(r.mpn||'-')+'</td><td>'+r.quantity+'</td><td>'+(r.date?.slice(0,10)||'')+'</td><td><button class="btn btn-sm btn-outline delete-record-btn" style="color:#ef4444;" data-id="'+r.id+'"><i class="fas fa-trash"></i></button></td></tr>').join(''):'<tr><td colspan="5" class="text-center text-muted">无入库记录</td></tr>';});
+
+    // ==================== 储位查找 ====================
+    function clearLocationResult(){document.getElementById('locationResultBody').innerHTML='<div class="text-center text-muted">输入料号关键字搜索</div>';document.getElementById('locationResultCount').textContent='0';document.getElementById('locationSearchInput').value='';}
+async function performLocationSearch(){
+    const val=document.getElementById('locationSearchInput').value.trim().toUpperCase();if(!val) return toast('请输入搜索关键字','info');
+    document.getElementById('locationResultBody').innerHTML='<div class="text-center text-muted">搜索中...</div>';document.getElementById('locationResultCount').textContent='...';
+    let res=locationData.filter(d=>d.part.includes(val));
+    if(res.length===0){const {data}=await supabase.from('locations').select('part,location,responsible').ilike('part','%'+val+'%');if(data){data.forEach(d=>{if(!locationData.find(item=>item.part===d.part)) locationData.push({part:d.part,location:d.location,responsible:d.responsible||''});});res=data.map(d=>({part:d.part,location:d.location,responsible:d.responsible||''}));}}
+    document.getElementById('locationResultBody').innerHTML = res.length ? res.map(d =>
+    '<div id="loc-row-' + d.part + '" style="display:flex;flex-direction:column;align-items:center;width:100%;padding:16px;background:#fff;border-radius:14px;margin-bottom:10px;border:1px solid #e2e8f0;box-shadow:0 2px 6px rgba(0,0,0,0.04);">' +
+    '<div style="font-weight:700;font-size:16px;color:#0f172a;margin-bottom:8px;"><i class="fas fa-barcode" style="color:#3b82f6;margin-right:6px;"></i>' + d.part + '</div>' +
+    '<div style="color:#475569;font-size:14px;margin-bottom:6px;"><i class="fas fa-map-marker-alt" style="color:#0ea5e9;margin-right:6px;"></i>储位: <span class="display-loc">' + (d.location || '-') + '</span>' +
+    '<input class="form-control edit-loc" value="' + (d.location || '') + '" style="display:none;width:100px;font-size:12px;padding:4px;"></div>' +
+    '<div style="display:flex;align-items:center;width:100%;color:#475569;font-size:14px;position:relative;">' +
+    '<span style="flex:1;text-align:center;"><i class="fas fa-user" style="color:#f59e0b;margin-right:6px;"></i>担当: ' + (d.responsible || '-') + '</span>' +
+    '<button class="btn btn-sm btn-outline btn-edit-loc" data-part="' + d.part + '" style="position:absolute;right:0;"><i class="fas fa-pen"></i> 修改</button>' +
+    '<button class="btn btn-sm btn-success btn-save-loc" data-part="' + d.part + '" style="display:none;position:absolute;right:0;"><i class="fas fa-check"></i> 保存</button>' +
+    '</div></div>'
+).join('') : '<div class="text-center text-muted">未找到匹配项</div>';
+    document.getElementById('locationResultCount').textContent=res.length;
+}
+document.getElementById('locationSearchBtn').addEventListener('click',performLocationSearch);
+document.getElementById('locationSearchInput').addEventListener('keydown',e=>{if(e.key==='Enter') performLocationSearch();});
+document.getElementById('locationClearBtn').addEventListener('click',clearLocationResult);
+document.getElementById('locationResult').addEventListener('click',e=>{
+    const btn=e.target.closest('button');if(!btn) return;const part=btn.dataset.part;if(!part) return;
+    if(btn.classList.contains('btn-edit-loc')){const row=document.getElementById('loc-row-'+part);row.querySelector('.display-loc').style.display='none';row.querySelector('.edit-loc').style.display='inline-block';row.querySelector('.btn-edit-loc').style.display='none';row.querySelector('.btn-save-loc').style.display='inline-flex';row.querySelector('.edit-loc').focus();}
+    else if(btn.classList.contains('btn-save-loc')){const row=document.getElementById('loc-row-'+part);const newLoc=row.querySelector('.edit-loc').value.trim();const d=locationData.find(d=>d.part===part);if(d){d.location=newLoc;saveLocationDataToCloud();}row.querySelector('.display-loc').textContent=newLoc||'-';row.querySelector('.display-loc').style.display='inline';row.querySelector('.edit-loc').style.display='none';row.querySelector('.btn-edit-loc').style.display='inline-flex';row.querySelector('.btn-save-loc').style.display='none';}
+});
+
+    // ==================== 出入库自动完成 ====================
+    function setupAutocompletes(){
+        ['out','in','reportIn'].forEach(type=>{
+            const input=document.getElementById(type+'MaterialInput'),hidden=document.getElementById(type+'MaterialId'),dropdown=document.getElementById(type+'MaterialDropdown');
+            if(!input||!hidden||!dropdown) return;
+            let currentFocus=-1;
+            input.addEventListener('input',function(){
+                const val=this.value.trim().toUpperCase();closeAllLists();hidden.value='';
+                if(type==='out'){document.getElementById('outMpn').innerHTML='<option value="">请先选择料号</option>';document.getElementById('outMpn').disabled=true;document.getElementById('outStockHint').textContent='';}
+                else if(type==='in'){document.getElementById('inMpn').innerHTML='<option value="">请先选择料号</option>';document.getElementById('inMpn').disabled=true;}
+                if(!val) return;
+                const matches=materials.filter(m=>m.id.includes(val));if(matches.length===0) return;
+                dropdown.innerHTML='';matches.forEach((m)=>{const div=document.createElement('div');div.innerHTML='<strong>'+m.id+'</strong> - '+(m.mpn||'无MPN')+' (库存: '+m.stock+')';div.addEventListener('click',()=>{input.value=m.id;hidden.value=m.id;closeAllLists();if(type==='out') onMaterialSelected(m,'out');else if(type==='in') onMaterialSelected(m,'in');});dropdown.appendChild(div);});
+                dropdown.style.display='block';
+            });
+            input.addEventListener('keydown',function(e){let items=dropdown.getElementsByTagName('div');if(e.key==='ArrowDown'){currentFocus++;addActive(items);}else if(e.key==='ArrowUp'){currentFocus--;addActive(items);}else if(e.key==='Enter'){e.preventDefault();if(currentFocus>-1&&items[currentFocus]) items[currentFocus].click();}});
+            function addActive(items){if(!items.length) return;removeActive(items);if(currentFocus>=items.length) currentFocus=0;if(currentFocus<0) currentFocus=items.length-1;items[currentFocus].classList.add('autocomplete-active');}
+            function removeActive(items){for(let item of items) item.classList.remove('autocomplete-active');}
+            function closeAllLists(){dropdown.style.display='none';currentFocus=-1;}
+            document.addEventListener('click',function(e){if(e.target!==input) closeAllLists();});
+        });
+    }
+    function onMaterialSelected(mat, type){
+        const mpnOptions = materials.filter(m => m.id === mat.id).map(m => m.mpn);
+        const mpnSel = document.getElementById(type==='out'?'outMpn':'inMpn');
+        mpnSel.innerHTML = ''; mpnOptions.forEach(mpn => { const opt = document.createElement('option'); opt.value = mpn; opt.textContent = mpn; mpnSel.appendChild(opt); });
+        if (mpnOptions.length > 0) { mpnSel.disabled = false; mpnSel.value = mat.mpn; if (type === 'out') { const m = findMaterial(mat.id, mat.mpn); if (m) { document.getElementById('outStockHint').textContent = '当前库存: '+m.stock; document.getElementById('outQty').max = m.stock; } } }
+        else { mpnSel.disabled = true; }
+    }
+    document.getElementById('outCangma').addEventListener('change', function() { document.getElementById('outSubmitBtn').disabled = !this.value; });
+    document.getElementById('outMpn').addEventListener('change',function(){const id=document.getElementById('outMaterialId').value;const m=findMaterial(id,this.value);if(m){document.getElementById('outStockHint').textContent='当前库存: '+m.stock;document.getElementById('outQty').max=m.stock;}});
+
+    // ==================== 删除记录 ====================
+    document.addEventListener('click', function(e) { const btn = e.target.closest('.delete-record-btn'); if (btn) { e.stopPropagation(); const recordId = parseInt(btn.dataset.id); if (!isNaN(recordId)) showDeletePasswordModal(recordId); } });
+    function showDeletePasswordModal(recordId) { pendingDeleteRecordId = recordId; document.getElementById('deletePasswordInput').value = ''; document.getElementById('deletePasswordModal').classList.add('show'); }
+    document.getElementById('deletePasswordCancel').addEventListener('click', () => { pendingDeleteRecordId = null; document.getElementById('deletePasswordModal').classList.remove('show'); });
+    document.getElementById('deletePasswordConfirm').addEventListener('click', async () => {
+    const password = document.getElementById('deletePasswordInput').value.trim();
+    if (password !== '927521') { toast('密码错误', 'error'); return; }
+    document.getElementById('deletePasswordModal').classList.remove('show');
+    if (!pendingDeleteRecordId) return;
+    const recordId = pendingDeleteRecordId; pendingDeleteRecordId = null;
+    try {
+        const record = records.find(r => r.id === recordId);
+        if (record) {
+            if (record.type === 'out') {
+                await supabase.rpc('increase_stock', {
+                    p_user_id: Number(currentUser.id),
+                    p_team_id: userTeamId || 1,
+                    p_material_id: record.materialId,
+                    p_mpn: record.mpn,
+                    p_quantity: record.quantity
+                });
+            } else if (record.type === 'in') {
+                await supabase.rpc('decrease_stock', {
+                    p_user_id: Number(currentUser.id),
+                    p_team_id: userTeamId || 1,
+                    p_material_id: record.materialId,
+                    p_mpn: record.mpn,
+                    p_quantity: record.quantity
+                });
+            }
+        }
+        await supabase.from('records').delete().eq('id', recordId);
+        records = records.filter(r => r.id !== recordId);
+        await loadData();
+        toast('记录已删除，库存已恢复', 'success');
+        renderStock(); updateDaily();
+        if (currentPage === 'report') { const activeTab = document.querySelector('#page-report .tab-btn.active'); if (activeTab && activeTab.dataset.tab === 'tab-out') renderOutReport(); else autoRefreshInReport(); }
+    } catch(e) { toast('删除失败: '+e.message, 'error'); }
+});
+
+    // ==================== 系统维护 ====================
+    document.getElementById('systemMaintenanceBtn').addEventListener('click', () => { document.getElementById('systemMaintenanceModal').classList.add('show'); });
+    document.getElementById('maintainCancelBtn').addEventListener('click', () => { document.getElementById('systemMaintenanceModal').classList.remove('show'); });
+    document.getElementById('maintainErrorLogBtn').addEventListener('click', () => { document.getElementById('systemMaintenanceModal').classList.remove('show'); const list = document.getElementById('errorLogList'); if (errorLogs.length === 0) list.innerHTML = '<div class="text-muted">暂无错误日志</div>'; else list.innerHTML = errorLogs.map(log => '<div class="error-log-item">['+log.time+'] '+log.message+(log.detail?' ('+log.detail+')':'')+'</div>').join(''); document.getElementById('errorLogModal').classList.add('show'); });
+    document.getElementById('clearErrorLogBtn').addEventListener('click', () => { errorLogs = []; localStorage.removeItem('wms_error_logs'); document.getElementById('errorLogList').innerHTML = '<div class="text-muted">日志已清空</div>'; });
+    document.getElementById('closeErrorLogBtn').addEventListener('click', () => { document.getElementById('errorLogModal').classList.remove('show'); });
+
+    // ==================== 设置面板 ====================
+    const settingsBtn=document.getElementById('settingsBtn'),settingsOverlay=document.getElementById('settingsOverlay'),settingsPanel=document.getElementById('settingsPanel'),settingsClose=document.getElementById('settingsClose');
+    function openSettings(){settingsOverlay.classList.add('show');settingsPanel.classList.add('show');}
+    function closeSettings(){settingsOverlay.classList.remove('show');settingsPanel.classList.remove('show');}
+    settingsBtn.addEventListener('click',openSettings); settingsClose.addEventListener('click',closeSettings); settingsOverlay.addEventListener('click',closeSettings);
+    document.getElementById('thresholdSelect').value=LOW;
+    document.getElementById('thresholdSelect').addEventListener('change',function(){LOW=parseInt(this.value);localStorage.setItem('wms_threshold',LOW);updateMarquee();});
+    document.getElementById('editShelfNamesBtn').addEventListener('click',()=>{document.querySelectorAll('.shelf-name-input').forEach(inp=>{inp.value=shelfNames[parseInt(inp.dataset.shelf)]||'';});document.getElementById('shelfNamesModal').classList.add('show');});
+    document.getElementById('shelfNamesCancel').addEventListener('click',()=>document.getElementById('shelfNamesModal').classList.remove('show'));
+    document.getElementById('shelfNamesSave').addEventListener('click',()=>{document.querySelectorAll('.shelf-name-input').forEach(inp=>{shelfNames[parseInt(inp.dataset.shelf)]=inp.value.trim()||('架'+(parseInt(inp.dataset.shelf)+1));});localStorage.setItem('wms_shelf_names',JSON.stringify(shelfNames));updateShelfUI();document.getElementById('shelfNamesModal').classList.remove('show');});
+    document.getElementById('editShelfRangesBtn').addEventListener('click',()=>{document.querySelectorAll('.shelf-range-start').forEach(inp=>{inp.value=(shelfRanges[parseInt(inp.dataset.shelf)]&&shelfRanges[parseInt(inp.dataset.shelf)].start)?shelfRanges[parseInt(inp.dataset.shelf)].start:'';});document.querySelectorAll('.shelf-range-end').forEach(inp=>{inp.value=(shelfRanges[parseInt(inp.dataset.shelf)]&&shelfRanges[parseInt(inp.dataset.shelf)].end)?shelfRanges[parseInt(inp.dataset.shelf)].end:'';});document.getElementById('shelfRangesModal').classList.add('show');});
+    document.getElementById('shelfRangesCancel').addEventListener('click',()=>document.getElementById('shelfRangesModal').classList.remove('show'));
+    document.getElementById('shelfRangesSave').addEventListener('click',()=>{const starts=document.querySelectorAll('.shelf-range-start');const ends=document.querySelectorAll('.shelf-range-end');for(let i=0;i<7;i++) shelfRanges[i]={start:starts[i].value.trim().toUpperCase(),end:ends[i].value.trim().toUpperCase()};localStorage.setItem('wms_shelf_ranges',JSON.stringify(shelfRanges));document.getElementById('shelfRangesModal').classList.remove('show');});
+    const soundSwitch=document.getElementById('soundSwitchTrack');
+    if(soundSwitch){if(scanSettings.sound) soundSwitch.classList.add('on');soundSwitch.addEventListener('click',()=>{scanSettings.sound=!scanSettings.sound;soundSwitch.classList.toggle('on',scanSettings.sound);localStorage.setItem('scan_sound',scanSettings.sound);});}
+
+    // ==================== 退出登录 ====================
+    document.getElementById('logoutBtn').addEventListener('click',()=>{showConfirm('确定退出登录？','fa-sign-out-alt','#ef4444','btn-modal-danger',()=>{currentUser=null;userTeamId=null;localStorage.removeItem('wms_user');localStorage.removeItem('wms_remember');showPage('login');document.getElementById('loginUsername').value='';document.getElementById('loginPassword').value='';document.getElementById('rememberMe').checked=false;toast('已退出登录','info');});});
+
+    // ==================== 滚动预警 ====================
+    function renderSubCustomMsgs(){
+        const c=document.getElementById('subCustomMsgList');if(!c) return;
+        const summaryAlerts=getSummaryAlerts();
+        let html='<div class="text-muted" style="font-size:16px;margin-bottom:8px;">低库存预警（勾选则显示）</div>';
+        html+=summaryAlerts.map(a=>{const key='LOW:'+a.id;return'<label class="checkbox-label"><input type="checkbox" class="alert-check" data-key="'+key+'" '+(hiddenAlerts.has(key)?'':'checked')+'> '+a.id+' 库存 '+a.total+'</label>';}).join('');
+        html+='<div class="text-muted" style="font-size:16px;margin:12px 0 8px;">自定义消息（勾选则显示）</div>';
+        html+=userMessages.map((m,i)=>{const key='MSG:'+m.text;return'<div class="custom-msg-item"><label class="checkbox-label" style="flex:1;"><input type="checkbox" class="alert-check" data-key="'+key+'" '+(hiddenAlerts.has(key)?'':'checked')+'> '+m.text+'</label><button class="btn-remove delete-msg-btn" data-index="'+i+'" data-text="'+m.text.replace(/"/g,'&quot;')+'"><i class="fas fa-trash"></i></button></div>';}).join('');
+        c.innerHTML=html||'<div class="text-muted">暂无预警或消息</div>';
+        c.querySelectorAll('.alert-check').forEach(cb=>{cb.addEventListener('change',async function(){const key=this.dataset.key;if(this.checked) hiddenAlerts.delete(key);else hiddenAlerts.add(key);await saveAlertConfig();updateMarquee();});});
+        c.querySelectorAll('.delete-msg-btn').forEach(btn=>{btn.addEventListener('click',async function(){const index=parseInt(this.dataset.index);const text=this.dataset.text;showConfirm('确定删除消息 "'+text+'" 吗？','fa-trash','#ef4444','btn-modal-danger',async()=>{userMessages.splice(index,1);hiddenAlerts.delete('MSG:'+text);await saveAlertConfig();await syncMessagesToCloud();updateMarquee();renderSubCustomMsgs();toast('消息已删除','success');});});});
+    }
+    document.getElementById('subAddCustomMsgBtn').addEventListener('click',async()=>{const txt=document.getElementById('subCustomMsgInput').value.trim();if(!txt) return toast('请输入内容','error');const isGlobal=document.getElementById('globalMsgCheck').checked;if(isGlobal&&currentUser){await supabase.from('messages').insert({text:txt,user_id:null});}else if(currentUser){userMessages.push({text:txt});await syncMessagesToCloud();}else{userMessages.push({text:txt});localStorage.setItem('wms_messages',JSON.stringify(userMessages));}updateMarquee();renderSubCustomMsgs();document.getElementById('subCustomMsgInput').value='';document.getElementById('globalMsgCheck').checked=false;});
+    document.getElementById('backFromMsgBtn').addEventListener('click',()=>showPage('mine'));
+    document.getElementById('goCustomMsgBtn').addEventListener('click',()=>showPage('customMsg'));
+
+    // ==================== 我的 ====================
+    function updateMine(){document.getElementById('myLowStockCount').textContent=materials.filter(m=>m.stock<LOW).length;document.getElementById('myTotalLocations').textContent=locationData.length;if(currentUser){(async()=>{const today=new Date().toISOString().slice(0,10);const{data}=await supabase.from('scan_records').select('location').eq('team_id',userTeamId||1).eq('date',today).gt('qty',0);document.getElementById('myCheckedLocations').textContent=new Set((data||[]).map(r=>r.location).filter(Boolean)).size;})();}const d=Math.floor((new Date()-startTime)/1000);document.getElementById('sysUptime').textContent=Math.floor(d/3600)+'h '+Math.floor((d%3600)/60)+'m';document.getElementById('lastUpdateTime').textContent=LAST_UPDATE_DATE;if(currentUser){document.getElementById('profileName').textContent=currentUser.real_name||currentUser.username;document.getElementById('profileRole').textContent=currentUser.is_admin?'管理员':'普通用户';}}
+    function loadCustomStyles(){const avatar=localStorage.getItem('wms_avatar');if(avatar){document.getElementById('avatarIcon').style.display='none';let img=document.getElementById('avatarImg');if(!img){img=document.createElement('img');img.id='avatarImg';img.style.width='64px';img.style.height='64px';img.style.borderRadius='50%';img.style.objectFit='cover';document.getElementById('avatarBtn').appendChild(img);}img.src=avatar;}else{document.getElementById('avatarIcon').style.display='block';const img=document.getElementById('avatarImg');if(img) img.remove();}}
+    function loadProfileBg(){const bg=localStorage.getItem('wms_profile_bg');const card=document.getElementById('myProfileCard');if(card) card.style.backgroundImage=bg?'url('+bg+')':'';}
+    document.getElementById('changeAvatarBtn').addEventListener('click',()=>{const input=document.createElement('input');input.type='file';input.accept='image/*';input.onchange=(e)=>{const file=e.target.files[0];if(!file) return;const reader=new FileReader();reader.onload=(ev)=>{localStorage.setItem('wms_avatar',ev.target.result);loadCustomStyles();};reader.readAsDataURL(file);};input.click();});
+    document.getElementById('changeBgBtn').addEventListener('click',()=>{const input=document.createElement('input');input.type='file';input.accept='image/*';input.onchange=(e)=>{const file=e.target.files[0];if(!file) return;const reader=new FileReader();reader.onload=(ev)=>{localStorage.setItem('wms_profile_bg',ev.target.result);loadProfileBg();};reader.readAsDataURL(file);};input.click();});
+    document.getElementById('resetBgBtn').addEventListener('click',()=>{localStorage.removeItem('wms_avatar');localStorage.removeItem('wms_profile_bg');loadCustomStyles();loadProfileBg();});
+
+    // ==================== 登录/注册 ====================
+    document.getElementById('loginBtn').addEventListener('click',async()=>{
+        const u=document.getElementById('loginUsername').value.trim(),p=document.getElementById('loginPassword').value;
+        if(!u||!p) return toast('请输入账号密码','error');
+        const {data,error}=await supabase.rpc('login_user',{p_username:u,p_password:p});
+        if(error||!data||!data.length){toast('登录失败','error');return;}
+        const r=data[0];
+        if(r.success){
+            currentUser={id:r.user_id,username:r.username,real_name:r.real_name,is_admin:r.is_admin};
+            localStorage.setItem('wms_user',JSON.stringify(currentUser));
+            if(document.getElementById('rememberMe').checked){localStorage.setItem('wms_remember',JSON.stringify({u:u,p:p}));}else{localStorage.removeItem('wms_remember');}
+            await fetchUserTeamId();
+            toast('登录成功','success');
+            showPage('home');
+loadData().then(() => {
+    setupAutocompletes();
+    updateMine();
+    updateMarquee();
+    renderStock();
+    updateDaily();
+});
+        }else toast(r.message||'账号或密码错误','error');
+    });
+    document.getElementById('registerBtn').addEventListener('click',async()=>{
+        const u=document.getElementById('regUsername').value.trim(),p=document.getElementById('regPassword').value,n=document.getElementById('regRealName').value.trim();
+        if(!u||!p) return toast('请输入账号密码','error');
+        if(!n) return toast('请输入姓名','error');
+        const {data,error}=await supabase.rpc('register_user',{p_username:u,p_password:p,p_real_name:n});
+        if(error||!data||!data.length){toast('注册失败','error');return;}
+        if(data[0].success){toast('注册成功，请登录','success');showPage('login');document.getElementById('regUsername').value='';document.getElementById('regPassword').value='';document.getElementById('regRealName').value='';}
+        else toast(data[0].message||'注册失败','error');
+    });
+    document.getElementById('goRegisterLink').addEventListener('click',e=>{e.preventDefault();showPage('register');});
+    document.getElementById('goLoginLink').addEventListener('click',e=>{e.preventDefault();showPage('login');});
+
+    // ==================== 暂停滚动 ====================
+    document.getElementById('alertMarquee').addEventListener('click', function() { this.classList.toggle('paused'); });
+
+    // ==================== Loading 辅助 ====================
+    function setLoading(el, loading) { if (loading) { el.disabled = true; el._originalText = el.innerHTML; el.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 处理中...'; } else { el.disabled = false; el.innerHTML = el._originalText || el.innerHTML; } }
+
+    // ==================== 手动添加数据按钮 ====================
+    document.getElementById('saveManualBtn').addEventListener('click', async function() {
+        if (!currentUser || !currentUser.id || !userTeamId) { toast('请先登录', 'error'); return; }
+        setLoading(this, true);
+        const id = document.getElementById('manId').value.trim().toUpperCase(), mpn = document.getElementById('manMpn').value.trim();
+        const location = document.getElementById('manLocation').value.trim(), stock = parseInt(document.getElementById('manStock').value) || 0;
+        if (!id || !mpn) { setLoading(this, false); return toast('请输入料号和MPN', 'error'); }
+        if (findMaterial(id, mpn)) { setLoading(this, false); return toast('该料号+MPN已存在', 'error'); }
+        const newMat = { id, mpn, manufacturer: '', location, stock, responsible: '', user_id: Number(currentUser.id), team_id: userTeamId };
+        const { error } = await supabase.from('materials').upsert(newMat, { onConflict: 'team_id, user_id, id, mpn' });
+        setLoading(this, false);
+        if (error) { toast('添加失败: '+error.message, 'error'); return; }
+        materials.push(newMat); toast('添加成功', 'success');
+        document.getElementById('manId').value = ''; document.getElementById('manMpn').value = ''; document.getElementById('manLocation').value = ''; document.getElementById('manStock').value = '0';
+        refreshAll();
+    });
+    document.getElementById('saveLocationManualBtn').addEventListener('click', async function() {
+        setLoading(this, true);
+        const part = document.getElementById('locManId').value.trim().toUpperCase(), location = document.getElementById('locManLocation').value.trim(), responsible = document.getElementById('locManResponsible').value.trim();
+        if (!part || !location) { setLoading(this, false); return toast('请输入料号和储位', 'error'); }
+        const { error } = await supabase.from('locations').upsert({ part, location, responsible }, { onConflict: 'part' });
+        setLoading(this, false);
+        if (error) { toast('添加失败: '+error.message, 'error'); return; }
+        locationData.push({ part, location, responsible }); toast('储位数据添加成功', 'success');
+        document.getElementById('locManId').value = ''; document.getElementById('locManLocation').value = ''; document.getElementById('locManResponsible').value = '';
+        setCachedLocations(locationData); refreshAll();
+    });document.getElementById('saveWukongManualBtn').addEventListener('click', async function() {
+    setLoading(this, true);
+    const part = document.getElementById('wukongManId').value.trim().toUpperCase();
+    const responsible = document.getElementById('wukongManResponsible').value.trim();
+    if (!part) { setLoading(this, false); return toast('请输入料号', 'error'); }
+    const { error } = await supabase.from('wukong').upsert({ part, responsible }, { onConflict: 'part' });
+    setLoading(this, false);
+    if (error) { toast('添加失败: ' + error.message, 'error'); return; }
+    toast('物控数据添加成功', 'success');
+    document.getElementById('wukongManId').value = '';
+    document.getElementById('wukongManResponsible').value = '';
+});
+    document.getElementById('addCountManBtn').addEventListener('click', async function() {
+        if (!currentUser || !currentUser.id) { toast('请先登录', 'error'); return; }
+        setLoading(this, true);
+        const id = document.getElementById('countManId').value.trim().toUpperCase(), location = document.getElementById('countManLoc').value.trim();
+        if (!id || !location) { setLoading(this, false); return toast('请输入料号和储位', 'error'); }
+        const today = new Date().toISOString().slice(0,10), nowTime = new Date().toTimeString().slice(0,8);
+        const { error } = await supabase.from('scan_records').insert({ user_id: Number(currentUser.id), team_id: userTeamId || 1, date: today, "time": nowTime, part: id, qty: 0, mpn: '', location: location });
+        setLoading(this, false);
+        if (error) { toast('添加失败: '+error.message, 'error'); return; }
+        document.getElementById('countManId').value = ''; document.getElementById('countManLoc').value = '';
+        toast('盘点计划已添加', 'success');
+        if (countViewDate === today) importPlan();
+    });
+
+    // ==================== 折叠面板 ====================
+    document.querySelectorAll('.collapsible-header').forEach(header => { header.addEventListener('click', function() { this.classList.toggle('expanded'); this.nextElementSibling.classList.toggle('show'); }); });
+
+    // ==================== Excel 读取 ====================
+    function readExcel(file,cb){const reader=new FileReader();reader.onload=e=>{try{const wb=XLSX.read(new Uint8Array(e.target.result),{type:'array'});cb(null,XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{header:1,defval:''}));}catch(err){cb(err);}};reader.readAsArrayBuffer(file);}
+
+    // ==================== 上传库存 ====================
+    document.getElementById('uploadExcelBtn').addEventListener('click', async function() {
+        if (!currentUser || !currentUser.id || !userTeamId) { toast('请先登录', 'error'); return; }
+        const file = document.getElementById('excelFile').files[0]; if (!file) { toast('请选择Excel文件', 'error'); return; }
+        setLoading(this, true);
+        readExcel(file, async (err, rows) => {
+            if (err) { setLoading(this, false); return toast('解析失败: '+err.message, 'error'); }
+            if (!rows || rows.length < 2) { setLoading(this, false); return toast('表格数据不足', 'error'); }
+            const mergedMap = new Map();
+            for (let i = 1; i < rows.length; i++) {
+                const row = rows[i]; const id = String(row[0] || '').trim(), location = String(row[1] || '').trim(), mpn = String(row[2] || '').trim(), stock = parseInt(row[3]) || 0;
+                if (!id || !mpn) continue;
+                const key = id+'|'+mpn;
+                if (mergedMap.has(key)) mergedMap.get(key).stock += stock;
+                else mergedMap.set(key, { id, mpn, location, stock, manufacturer: '', responsible: '', user_id: Number(currentUser.id), team_id: userTeamId });
+            }
+            const toUpsert = Array.from(mergedMap.values());
+            if (toUpsert.length === 0) { setLoading(this, false); return toast('无有效数据', 'error'); }
+            const { error } = await supabase.from('materials').upsert(toUpsert, { onConflict: 'team_id, user_id, id, mpn' });
+            setLoading(this, false);
+            if (error) { toast('上传失败: '+error.message, 'error'); return; }
+            toast('成功导入 '+toUpsert.length+' 条', 'success');
+            document.getElementById('excelUploadStatus').style.display = 'block';
+            document.getElementById('excelUploadStatus').textContent = '已导入 '+toUpsert.length+' 条';
+            refreshAll();
+        });
+    });
+
+    // ==================== 上传储位 ====================
+    document.getElementById('uploadLocationExcelBtn').addEventListener('click', async function() {
+        const file = document.getElementById('locationExcelFile').files[0]; if (!file) { toast('请选择Excel文件', 'error'); return; }
+        setLoading(this, true);
+        readExcel(file, async (err, rows) => {
+            if (err) { setLoading(this, false); return toast('解析失败: '+err.message, 'error'); }
+            if (!rows || rows.length < 2) { setLoading(this, false); return toast('表格数据不足', 'error'); }
+            const toUpsert = [];
+            for (let i = 1; i < rows.length; i++) { const row = rows[i]; const part = String(row[0] || '').trim().toUpperCase(), location = String(row[1] || '').trim(), responsible = String(row[2] || '').trim(); if (part && location) toUpsert.push({ part, location, responsible }); }
+            if (toUpsert.length === 0) { setLoading(this, false); return toast('无有效数据', 'error'); }
+            const { error } = await supabase.rpc('upsert_locations_batch', { p_data: toUpsert });
+            setLoading(this, false);
+            if (error) { toast('上传失败: '+error.message, 'error'); return; }
+            toast('成功导入 '+toUpsert.length+' 条储位', 'success');
+            document.getElementById('locationUploadStatus').style.display = 'block';
+            document.getElementById('locationUploadStatus').textContent = '已导入 '+toUpsert.length+' 条';
+            locationData = locationData.filter(d => !toUpsert.find(u => u.part === d.part));
+            locationData.push(...toUpsert.map(u => ({ part: u.part, location: u.location, responsible: u.responsible || '' })));
+            setCachedLocations(locationData);
+        });
+    });
+
+    // ==================== 上传盘点 ====================
+    document.getElementById('uploadCountExcelBtn').addEventListener('click', async function() {
+        if (!currentUser || !currentUser.id) { toast('请先登录', 'error'); return; }
+        const file = document.getElementById('countExcelFile').files[0]; if (!file) { toast('请选择Excel文件', 'error'); return; }
+        setLoading(this, true);
+        readExcel(file, async (err, rows) => {
+            if (err) { setLoading(this, false); return toast('解析失败: '+err.message, 'error'); }
+            if (!rows || rows.length < 2) { setLoading(this, false); return toast('表格数据不足', 'error'); }
+            const today = new Date().toISOString().slice(0,10), nowTime = new Date().toTimeString().slice(0,8);
+            const toInsert = [];
+            for (let i = 1; i < rows.length; i++) { const row = rows[i]; const part = String(row[0] || '').trim().toUpperCase(), location = String(row[1] || '').trim(); if (part && location) toInsert.push({ user_id: Number(currentUser.id), team_id: userTeamId || 1, date: today, "time": nowTime, part, qty: 0, mpn: '', location }); }
+            if (toInsert.length === 0) { setLoading(this, false); return toast('无有效数据', 'error'); }
+            const { error } = await supabase.from('scan_records').insert(toInsert);
+            setLoading(this, false);
+            if (error) { toast('上传失败: '+error.message, 'error'); return; }
+            toast('成功导入 '+toInsert.length+' 条盘点计划', 'success');
+            document.getElementById('countUploadStatus').style.display = 'block';
+            document.getElementById('countUploadStatus').textContent = '已导入 '+toInsert.length+' 条';
+            if (countViewDate === today) importPlan();
+        });
+    });
+
+    // ==================== 上传 BOM ====================
+    document.getElementById('uploadBomExcelBtn').addEventListener('click', async function() {
+        if (!currentUser || !currentUser.id) { toast('请先登录', 'error'); return; }
+        const file = document.getElementById('bomExcelFile').files[0]; if (!file) { toast('请选择Excel文件', 'error'); return; }
+        setLoading(this, true);
+        readExcel(file, async (err, rows) => {
+            if (err) { setLoading(this, false); toast('解析失败: '+err.message, 'error'); return; }
+            if (!rows || rows.length < 2) { setLoading(this, false); toast('表格数据不足', 'error'); return; }
+            const headers = rows[0].map(h => String(h).trim());
+            const idxWo = headers.findIndex(h => h === '工单号'), idxModel = headers.findIndex(h => h === '机种号'), idxId = headers.findIndex(h => h === '料号'), idxMan = headers.findIndex(h => h === '厂商'), idxMpn = headers.findIndex(h => h === 'MPN');
+            if (idxId === -1 || idxMpn === -1) { setLoading(this, false); toast('表格必须包含料号和MPN两列', 'error'); return; }
+            const toUpsert = [];
+            for (let i = 1; i < rows.length; i++) { const row = rows[i]; const id = String(row[idxId] || '').trim(), mpn = String(row[idxMpn] || '').trim(); if (!id || !mpn) continue; toUpsert.push({ wo: idxWo > -1 ? String(row[idxWo] || '').trim() : '', model: idxModel > -1 ? String(row[idxModel] || '').trim() : '', part: id, manufacturer: idxMan > -1 ? String(row[idxMan] || '').trim() : '', mpn }); }
+            if (toUpsert.length === 0) { setLoading(this, false); toast('没有有效的BOM数据', 'error'); return; }
+            const progressBg = document.getElementById('bomProgressBg'), progressFill = document.getElementById('bomProgressFill'), progressText = document.getElementById('bomProgressText');
+            progressBg.style.display = 'block'; progressFill.style.width = '0%'; progressText.style.display = 'block'; progressText.className = 'bom-progress-text';
+            let uploadedCount = 0;
+            for (let i = 0; i < toUpsert.length; i += 1000) {
+    const batch = toUpsert.slice(i, i + 1000);
+                const { error } = await supabase.rpc('upsert_boms_batch', { p_data: batch });
+                if (error) { setLoading(this, false); progressText.className = 'bom-progress-text error'; progressText.innerHTML = '上传失败: '+error.message; toast('上传失败: '+error.message, 'error'); return; }
+                uploadedCount += batch.length;
+                progressFill.style.width = Math.round(uploadedCount / toUpsert.length * 100) + '%';
+                progressText.textContent = '正在上传: '+uploadedCount+' / '+toUpsert.length;
+                await new Promise(r => setTimeout(r, 50));
+            }
+            setLoading(this, false); progressBg.style.display = 'none';
+            progressText.className = 'bom-progress-text success'; progressText.innerHTML = '成功导入/更新 '+toUpsert.length+' 条 BOM';
+            toast('成功导入/更新 '+toUpsert.length+' 条 BOM', 'success');
+            document.getElementById('bomUploadStatus').style.display = 'block';
+            document.getElementById('bomUploadStatus').textContent = '已导入/更新 '+toUpsert.length+' 条';
+        });
+    });
+
+    // ==================== 上传机种号 ====================
+    document.getElementById('uploadModelsExcelBtn').addEventListener('click', async function() {
+        const file = document.getElementById('modelsExcelFile').files[0]; if (!file) { toast('请选择Excel文件', 'error'); return; }
+        setLoading(this, true);
+        readExcel(file, async (err, rows) => {
+            if (err) { setLoading(this, false); return toast('解析失败: '+err.message, 'error'); }
+            if (!rows || rows.length < 2) { setLoading(this, false); return toast('表格数据不足', 'error'); }
+            const toUpsert = [];
+            for (let i = 1; i < rows.length; i++) { const model = String(rows[i][0] || '').trim(); if (model) toUpsert.push({ model }); }
+            if (toUpsert.length === 0) { setLoading(this, false); return toast('无有效数据', 'error'); }
+            const { error } = await supabase.rpc('upsert_models_batch', { p_data: toUpsert });
+            setLoading(this, false);
+            if (error) { toast('上传失败: '+error.message, 'error'); return; }
+            toast('成功导入 '+toUpsert.length+' 个机种号', 'success');
+            document.getElementById('modelsUploadStatus').style.display = 'block';
+            document.getElementById('modelsUploadStatus').textContent = '已导入 '+toUpsert.length+' 个';
+        });
+    });
+    // ==================== 上传物控 ====================
+document.getElementById('uploadWukongExcelBtn').addEventListener('click', async function() {
+    const file = document.getElementById('wukongExcelFile').files[0]; if (!file) { toast('请选择Excel文件', 'error'); return; }
+    setLoading(this, true);
+    readExcel(file, async (err, rows) => {
+        if (err) { setLoading(this, false); return toast('解析失败: '+err.message, 'error'); }
+        if (!rows || rows.length < 2) { setLoading(this, false); return toast('表格数据不足', 'error'); }
+        const toUpsert = [];
+        for (let i = 1; i < rows.length; i++) {
+            const part = String(rows[i][0] || '').trim().toUpperCase();
+            const responsible = String(rows[i][1] || '').trim();
+            if (part) toUpsert.push({ part, responsible });
+        }
+        const seen = new Set();
+        const unique = [];
+        for (const item of toUpsert) {
+            if (!seen.has(item.part)) {
+                seen.add(item.part);
+                unique.push(item);
+            }
+        }
+        if (unique.length === 0) { setLoading(this, false); return toast('无有效数据', 'error'); }
+        const { error } = await supabase.from('wukong').upsert(unique, { onConflict: 'part' });
+        setLoading(this, false);
+        if (error) { toast('上传失败: '+error.message, 'error'); return; }
+        toast('成功导入 '+unique.length+' 条物控', 'success');
+        document.getElementById('wukongUploadStatus').style.display = 'block';
+        document.getElementById('wukongUploadStatus').textContent = '已导入 '+unique.length+' 条';
+    });
+});
+     
+    // ==================== BOM 页 Tab 切换 ====================
+    document.querySelectorAll('#locationModeTabs .tab-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            document.querySelectorAll('#locationModeTabs .tab-btn').forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            document.querySelectorAll('#page-location .report-tab-content').forEach(c => c.classList.remove('active'));
+            const mode = this.dataset.mode;
+if (mode === 'loc') document.getElementById('loc-mode-loc').classList.add('active');
+else if (mode === 'bom') document.getElementById('loc-mode-bom').classList.add('active');
+else if (mode === 'wukong') document.getElementById('loc-mode-wukong').classList.add('active');
+        });
+    });
+
+    // ==================== BOM 查询按钮 ====================
+    document.getElementById('bomSearchBtn').addEventListener('click', renderBomResult);
+    document.getElementById('bomClearBtn').addEventListener('click', () => {
+        document.getElementById('bomModelInput').value = '';
+        document.getElementById('bomPartInput').value = '';
+        document.getElementById('bomResultList').innerHTML = '<div class="empty-state"><i class="fas fa-search"></i><p>输入机种号或料号查询 BOM</p></div>';
+    });
+
+    // ==================== BOM 卡片内联编辑 ====================
+    document.getElementById('bomResultList').addEventListener('click', function(e) {
+            const delBtn = e.target.closest('.bom-delete-btn');
+            if (delBtn) {
+                e.stopPropagation();
+                const id = parseInt(delBtn.dataset.id);
+                if (isNaN(id)) return;
+                showConfirm('确定删除这条 BOM 记录？', 'fa-trash', '#ef4444', 'btn-modal-danger', async () => {
+                    const { error } = await supabase.from('boms').delete().eq('id', id);
+                    if (error) { toast('删除失败: ' + error.message, 'error'); return; }
+                    toast('BOM 记录已删除', 'success');
+                    renderBomResult();
+                });
+                return;
+            }
+            const target = e.target;
+            if (!target.classList.contains('bom-part-editable') && !target.classList.contains('bom-mpn-editable') && !target.classList.contains('bom-manufacturer-editable')) return;
+            if (target.tagName === 'INPUT') return;
+        const id = parseInt(target.dataset.id);
+        const currentText = target.textContent.trim() === '-' ? '' : target.textContent.trim();
+        const input = document.createElement('input'); input.type = 'text'; input.value = currentText;
+        input.style.width = target.classList.contains('bom-part-editable') ? '150px' : '120px';
+        input.style.fontSize = target.classList.contains('bom-part-editable') ? '15px' : '13px';
+        target.parentNode.replaceChild(input, target); input.focus(); input.select();
+        const saveToCloud = async (newVal) => {
+            if (newVal === currentText) return;
+            try {
+                let updateData = {};
+                if (target.classList.contains('bom-part-editable')) updateData = { part: newVal };
+                else if (target.classList.contains('bom-mpn-editable')) updateData = { mpn: newVal };
+                else updateData = { manufacturer: newVal };
+                await supabase.from('boms').update(updateData).eq('id', id);
+                renderBomResult();
+            } catch(e) {}
+        };
+        const finishEdit = async () => {
+            const newVal = input.value.trim();
+            const span = document.createElement('span'); span.className = target.className; span.dataset.id = id; span.textContent = newVal || '-';
+            input.parentNode.replaceChild(span, input);
+            await saveToCloud(newVal);
+        };
+        input.addEventListener('blur', finishEdit);
+        input.addEventListener('keydown', async (e) => { if (e.key === 'Enter') { input.removeEventListener('blur', finishEdit); await finishEdit(); } else if (e.key === 'Escape') { input.value = currentText; input.blur(); } });
+    });
+
+    // ==================== 初始化 ====================
+    await loadData();
+    setupAutocompletes();
+    setupBomAutocompletes();
+    if(currentUser){
+    await fetchUserTeamId();
+    showPage('home');
+    loadData().then(() => {
+        renderStock(); updateDaily(); updateMarquee(); updateMine();
+        loadCustomStyles(); loadProfileBg(); updateShelfUI();
+    });
+        const saved=JSON.parse(localStorage.getItem('wms_remember')||'null');if(saved&&Date.now()-saved.time<7200000){document.getElementById('loginUsername').value=saved.u;document.getElementById('loginPassword').value=saved.p;document.getElementById('rememberMe').checked=true;}
+    } else showPage('login');
+    // 键盘弹起时计算器按钮上移（focus/blur 方案）
+// 键盘弹起时计算器按钮上移
+const calcFloatBtn = document.getElementById('calculatorFloatBtn');
+const originalBottom = 120;
+
+function adjustCalcBtnForKeyboard() {
+    if (!calcFloatBtn) return;
+    const targetPage = currentPage;
+    if (targetPage !== 'manualCount' && targetPage !== 'out' && targetPage !== 'in') return;
+    
+    if (window.visualViewport) {
+        const viewportHeight = window.visualViewport.height;
+        const windowHeight = window.innerHeight;
+        if (viewportHeight < windowHeight * 0.8) {
+            let offset = windowHeight - viewportHeight + -10;
+            if (targetPage === 'out' || targetPage === 'in') offset += windowHeight * 0;
+            calcFloatBtn.style.bottom = offset + 'px';
+        } else {
+            calcFloatBtn.style.bottom = originalBottom + 'px';
+        }
+    } else {
+        const currentHeight = window.innerHeight;
+        const screenHeight = window.screen.availHeight || window.screen.height;
+        if (currentHeight < screenHeight * 0.8) {
+            let offset = screenHeight - currentHeight + -10;
+            if (targetPage === 'out' || targetPage === 'in') offset += window.innerHeight * -0;
+            calcFloatBtn.style.bottom = offset + 'px';
+        } else {
+            calcFloatBtn.style.bottom = originalBottom + 'px';
+        }
+    }
+}
+
+document.addEventListener('focusin', function(e) {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+        setTimeout(adjustCalcBtnForKeyboard, 400);
+        setTimeout(adjustCalcBtnForKeyboard, 800);
+    }
+});
+
+document.addEventListener('focusout', function() {
+    setTimeout(adjustCalcBtnForKeyboard, 200);
+});
+    document.onkeydown=e=>{if(e.key==='Escape'&&currentPage!=='home'&&currentUser) showPage('home');};
+});
+document.getElementById('lastUpdateTime').addEventListener('click', () => {
+    document.getElementById('modalIcon').className = 'fas fa-history';
+    document.getElementById('modalIcon').style.color = '#3b82f6';
+    document.getElementById('modalText').innerHTML = 'v24.1 (2026-07-03)<br><br>· 物控查找页面上线<br>· 储位结果改为卡片样式<br>· BOM删除功能<br>· 盘点计划自动延续<br>· 删除记录恢复库存';
+    document.getElementById('modalOk').style.display = 'none';
+    document.getElementById('confirmModal').classList.add('show');
+});
+</script>
+</body>
+</html>
+<!DOCTYPE htm
