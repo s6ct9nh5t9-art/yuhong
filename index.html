@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app >-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="仓库管理">
     <link rel="apple-touch-icon" href="icon.png">
@@ -21,7 +21,7 @@
         *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
         html,body{height:100%;width:100%;overflow:hidden;touch-action:manipulation}
         body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC',Roboto,sans-serif;background:#f0f4f8;color:#1e293b;display:flex;justify-content:center;align-items:flex-start;padding:0}
-        #app{width:100%;max-width:480px;background:#fff;box-shadow:0 20px 60px rgba(0,0,0,0.12);position:relative;height:100%;display:flex;flex-direction:column;padding-top:env(safe-area-inset-top);padding-bottom:40px}.display-loc {
+        #app{width:100%;max-width:480px;background:#fff;box-shadow:0 20px 60px rgba(0,0,0,0.12);position:relative;height:100%;display:flex;flex-direction:column;padding-top:env(safe-area-inset-top);padding-bottom:40px;}.display-loc {
     font-weight: 700;
     color:#1e40af;
 }
@@ -110,7 +110,7 @@
         .my-info-item{background:#fff;border-radius:14px;padding:14px 6px;text-align:center;border:1px solid #f1f5f9}
         .my-info-item .num{font-size:22px;font-weight:700;color:#1e293b}
         .my-info-item .label{font-size:12px;color:#94a3b8;margin-top:2px}
-        .custom-msg-item{display:fl#42445Aex;align-items:center;justify-content:space-between;padding:8px 12px;background:#fff;border-radius:10px;margin-bottom:6px;border:1px solid #f1f5f9}
+        .custom-msg-item{display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:#fff;border-radius:10px;margin-bottom:6px;border:1px solid #f1f5f9}
         .btn-remove{color:#ef4444;cursor:pointer;padding:4px 8px;border-radius:6px;background:none;border:none;font-size:14px}
         .upload-card{background:#f8fafc;border-radius:16px;padding:16px;margin-bottom:16px;border:1px solid #e9eef3}
         .file-input-wrap{display:flex;align-items:center;gap:8px}
@@ -428,31 +428,72 @@
         </div>
         <div id="page-count" class="page">
             <div class="section-title"><i class="fas fa-clipboard-list" style="color:#f59e0b;"></i> 盘点</div>
-            <div class="count-search-row"><input type="date" class="form-control date-sm" id="countDateInput"><input type="text" class="form-control" id="countSearchInput" placeholder="搜索料号后四位..." style="flex:1;"><button class="btn btn-warning btn-sm" id="clearTodayBtn"><i class="fas fa-trash-alt"></i> 清空今日</button></div>
+            <div class="count-search-row"><input type="date" class="form-control date-sm" id="countDateInput" style="width:140px;height:40px;" onchange="this.blur()"><input type="text" class="form-control" id="countSearchInput" placeholder="搜索料号后四位..." style="flex:1;"><button class="btn btn-warning btn-sm" id="clearTodayBtn"><i class="fas fa-trash-alt"></i> 清空今日</button></div>
             <div class="plan-row" id="planRow"><span class="plan-info" id="planInfo">未导入计划</span><div style="display:flex; gap:8px;"><button class="btn btn-outline btn-sm" id="goCountListBtn"><i class="fas fa-list"></i> 清单</button></div></div>
-            <div class="shelf-row" id="countShelfRow">
-                <button class="shelf-btn active" data-shelf="all">全部</button><button class="shelf-btn" data-shelf="0">架1</button><button class="shelf-btn" data-shelf="1">架2</button><button class="shelf-btn" data-shelf="2">架3</button>
-                <button class="shelf-btn" data-shelf="3">架4</button><button class="shelf-btn" data-shelf="4">架5</button><button class="shelf-btn" data-shelf="5">架6</button><button class="shelf-btn" data-shelf="6">架7</button>
-            </div>
             <div class="tab-nav"><button class="tab-btn" data-mode="plan">计划</button><button class="tab-btn active" data-mode="detail">明细</button><button class="tab-btn" data-mode="part">料号汇总</button></div>
             <div id="countList"></div>
         </div>
         <div id="page-count-list" class="page">
             <div class="back-header"><button id="backFromCountList"><i class="fas fa-arrow-left"></i></button><h2 style="font-size:18px;font-weight:700; flex:1;">盘点清单</h2><button class="btn btn-outline btn-sm" id="exportCountListBtn"><i class="fas fa-download"></i> 导出</button></div>
-            <div class="form-row" style="margin-bottom:12px;"><div class="form-group"><label>日期</label><input type="date" class="form-control date-sm" id="countListDateInput"></div><div class="form-group"><label>&nbsp;</label><button class="btn btn-primary btn-block" id="refreshCountListBtn"><i class="fas fa-sync-alt"></i> 刷新</button></div></div>
+            <div class="form-row" style="margin-bottom:12px;"><div class="form-group"><label>日期</label><select class="form-control date-sm" id="countListDateInput" style="width:160px;height:40px;"><option value="">加载中...</option></select></div><div class="form-group"><label>&nbsp;</label><button class="btn btn-primary btn-block" id="refreshCountListBtn"><i class="fas fa-sync-alt"></i> 刷新</button></div></div>
             <div class="tab-nav" id="countListModeTabs"><button class="tab-btn active" data-mode="part">按料号汇总</button><button class="tab-btn" data-mode="mpn">按 MPN 汇总</button></div>
-            <div class="table-wrap"><table><thead id="countListTableHead"><tr><th>料号</th><th>盘点数量</th><th>系统数量</th><th>差异</th></tr></thead><tbody id="countListBody"><tr><td colspan="4" class="text-center text-muted">点击刷新查看数据</td></tr></tbody></table></div>
-        </div>        <div id="page-stock" class="page">
+            <div id="countListBody" style="padding:0 4px;"><div class="text-center text-muted">点击刷新查看数据</div></div>
+        </div>
+        <div id="page-out-search" class="page">
+    <div class="back-header"><button id="backFromOutSearch"><i class="fas fa-arrow-left"></i></button><h2 style="font-size:18px;font-weight:700;">出库记录查找</h2></div>
+    <div style="display:flex;gap:8px;align-items:flex-end;margin-bottom:16px;">
+        <div style="flex:1;">
+            <label style="font-size:12px;font-weight:600;color:#475569;display:block;margin-bottom:4px;">料号</label>
+            <div class="autocomplete-wrapper">
+                <input type="text" class="form-control" id="outSearchMaterialInput" placeholder="输入料号" autocomplete="off" style="height:38px;">
+                <input type="hidden" id="outSearchMaterialId">
+                <div class="autocomplete-dropdown" id="outSearchMaterialDropdown"></div>
+            </div>
+        </div>
+        <button class="btn btn-primary" id="outSearchQueryBtn" style="height:38px;white-space:nowrap;"><i class="fas fa-search"></i> 查询</button>
+    </div>
+    <div id="outSearchResult" style="margin-top:16px;"></div>
+</div>
+        <div id="page-stock" class="page">
             <div class="section-title"><i class="fas fa-boxes" style="color:#3b82f6;"></i> 库存</div>
             <div class="form-group" style="margin-bottom:12px;"><input type="text" class="form-control" id="stockSearch" placeholder="🔍 搜索料号 / MPN ..."></div>
-            <div class="table-wrap"><table><thead><tr><th>料号</th><th>MPN</th><th>库存</th></tr></thead><tbody id="stockBody"></tbody></table></div>
+            <div id="stockBody" style="padding:0 4px;"></div>
             <div style="margin-top:12px;text-align:right;font-size:12px;color:#94a3b8;">共 <span id="stockCount">0</span> 项 · <small>点击库存数字可修改</small></div>
         </div>
         <div id="page-report" class="page">
             <div class="section-title"><i class="fas fa-list" style="color:#ec4899;"></i> 出入库清单</div>
             <div class="tab-nav"><button class="tab-btn active" data-tab="tab-out">出库</button><button class="tab-btn" data-tab="tab-in">入库</button></div>
-            <div class="report-tab-content active" id="tab-out"><div class="form-row" style="margin-bottom:12px;"><div class="form-group"><label>日期</label><input type="date" class="form-control date-sm" id="reportOutDate"></div><div class="form-group"><label>仓码</label><select class="form-control" id="reportOutCangma"><option value="">全部</option><option value="B8SA">B8SA</option><option value="B909">B909</option><option value="B907">B907</option></select></div></div><div class="table-wrap" style="margin-top:12px;"><table><thead><tr><th>料号</th><th>MPN</th><th>出库总数</th><th>操作</th></tr></thead><tbody id="outReportBody"><tr><td colspan="4" class="text-center text-muted">请选择日期查询</td></tr></tbody></table></div></div>
-            <div class="report-tab-content" id="tab-in"><div class="form-group"><label>料号（选填）</label><div class="autocomplete-wrapper"><input type="text" class="form-control" id="reportInMaterialInput" placeholder="输入料号任意位数搜索" autocomplete="off"><input type="hidden" id="reportInMaterialId"><div class="autocomplete-dropdown" id="reportInMaterialDropdown"></div></div></div><button class="btn btn-primary btn-inline" id="queryInBtn"><i class="fas fa-search"></i> 查询</button><div class="table-wrap" style="margin-top:12px;"><table><thead><tr><th>料号</th><th>MPN</th><th>入库总数</th><th>日期</th><th>操作</th></tr></thead><tbody id="inReportBody"><tr><td colspan="5" class="text-center text-muted">查询当天入库记录</td></tr></tbody></table></div></div>
+            <div class="report-tab-content active" id="tab-out">
+                <div style="display:flex;gap:10px;align-items:flex-end;margin-bottom:12px;flex-wrap:wrap;">
+                    <div style="min-width:100px;flex:1;">
+                        <label style="font-size:12px;font-weight:600;color:#475569;display:block;margin-bottom:4px;">日期</label>
+                        <input type="date" class="form-control" id="reportOutDate" style="width:100%;height:38px;padding:6px 10px;font-size:13px;">
+                    </div>
+                    <div style="min-width:80px;flex:1;margin-left:14px;">
+                        <label style="font-size:12px;font-weight:600;color:#475569;display:block;margin-bottom:4px;">仓码</label>
+                        <select class="form-control" id="reportOutCangma" style="width:100%;height:38px;padding:6px 10px;font-size:13px;">
+                            <option value="">全部</option><option value="B8SA">B8SA</option><option value="B909">B909</option><option value="B907">B907</option>
+                        </select>
+                    </div>
+                    <button class="btn btn-outline" id="outSearchBtn" style="height:38px;padding:0 16px;font-size:13px;white-space:nowrap;"><i class="fas fa-search"></i> 出库查找</button>
+                </div>
+                <div class="table-wrap" style="margin-top:12px;"></div>
+            </div>
+            <div class="report-tab-content" id="tab-in">
+                <div style="display:flex;gap:10px;align-items:flex-end;margin-bottom:12px;">
+                    <div style="flex:1;">
+                        <label style="font-size:12px;font-weight:600;color:#475569;display:block;margin-bottom:4px;">料号（选填）</label>
+                        <div class="autocomplete-wrapper">
+                            <input type="text" class="form-control" id="reportInMaterialInput" placeholder="输入料号搜索" autocomplete="off" style="height:38px;font-size:13px;">
+                            <input type="hidden" id="reportInMaterialId">
+                            <div class="autocomplete-dropdown" id="reportInMaterialDropdown"></div>
+                        </div>
+                    </div>
+                    <button class="btn btn-primary" id="queryInBtn" style="height:38px;padding:0 16px;font-size:13px;white-space:nowrap;"><i class="fas fa-search"></i> 查询</button>
+                    <button class="btn btn-outline" id="showAllInBtn" style="height:38px;padding:0 16px;font-size:13px;white-space:nowrap;"><i class="fas fa-list"></i> 全部</button>
+                </div>
+                <div class="table-wrap" style="margin-top:12px;"></div>
+            </div>
         </div>
         <div id="page-location" class="page">
             <div class="section-title"><i class="fas fa-search" style="color:#0ea5e9;"></i> 查找</div>
@@ -589,7 +630,11 @@
             <div class="back-header"><button id="backFromMsgBtn"><i class="fas fa-arrow-left"></i></button><h2 style="font-size:18px;font-weight:700;">滚动预警设置</h2></div>
             <div style="display:flex;gap:8px;margin-bottom:16px;"><input type="text" class="form-control" id="subCustomMsgInput" placeholder="输入要显示的文字..."><button class="btn btn-primary btn-sm" id="subAddCustomMsgBtn"><i class="fas fa-plus"></i> 添加</button></div>
             <label style="display:flex;align-items:center;gap:8px;margin-bottom:12px;"><input type="checkbox" id="globalMsgCheck"> 全局公告（所有用户可见）</label>
-            <div id="subCustomMsgList"></div>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+    <span style="font-size:16px;color:#475569;">自定义消息</span>
+    <button class="btn btn-outline btn-sm" id="subCheckAllBtn" style="white-space:nowrap;">一键勾选</button>
+</div>
+<div id="subCustomMsgList"></div>
         </div>
     </div>
     <nav class="bottom-nav" id="bottomNav" style="display:none;">
@@ -688,7 +733,7 @@ const saved=JSON.parse(localStorage.getItem('wms_remember')||'null');if(saved){d
         count: $('#page-count'), stock: $('#page-stock'), report: $('#page-report'),
         location: $('#page-location'), data: $('#page-data'), mine: $('#page-mine'),
         customMsg: $('#page-custom-msg'), manualCount: $('#page-manual-count'),
-        countList: $('#page-count-list')
+        countList: $('#page-count-list'), 'out-search': $('#page-out-search')
     };
 
     let scanSettings = {
@@ -718,15 +763,16 @@ const saved=JSON.parse(localStorage.getItem('wms_remember')||'null');if(saved){d
     }
 
     async function saveRecordToCloud(r) {
-        if (!currentUser) { throw new Error('请先登录'); }
-        const record = {
-            type: r.type, materialid: r.materialId, mpn: r.mpn || '', quantity: r.quantity,
-            date: r.date, source: r.source || null, dest: r.dest || null, note: r.note || '',
-            user_id: Number(currentUser.id), team_id: userTeamId || 1
-        };
-        const { error } = await supabase.from('records').insert(record);
-        if (error) throw error;
-    }
+    if (!currentUser) { throw new Error('请先登录'); }
+    const record = {
+        type: r.type, materialid: r.materialId, mpn: r.mpn || '', quantity: r.quantity,
+        date: new Date().toISOString().slice(0, 10), source: r.source || null, dest: r.dest || null, note: r.note || '',
+        user_id: Number(currentUser.id), team_id: userTeamId || 1,
+        operated_at: new Date().toISOString()   // UTC 时间，但 JavaScript 解析时会自动转为本地
+    };
+    const { error } = await supabase.from('records').insert(record);
+    if (error) throw error;
+}
 
     // ==================== 字体大小调节 ====================
     let currentFontSize = parseInt(localStorage.getItem('wms_font_size') || '100');
@@ -887,12 +933,12 @@ const saved=JSON.parse(localStorage.getItem('wms_remember')||'null');if(saved){d
     
     // 并行加载所有数据
     const [matResult, recResult, locResult, msgResult, globalMsgResult] = await Promise.all([
-        supabase.rpc('get_my_materials', { p_user_id: uid }),
-        supabase.rpc('get_my_records', { p_user_id: uid }),
-        supabase.from('locations').select('part, location, responsible, updated_at'),
-        currentUser ? supabase.from('messages').select('text').eq('user_id', currentUser.id).not('text', 'like', '__alert_config__%') : Promise.resolve({ data: null }),
-        currentUser ? supabase.from('messages').select('text').is('user_id', null) : Promise.resolve({ data: null })
-    ]);
+    supabase.rpc('get_my_materials', { p_user_id: uid }),
+    supabase.from('records').select('*').eq('user_id', uid),
+    supabase.from('locations').select('part, location, responsible, updated_at'),
+    currentUser ? supabase.from('messages').select('text').eq('user_id', currentUser.id).not('text', 'like', '__alert_config__%') : Promise.resolve({ data: null }),
+    currentUser ? supabase.from('messages').select('text').is('user_id', null) : Promise.resolve({ data: null })
+]);
     
     const mat = matResult.data;
     const rec = recResult.data;
@@ -997,15 +1043,27 @@ const saved=JSON.parse(localStorage.getItem('wms_remember')||'null');if(saved){d
         if (currentPage === 'out' || currentPage === 'in') { stopHalfScan(); }
         if (name === 'location') { document.getElementById('bomModelInput').value=''; document.getElementById('bomPartInput').value=''; document.getElementById('bomResultList').innerHTML='<div class="empty-state"><i class="fas fa-search"></i><p>输入机种号或料号查询 BOM</p></div>'; }
         Object.values(pages).forEach(p=>p.classList.remove('active'));
-        if(pages[name]) pages[name].classList.add('active');
-        currentPage = name;
+if(pages[name]) pages[name].classList.add('active');
+if (name === 'out-search') {
+    document.getElementById('outSearchMaterialInput').value = '';
+    document.getElementById('outSearchResult').innerHTML = '';
+    setupAutocompletes();
+}
+currentPage = name;
         document.getElementById('bottomNav').style.display = (name==='customMsg'||name==='manualCount'||name==='countList'||!currentUser||name==='login'||name==='register')?'none':'flex';
         document.querySelectorAll('.bottom-nav .nav-item').forEach(n=>n.classList.toggle('active',n.dataset.tab===name));
         if (name==='mine') { document.getElementById('settingsBtn').classList.add('visible'); }
         else { document.getElementById('settingsBtn').classList.remove('visible'); }
         if (name==='out') { document.getElementById('outCangma').value = 'B8SA'; document.getElementById('outSubmitBtn').disabled = false; }
         if(name==='stock') { document.getElementById('stockSearch').value = ''; await loadData(); renderStock(); }
-        if(name==='report') { const today=new Date(); const localDate=new Date(today.getTime()-today.getTimezoneOffset()*60000).toISOString().slice(0,10); document.getElementById('reportOutDate').value=localDate; await loadData(); document.querySelector('#page-report .tab-btn.active')?.click(); }
+        if (name === 'report') {
+    const today = new Date();
+    const localDate = new Date(today.getTime() - today.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+    document.getElementById('reportOutDate').value = localDate;
+    await loadData();
+    renderOutReport();
+    autoRefreshInReport();
+}
         if(name==='home'){updateDaily();updateMarquee();}
         if(name==='count') {
             document.getElementById('countDateInput').value = countViewDate;
@@ -1024,16 +1082,20 @@ const saved=JSON.parse(localStorage.getItem('wms_remember')||'null');if(saved){d
     document.querySelectorAll('#page-location .report-tab-content').forEach(c => c.classList.remove('active'));
     document.getElementById('loc-mode-loc').classList.add('active');
 }
-if(name==='manualCount') { updateShelfUI(); document.getElementById('manualShelfLabel').textContent = ' - ' + (shelfNames[currentShelf]||('架'+(currentShelf+1))); loadManualPartList(currentShelf); }
+if (name === 'manualCount') {
+    if (countPlan.length === 0 || countPlanDate !== countViewDate) await importPlan();
+    updateShelfUI(); document.getElementById('manualShelfLabel').textContent = ' - ' + (shelfNames[currentShelf]||('架'+(currentShelf+1))); loadManualPartList(currentShelf); }
 if(name==='mine'){updateMine();loadCustomStyles();loadProfileBg();}
 if(name==='customMsg') renderSubCustomMsgs();
-if(name==='countList') { document.getElementById('countListDateInput').value = countViewDate; document.getElementById('countListModeTabs').querySelector('.tab-btn.active')?.click(); }
+if(name==='countList') { 
+    if (currentUser && userTeamId) await loadCountDates();
+    document.getElementById('countListModeTabs').querySelector('.tab-btn.active')?.click(); 
+}
 window.scrollTo({ top: 0, behavior: 'smooth' });
-// 触发首页卡片依次弹入动画
 if (name === 'home') {
     const cards = document.querySelectorAll('.home-card');
     cards.forEach(c => c.classList.remove('anim'));
-    void cards[0].offsetWidth; // 强制重绘
+    void cards[0].offsetWidth;
     cards.forEach(c => c.classList.add('anim'));
 }
 if (name === 'out' && document.getElementById('outHalfScanPanel').classList.contains('show')) { document.getElementById('outFormContainer').classList.add('shift-down'); }
@@ -1173,8 +1235,8 @@ data.forEach(item => {
     if (!modelVal && !partVal) { container.innerHTML = '<div class="empty-state"><i class="fas fa-search"></i><p>输入机种号或料号查询 BOM</p></div>'; return; }
     container.innerHTML = '<div class="empty-state"><i class="fas fa-spinner fa-spin"></i><p>查询中...</p></div>';
     let query = supabase.from('boms').select('*');
-    if (modelVal) query = query.eq('model', modelVal);
-    if (partVal) query = query.eq('part', partVal);
+if (modelVal) query = query.ilike('model', '%' + modelVal + '%');
+if (partVal) query = query.ilike('part', '%' + partVal + '%');
     const { data, error } = await query;
     if (error) { container.innerHTML = '<div class="empty-state"><p>查询失败: ' + error.message + '</p></div>'; return; }
     if (!data || data.length === 0) { container.innerHTML = '<div class="empty-state"><i class="fas fa-search"></i><p>未找到匹配的 BOM 记录</p></div>'; return; }
@@ -1232,7 +1294,9 @@ document.getElementById('wukongSearchBtn').addEventListener('click', async () =>
 
     // ==================== 导航 ====================
     document.getElementById('bottomNav').onclick=e=>{const btn=e.target.closest('.nav-item');if(btn&&pages[btn.dataset.tab]) showPage(btn.dataset.tab);};
-    document.getElementById('page-home').onclick=e=>{const card=e.target.closest('.home-card[data-page]');if(card&&pages[card.dataset.page]) showPage(card.dataset.page);};
+    document.getElementById('page-home').onclick=e=>{
+        const card=e.target.closest('.home-card[data-page]');if(card&&pages[card.dataset.page]) showPage(card.dataset.page);
+    };
     function updateDaily(){
     const today=records.filter(r=>isToday(r.date));
     let tin=0,tout=0,inCount=0,outCount=0;
@@ -1276,10 +1340,12 @@ document.getElementById('wukongSearchBtn').addEventListener('click', async () =>
             const location = planEntry ? planEntry.location : '';
             const today = new Date().toISOString().slice(0,10);
             const nowTime = new Date().toTimeString().slice(0,8);
-            await supabase.from('scan_records').insert({
-                user_id: Number(currentUser.id), team_id: userTeamId || 1,
-                date: today, "time": nowTime, part: part, qty: finalQty, mpn: mpn, location: location
-            });
+            const mat = materials.find(m => m.id === part);
+                const snapStock = mat ? mat.stock : 0;
+                await supabase.from('scan_records').insert({
+                    user_id: Number(currentUser.id), team_id: userTeamId || 1,
+                    date: today, "time": nowTime, part: part, qty: finalQty, mpn: mpn, location: location, snapshot_stock: snapStock
+                });
             document.getElementById('scanPartNumber').value = ''; document.getElementById('scanQuantity').value = '1'; document.getElementById('scanMpn').value = '';
             toast('已保存 ' + part + ' × ' + finalQty, 'success');
             return true;
@@ -1470,7 +1536,9 @@ document.getElementById('wukongSearchBtn').addEventListener('click', async () =>
             if (!part) { toast('请输入料号', 'error'); btn.disabled = false; btn.innerHTML = '<i class="fas fa-save"></i> 保存盘点'; return; }
             const today = new Date().toISOString().slice(0,10); const nowTime = new Date().toTimeString().slice(0,8);
             let location = manualPartList.length > 0 && manualPartIndex < manualPartList.length ? manualPartList[manualPartIndex].location : (shelfNames[currentShelf] || ('架'+(currentShelf+1)));
-            const { error } = await supabase.from('scan_records').insert({ user_id: Number(currentUser.id), team_id: userTeamId || 1, date: today, "time": nowTime, part: part, qty, mpn, location: location });
+            const mat = materials.find(m => m.id === part);
+const snapStock = mat ? mat.stock : 0;
+const { error } = await supabase.from('scan_records').insert({ user_id: Number(currentUser.id), team_id: userTeamId || 1, date: today, "time": nowTime, part: part, qty, mpn, location: location, snapshot_stock: snapStock });
             if (error) { toast('保存失败: ' + error.message, 'error'); btn.disabled = false; btn.innerHTML = '<i class="fas fa-save"></i> 保存盘点'; return; }
             toast('已保存 ' + part + ' x ' + qty, 'success');
             document.getElementById('manualCountQty').value = ''; document.getElementById('manualCountQty').focus();
@@ -1514,6 +1582,27 @@ document.getElementById('wukongSearchBtn').addEventListener('click', async () =>
     document.querySelectorAll('#manualShelfRow .shelf-btn').forEach(btn => { btn.addEventListener('click', function() { currentShelf = parseInt(this.dataset.shelf); updateShelfUI(); document.getElementById('manualShelfLabel').textContent = ' - ' + (shelfNames[currentShelf]||('架'+(currentShelf+1))); loadManualPartList(currentShelf); }); });
     document.getElementById('outScanBtn').onclick = () => startHalfScan('out');
     document.getElementById('inScanBtn').onclick = () => startHalfScan('in');
+document.getElementById('backFromOutSearch').onclick = () => showPage('report');
+document.getElementById('outSearchQueryBtn').addEventListener('click', async function() {
+    const inputVal = document.getElementById('outSearchMaterialInput').value.trim().toUpperCase();
+    if (!inputVal) return toast('请输入料号', 'info');
+    const threeMonthsAgo = new Date();
+    threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
+    const dateStr = threeMonthsAgo.toISOString().slice(0, 10);
+    const container = document.getElementById('outSearchResult');
+    container.innerHTML = '<div style="text-align:center;padding:20px;color:#94a3b8;">查询中...</div>';
+    try {
+        const { data, error } = await supabase.from('records').select('*').eq('type', 'out').eq('materialid', inputVal).gte('date', dateStr).order('operated_at', { ascending: false });
+        if (error) throw error;
+        if (!data || data.length === 0) { container.innerHTML = '<div class="empty-state">最近3个月无出库记录</div>'; return; }
+        container.innerHTML = data.map(r => {
+            const date = r.operated_at ? new Date(r.operated_at).toLocaleString('zh-CN', { hour12: false }).slice(0, 10) : (r.date || '-');
+            let shift = '--';
+            if (r.operated_at) { const hour = new Date(r.operated_at).getHours(); shift = (hour >= 8 && hour < 20) ? '白班' : '夜班'; }
+            return '<div class="count-item" style="justify-content:space-between;align-items:center;"><div class="info" style="flex:1;"><div class="name">' + (r.mpn ? '(' + r.mpn + ')' : '') + '</div><div class="spec">数量: <span style="color:#ef4444;font-weight:600;">' + r.quantity + '</span> · ' + date + ' · 仓码: <span style="color:#3b82f6;font-weight:600;">' + (r.note || '-') + '</span> · ' + shift + '</div></div></div>';
+        }).join('');
+    } catch (e) { container.innerHTML = '<div class="empty-state">加载失败</div>'; }
+});
     document.getElementById('closeOutHalfScan').onclick = stopHalfScan;
     document.getElementById('closeInHalfScan').onclick = stopHalfScan;
     document.getElementById('outHalfScanBtn').onclick = () => halfScanning ? stopHalfScan() : startHalfScan('out');
@@ -1614,45 +1703,159 @@ document.getElementById('wukongSearchBtn').addEventListener('click', async () =>
         finally { inSubmitBtn.disabled = false; }
     });
 
-    // ==================== 盘点清单 ====================
-    async function renderCountListByMode(mode) {
-        const tbody = document.getElementById('countListBody'); const thead = document.getElementById('countListTableHead');
-        if (!currentUser || !currentUser.id) { tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted">请先登录</td></tr>'; return; }
-        const date = document.getElementById('countListDateInput').value;
-        tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted">加载中...</td></tr>';
-        try {
-            const { data, error } = await supabase.from('scan_records').select('part, mpn, qty').eq('team_id', userTeamId || 1).eq('date', date).gt('qty', 0).order('"time"', { ascending: true });
-            if (error) throw error;
-            if (!data || data.length === 0) { tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted">当天无盘点数据</td></tr>'; return; }
-            if (mode === 'part') {
-                thead.innerHTML = '<tr><th>料号</th><th>盘点数量</th><th>系统数量</th><th>差异</th></tr>';
-                const partMap = {}; data.forEach(r => { partMap[r.part] = (partMap[r.part] || 0) + r.qty; });
-                const rows = Object.entries(partMap).map(([part, countQty]) => { const sysQty = materials.filter(m => m.id === part).reduce((s, m) => s + m.stock, 0); return { part, countQty, sysQty, diff: countQty - sysQty }; });
-                tbody.innerHTML = rows.map(r => '<tr><td>'+r.part+'</td><td>'+r.countQty+'</td><td>'+r.sysQty+'</td><td style="color:'+(r.diff===0?'#22c55e':r.diff>0?'#ef4444':'#f59e0b')+'">'+r.diff+'</td></tr>').join('');
-            } else {
-                thead.innerHTML = '<tr><th>料号</th><th>MPN</th><th>盘点数量</th><th>系统数量</th><th>差异</th></tr>';
-                const comboMap = {}; data.forEach(r => { const key = r.part+'|'+(r.mpn||''); if (!comboMap[key]) comboMap[key] = { part: r.part, mpn: r.mpn || '', countQty: 0 }; comboMap[key].countQty += r.qty; });
-                const rows = Object.values(comboMap).map(item => { const m = materials.find(mat => mat.id === item.part && mat.mpn === item.mpn); const sysQty = m ? m.stock : 0; return { ...item, sysQty, diff: item.countQty - sysQty }; });
-                tbody.innerHTML = rows.map(r => '<tr><td>'+r.part+'</td><td>'+(r.mpn||'-')+'</td><td>'+r.countQty+'</td><td>'+r.sysQty+'</td><td style="color:'+(r.diff===0?'#22c55e':r.diff>0?'#ef4444':'#f59e0b')+'">'+r.diff+'</td></tr>').join('');
-            }
-        } catch(e) { tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted">加载失败</td></tr>'; }
-    }
+   let cachedExportData = null;
+   async function loadCountDates() {
+  const sel = document.getElementById('countListDateInput');
+  if (!sel) return;
+  if (!currentUser || !currentUser.id) {
+    sel.innerHTML = '<option value="">请先登录</option>';
+    return;
+  }
+  const { data } = await supabase.from('scan_records').select('date').eq('team_id', userTeamId || 1).gt('qty', 0).order('date', { ascending: false });
+  const dates = data ? [...new Set(data.map(r => r.date))] : [];
+  sel.innerHTML = dates.map(d => '<option value="' + d + '"' + (d === countViewDate ? ' selected' : '') + '>' + d + '</option>').join('') || '<option value="">无盘点数据</option>';
+}
 
-    function exportCountList() {
-        const mode = document.getElementById('countListModeTabs').querySelector('.tab-btn.active')?.dataset.mode || 'part';
-        const tbody = document.getElementById('countListBody'); const rows = tbody.querySelectorAll('tr');
-        if (rows.length === 0 || rows[0].querySelector('.text-muted')) { toast('无数据可导出', 'error'); return; }
-        const sheetData = []; if (mode === 'part') { sheetData.push(['料号','盘点数量','系统数量','差异']); rows.forEach(row => { const cells = row.querySelectorAll('td'); if (cells.length >= 4) sheetData.push([cells[0].textContent.trim(), cells[1].textContent.trim(), cells[2].textContent.trim(), cells[3].textContent.trim()]); }); }
-        else { sheetData.push(['料号','MPN','盘点数量','系统数量','差异']); rows.forEach(row => { const cells = row.querySelectorAll('td'); if (cells.length >= 5) sheetData.push([cells[0].textContent.trim(), cells[1].textContent.trim(), cells[2].textContent.trim(), cells[3].textContent.trim(), cells[4].textContent.trim()]); }); }
-        const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(sheetData), '盘点清单');
-        XLSX.writeFile(wb, '盘点清单_'+document.getElementById('countListDateInput').value+'.xlsx');
-        toast('文件已下载', 'success');
+async function renderCountListByMode(mode) {
+    const container = document.getElementById('countListBody');
+    if (!currentUser || !currentUser.id) { container.innerHTML = '<div class="empty-state"><p>请先登录</p></div>'; return; }
+    const date = document.getElementById('countListDateInput').value;
+    container.innerHTML = '<div class="text-center text-muted" style="padding:20px;">加载中...</div>';
+    try {
+        const { data: scanData, error } = await supabase.from('scan_records').select('part, mpn, qty').eq('team_id', userTeamId || 1).eq('date', date).gt('qty', 0).order('"time"', { ascending: true });
+        if (error) throw error;
+        if (!scanData || scanData.length === 0) { container.innerHTML = '<div class="empty-state"><p>当天无盘点数据</p></div>'; return; }
+
+        const { data: snapData } = await supabase.from('stock_snapshots').select('part, mpn, stock').eq('team_id', userTeamId || 1).eq('snapshot_date', date);
+        const snapMap = {};
+        if (snapData) snapData.forEach(s => { const key = s.part + '|' + (s.mpn || ''); snapMap[key] = s.stock; });
+
+        let html = '';
+        if (mode === 'part') {
+            const partMap = {}; scanData.forEach(r => { partMap[r.part] = (partMap[r.part] || 0) + r.qty; });
+            const rows = Object.entries(partMap).map(([part, countQty]) => {
+                const sysQty = snapMap[part + '|'] || materials.filter(m => m.id === part).reduce((s, m) => s + m.stock, 0);
+                const diff = countQty - sysQty;
+                return { part, countQty, sysQty, diff };
+            });
+            html = rows.map(r =>
+                '<div style="display:flex;align-items:center;justify-content:space-between;background:#fff;border-radius:12px;padding:14px 16px;margin-bottom:10px;border:1px solid #e2e8f0;">' +
+                '<div style="font-size:15px;font-weight:600;color:#1e293b;">' + r.part + '</div>' +
+                '<div style="display:flex;gap:24px;text-align:center;">' +
+                '<div><div style="font-size:10px;color:#94a3b8;">盘点</div><div style="font-size:15px;font-weight:700;color:#3b82f6;">' + r.countQty + '</div></div>' +
+                '<div><div style="font-size:10px;color:#94a3b8;">库存</div><div style="font-size:15px;font-weight:700;color:#64748b;">' + r.sysQty + '</div></div>' +
+                '<div><div style="font-size:10px;color:#94a3b8;">差异</div><div style="font-size:15px;font-weight:700;color:' + (r.diff === 0 ? '#22c55e' : r.diff > 0 ? '#ef4444' : '#f59e0b') + ';">' + r.diff + '</div></div>' +
+                '</div></div>'
+            ).join('');
+            cachedExportData = { headers: ['料号', '盘点数量', '系统数量', '差异'], rows: rows, type: 'part' };
+        } else {
+            const comboMap = {}; scanData.forEach(r => { const key = r.part + '|' + (r.mpn || ''); if (!comboMap[key]) comboMap[key] = { part: r.part, mpn: r.mpn || '', countQty: 0 }; comboMap[key].countQty += r.qty; });
+            const rows = Object.values(comboMap).map(item => {
+                const key = item.part + '|' + (item.mpn || '');
+                const sysQty = snapMap[key] !== undefined ? snapMap[key] : (materials.find(m => m.id === item.part && m.mpn === item.mpn)?.stock || 0);
+                const diff = item.countQty - sysQty;
+                return { ...item, sysQty, diff };
+            });
+            html = rows.map(r =>
+                '<div style="display:flex;align-items:center;justify-content:space-between;background:#fff;border-radius:12px;padding:14px 16px;margin-bottom:10px;border:1px solid #e2e8f0;">' +
+                '<div><div style="font-size:15px;font-weight:600;color:#1e293b;">' + r.part + '</div><div style="font-size:12px;color:#94a3b8;">' + (r.mpn || '-') + '</div></div>' +
+                '<div style="display:flex;gap:24px;text-align:center;">' +
+                '<div><div style="font-size:10px;color:#94a3b8;">盘点</div><div style="font-size:15px;font-weight:700;color:#3b82f6;">' + r.countQty + '</div></div>' +
+                '<div><div style="font-size:10px;color:#94a3b8;">库存</div><div style="font-size:15px;font-weight:700;color:#64748b;">' + r.sysQty + '</div></div>' +
+                '<div><div style="font-size:10px;color:#94a3b8;">差异</div><div style="font-size:15px;font-weight:700;color:' + (r.diff === 0 ? '#22c55e' : r.diff > 0 ? '#ef4444' : '#f59e0b') + ';">' + r.diff + '</div></div>' +
+                '</div></div>'
+            ).join('');
+            cachedExportData = { headers: ['料号', 'MPN', '盘点数量', '系统数量', '差异'], rows: rows, type: 'mpn' };
+        }
+        container.innerHTML = html || '<div class="empty-state"><p>无数据</p></div>';
+    } catch(e) { container.innerHTML = '<div class="empty-state"><p>加载失败</p></div>'; }
+}
+
+function downloadCountList() {
+    if (!cachedExportData) {
+        toast('请先刷新数据', 'error');
+        return;
     }
+    const sheetData = [cachedExportData.headers, ...cachedExportData.rows.map(r => {
+        if (cachedExportData.type === 'mpn') {
+            return [r.part, r.mpn || '-', r.countQty, r.sysQty, r.diff];
+        } else {
+            return [r.part, r.countQty, r.sysQty, r.diff];
+        }
+    })];
+    const wb = XLSX.utils.book_new();
+const ws = XLSX.utils.aoa_to_sheet(sheetData);
+ws['!cols'] = [
+    { wch: 200 },
+    { wch: 200 },
+    { wch: 200 },
+    { wch: 25 },
+    { wch: 25 }
+];
+XLSX.utils.book_append_sheet(wb, ws, '盘点清单');
+XLSX.writeFile(wb, '盘点清单_' + document.getElementById('countListDateInput').value + '.xlsx');
+toast('文件已下载', 'success');
+}
+
+async function shareCountList() {
+    if (!cachedExportData) {
+        toast('请先刷新数据', 'error');
+        return;
+    }
+    try {
+        const sheetData = [cachedExportData.headers, ...cachedExportData.rows.map(r => {
+            if (cachedExportData.type === 'mpn') {
+                return [r.part, r.mpn || '-', r.countQty, r.sysQty, r.diff];
+            } else {
+                return [r.part, r.countQty, r.sysQty, r.diff];
+            }
+        })];
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(sheetData), '盘点清单');
+        const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+        const blob = new Blob([wbout], { type: 'application/octet-stream' });
+        const file = new File([blob], '盘点清单_' + document.getElementById('countListDateInput').value + '.xlsx', { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+        
+        if (navigator.share && navigator.canShare({ files: [file] })) {
+            await navigator.share({ files: [file], title: '盘点清单' });
+            toast('分享成功', 'success');
+        } else {
+            toast('设备不支持文件分享，正在下载...', 'info');
+            downloadCountList();
+        }
+    } catch (e) {
+        if (e.name !== 'AbortError') {
+            toast('分享失败，正在下载...', 'info');
+            downloadCountList();
+        }
+    }
+}
 
     document.getElementById('goCountListBtn').addEventListener('click', () => showPage('countList'));
     document.getElementById('backFromCountList').addEventListener('click', () => showPage('count'));
-    document.getElementById('refreshCountListBtn').addEventListener('click', () => { countViewDate = document.getElementById('countListDateInput').value; document.getElementById('countListModeTabs').querySelector('.tab-btn.active')?.click(); });
-    document.getElementById('exportCountListBtn').addEventListener('click', exportCountList);
+    document.getElementById('countListDateInput').addEventListener('change', function() {
+  countViewDate = this.value;
+  document.getElementById('countListModeTabs').querySelector('.tab-btn.active')?.click();
+});
+    document.getElementById('refreshCountListBtn').addEventListener('click'
+    , () => { countViewDate = document.getElementById('countListDateInput').value; document.getElementById('countListModeTabs').querySelector('.tab-btn.active')?.click(); });
+    
+document.getElementById('exportDownloadBtn').addEventListener('click', () => {
+    document.getElementById('exportChoiceModal').style.display = 'none';
+    downloadCountList();
+});
+
+document.getElementById('exportShareBtn').addEventListener('click', async () => {
+    document.getElementById('exportChoiceModal').style.display = 'none';
+    await shareCountList();
+});
+
+document.getElementById('exportCancelBtn').addEventListener('click', () => {
+    document.getElementById('exportChoiceModal').style.display = 'none';
+});
+    document.getElementById('exportCountListBtn').addEventListener('click', () => {
+    document.getElementById('exportChoiceModal').style.display = 'flex';
+});
     document.querySelectorAll('#countListModeTabs .tab-btn').forEach(btn => { btn.addEventListener('click', function() { document.querySelectorAll('#countListModeTabs .tab-btn').forEach(b => b.classList.remove('active')); this.classList.add('active'); renderCountListByMode(this.dataset.mode); }); });
 
     // ==================== 盘点 ====================
@@ -1714,10 +1917,33 @@ document.getElementById('wukongSearchBtn').addEventListener('click', async () =>
     updateShelfUI();
 }
     function updatePlanUI() { document.getElementById('planInfo').textContent = (countPlan.length > 0 && countPlanDate === countViewDate) ? '已导入 '+countPlan.length+' 条计划' : '未导入计划'; }
-    document.getElementById('countDateInput').addEventListener('change', function() { countViewDate = this.value; countPlan = []; countPlanDate = countViewDate; importPlan(); renderCount(); });
-    document.querySelectorAll('#countShelfRow .shelf-btn').forEach(btn => { btn.addEventListener('click', function() { document.querySelectorAll('#countShelfRow .shelf-btn').forEach(b => b.classList.remove('active')); this.classList.add('active'); countFilterShelf = this.dataset.shelf; renderCount(); }); });
+    document.getElementById('countDateInput').addEventListener('change', function() { countViewDate = this.value; countPlan = []; countPlanDate = countViewDate; importPlan(); renderCount(); this.blur(); });
     document.getElementById('countSearchInput').addEventListener('input', () => renderCount());
-    document.querySelectorAll('#page-count .tab-btn').forEach(btn => { btn.addEventListener('click', function() { document.querySelectorAll('#page-count .tab-btn').forEach(b => b.classList.remove('active')); this.classList.add('active'); countViewMode = this.dataset.mode; renderCount(); }); });
+    document.querySelectorAll('#page-report .tab-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+        const tabName = this.dataset.tab;
+        // 更新 tab 高亮
+        document.querySelectorAll('#page-report .tab-btn').forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+        // 显示对应内容区
+        document.querySelectorAll('#page-report .report-tab-content').forEach(c => c.classList.remove('active'));
+        document.getElementById(tabName).classList.add('active');
+        // 调用对应的渲染函数
+        if (tabName === 'tab-out') {
+            renderOutReport();
+        } else if (tabName === 'tab-in') {
+            autoRefreshInReport();
+        }
+    });
+});
+    document.querySelectorAll('#page-count .tab-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+        document.querySelectorAll('#page-count .tab-btn').forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+        countViewMode = this.dataset.mode;
+        renderCount();
+    });
+});
     document.getElementById('clearTodayBtn').addEventListener('click', () => {
         if (!currentUser || !currentUser.id) return;
         showConfirm('确定清空当日盘点数据？', 'fa-trash-alt', '#ef4444', 'btn-modal-danger', async () => {
@@ -1752,37 +1978,169 @@ document.getElementById('wukongSearchBtn').addEventListener('click', async () =>
     // ==================== 库存 ====================
     let stockSearchTimer;
     async function renderStock(filter=''){
-        const tbody=document.getElementById('stockBody'),countSpan=document.getElementById('stockCount');
-        if (!currentUser || !currentUser.id) return;
-        tbody.innerHTML='<tr><td colspan="3" class="text-center text-muted">搜索中...</td></tr>'; countSpan.textContent='...';
-        const kw=filter.trim().toLowerCase(); let list=kw ? materials.filter(m=>m.id.toLowerCase().includes(kw)||m.mpn.toLowerCase().includes(kw)) : [...materials];
-        const total=list.length; if(list.length>MAX_STOCK_DISPLAY) list=list.slice(0,MAX_STOCK_DISPLAY);
-        if(!list.length) tbody.innerHTML='<tr><td colspan="3" class="text-center text-muted">暂无数据</td></tr>';
-        else {
-            tbody.innerHTML=list.map(m=>{const key=m.id+'|'+m.mpn;return '<tr><td>'+m.id+'</td><td>'+(m.mpn||'-')+'</td><td class="'+(m.stock<=LOW?'stock-low':'')+'"><span class="editable-stock" data-key="'+key+'">'+m.stock+'</span></td></tr>';}).join('');
-            tbody.querySelectorAll('.editable-stock').forEach(span=>span.addEventListener('click',function(e){
-                if(this.querySelector('input')) return; const key=this.dataset.key; const cur=parseInt(this.textContent)||0;
-                const input=document.createElement('input'); input.type='number'; input.value=cur; input.min=0;
-                input.addEventListener('blur',async function(){const newVal=parseInt(this.value)||0;const [id,mpn]=key.split('|');
-                    await supabase.from('materials').update({stock:newVal}).eq('id',id).eq('mpn',mpn).eq('user_id', Number(currentUser.id)).eq('team_id', userTeamId || 1);
-                    const mat=materials.find(m=>m.id===id&&m.mpn===mpn);if(mat) mat.stock=newVal;
-                    renderStock(document.getElementById('stockSearch').value);});
-                input.addEventListener('keydown',function(e){if(e.key==='Enter')this.blur();});
-                this.innerHTML='';this.appendChild(input);input.focus();
-            }));
-        }
-        countSpan.textContent=total>MAX_STOCK_DISPLAY?MAX_STOCK_DISPLAY+'+':total;
-    }
-    document.getElementById('stockSearch').addEventListener('input',function(){clearTimeout(stockSearchTimer);stockSearchTimer=setTimeout(()=>renderStock(this.value),300);});
+    const container = document.getElementById('stockBody');
+    const countSpan = document.getElementById('stockCount');
+    if (!currentUser || !currentUser.id) return;
+    container.innerHTML = '<div class="text-center text-muted" style="padding:20px;">搜索中...</div>'; countSpan.textContent = '...';
+    const kw = filter.trim().toLowerCase();
+    let list = kw ? materials.filter(m => m.id.toLowerCase().includes(kw) || m.mpn.toLowerCase().includes(kw)) : [...materials];
+    const total = list.length;
+    if (list.length > MAX_STOCK_DISPLAY) list = list.slice(0, MAX_STOCK_DISPLAY);
+    if (!list.length) { container.innerHTML = '<div class="empty-state"><p>暂无数据</p></div>'; countSpan.textContent = '0'; return; }
+    container.innerHTML = list.map(m => {
+        const key = m.id + '|' + m.mpn;
+        return '<div style="display:flex;align-items:center;justify-content:space-between;background:#fff;border-radius:12px;padding:14px 16px;margin-bottom:10px;border:1px solid #e2e8f0;">' +
+            '<div><div style="font-size:15px;font-weight:600;color:#1e293b;margin-bottom:8px;">' + m.id + '</div><div style="font-size:12px;color:#0ea5e9;">MPN: ' + (m.mpn || '-') + '</div></div>' +
+            '<div style="text-align:center;"><div style="font-size:10px;color:#94a3b8;">库存</div><div class="' + (m.stock <= LOW ? 'stock-low' : '') + '" style="font-size:18px;font-weight:700;color:' + (m.stock <= LOW ? '#ef4444' : '#1e293b') + ';"><span class="editable-stock" data-key="' + key + '">' + m.stock + '</span></div></div>' +
+            '</div>';
+    }).join('');
+    container.querySelectorAll('.editable-stock').forEach(span => span.addEventListener('click', function(e) {
+        if (this.querySelector('input')) return;
+        const key = this.dataset.key;
+        const cur = parseInt(this.textContent) || 0;
+        const input = document.createElement('input');
+        input.type = 'number'; input.value = cur; input.min = 0;
+        input.style.cssText = 'width:70px;padding:2px 6px;border:1px solid #3b82f6;border-radius:6px;text-align:center;font-size:13px;font-weight:600;';
+        input.addEventListener('blur', async function() {
+            const newVal = parseInt(this.value) || 0;
+            const [id, mpn] = key.split('|');
+            await supabase.from('materials').update({ stock: newVal }).eq('id', id).eq('mpn', mpn).eq('user_id', Number(currentUser.id)).eq('team_id', userTeamId || 1);
+            const mat = materials.find(m => m.id === id && m.mpn === mpn);
+            if (mat) mat.stock = newVal;
+            renderStock(document.getElementById('stockSearch').value);
+        });
+        input.addEventListener('keydown', function(e) { if (e.key === 'Enter') this.blur(); });
+        this.innerHTML = '';
+        this.appendChild(input);
+        input.focus();
+    }));
+    countSpan.textContent = total > MAX_STOCK_DISPLAY ? MAX_STOCK_DISPLAY + '+' : total;
+}
 
     // ==================== 出入库清单 ====================
-    document.querySelectorAll('#page-report .tab-btn').forEach(btn=>{btn.addEventListener('click',function(){const tabName=this.dataset.tab;document.querySelectorAll('#page-report .tab-btn').forEach(b=>b.classList.remove('active'));this.classList.add('active');document.querySelectorAll('#page-report .report-tab-content').forEach(c=>c.classList.remove('active'));document.getElementById(tabName).classList.add('active'); if(tabName==='tab-out') renderOutReport(); else t();});});
-    function renderOutReport(){if(!currentUser||!currentUser.id) return;const date=document.getElementById('reportOutDate').value;if(!date) return;const cangma=document.getElementById('reportOutCangma').value;const filtered=records.filter(r=>r.type==='out'&&r.date&&r.date.startsWith(date)&&(cangma===''||r.note===cangma));const tbody=document.getElementById('outReportBody');tbody.innerHTML=filtered.length?filtered.map(r=>'<tr><td>'+r.materialId+'</td><td>'+(r.mpn||'-')+'</td><td>'+r.quantity+'</td><td><button class="btn btn-sm btn-outline delete-record-btn" style="color:#ef4444;" data-id="'+r.id+'"><i class="fas fa-trash"></i></button></td></tr>').join(''):'<tr><td colspan="4" class="text-center text-muted">无出库记录</td></tr>';}
-    document.getElementById('reportOutDate').addEventListener('change', renderOutReport);
-    document.getElementById('reportOutCangma').addEventListener('change', renderOutReport);
-    function autoRefreshInReport(){if(!currentUser||!currentUser.id) return;const today=new Date();const localToday=new Date(today.getTime()-today.getTimezoneOffset()*60000).toISOString().slice(0,10);const filtered=records.filter(r=>r.type==='in'&&r.date&&r.date.startsWith(localToday));const tbody=document.getElementById('inReportBody');tbody.innerHTML=filtered.length?filtered.map(r=>'<tr><td>'+r.materialId+'</td><td>'+(r.mpn||'-')+'</td><td>'+r.quantity+'</td><td>'+(r.date?.slice(0,10)||'')+'</td><td><button class="btn btn-sm btn-outline delete-record-btn" style="color:#ef4444;" data-id="'+r.id+'"><i class="fas fa-trash"></i></button></td></tr>').join(''):'<tr><td colspan="5" class="text-center text-muted">当天无入库记录</td></tr>';}
-    document.getElementById('queryInBtn').addEventListener('click',()=>{if(!currentUser||!currentUser.id) return;const matId=document.getElementById('reportInMaterialId').value.trim();let filtered=records.filter(r=>r.type==='in');if(matId) filtered=filtered.filter(r=>r.materialId===matId);const tbody=document.getElementById('inReportBody');tbody.innerHTML=filtered.length?filtered.map(r=>'<tr><td>'+r.materialId+'</td><td>'+(r.mpn||'-')+'</td><td>'+r.quantity+'</td><td>'+(r.date?.slice(0,10)||'')+'</td><td><button class="btn btn-sm btn-outline delete-record-btn" style="color:#ef4444;" data-id="'+r.id+'"><i class="fas fa-trash"></i></button></td></tr>').join(''):'<tr><td colspan="5" class="text-center text-muted">无入库记录</td></tr>';});
+    function renderOutReport() {
+    if (!currentUser || !currentUser.id) return;
+    const date = document.getElementById('reportOutDate').value;
+    if (!date) return;
+    const cangma = document.getElementById('reportOutCangma').value;
+    const filtered = records.filter(r => r.type === 'out' && r.date && r.date.startsWith(date) && (cangma === '' || r.note === cangma));
+    
+    const container = document.querySelector('#tab-out .table-wrap');
+    if (!container) return;
+    
+    if (filtered.length === 0) {
+        container.innerHTML = '<div class="empty-state"><i class="fas fa-box-open"></i><p>无出库记录</p></div>';
+        return;
+    }
+    
+    container.innerHTML = filtered.map(r => {
+        let shift = '--';
+        if (r.operated_at) {
+            const hour = new Date(r.operated_at).getHours();
+            shift = (hour >= 8 && hour < 20) ? '白班' : '夜班';
+        }
+        
+        return `
+            <div class="count-item" style="justify-content: space-between; align-items: center;">
+                <div class="info" style="flex:1;">
+                    <div class="name">${r.materialId} ${r.mpn ? '(' + r.mpn + ')' : ''}</div>
+                    <div class="spec">
+                        数量: <span style="color:#3b82f6; font-weight:600;">${r.quantity}</span> · 仓码: ${r.note || '-'} · 班次: ${shift}
+                    </div>
+                </div>
+                <button class="btn btn-sm btn-outline delete-record-btn" style="color:#ef4444; margin-left: auto;" data-id="${r.id}">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+        `;
+    }).join('');
+}
 
+document.getElementById('outCangma').addEventListener('change', function() { document.getElementById('outSubmitBtn').disabled = !this.value; });
+    document.getElementById('outMpn').addEventListener('change',function(){const id=document.getElementById('outMaterialId').value;const m=findMaterial(id,this.value);if(m){document.getElementById('outStockHint').textContent='当前库存: '+m.stock;document.getElementById('outQty').max=m.stock;}});
+    // ==================== 出入库清单筛选自动刷新 ====================
+    document.getElementById('reportOutDate').addEventListener('change', function() {
+  this.blur();
+  renderOutReport();
+});
+    document.getElementById('reportOutCangma').addEventListener('change', renderOutReport);
+    document.getElementById('reportInMaterialInput').addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            autoRefreshInReport();
+        }
+    });
+
+// ==================== 入库清单自动刷新 ====================
+async function autoRefreshInReport() {
+  if (!currentUser || !currentUser.id) {
+    document.querySelector('#tab-in .table-wrap').innerHTML =
+      '<div class="empty-state"><i class="fas fa-box"></i><p>请先登录</p></div>';
+    return;
+  }
+  
+  const materialId = document.getElementById('reportInMaterialId')?.value || '';
+  const inputVal = document.getElementById('reportInMaterialInput')?.value.trim().toUpperCase() || '';
+  const searchId = materialId || inputVal;
+  
+  try {
+    let query = supabase
+      .from('records')
+      .select('*')
+      .eq('type', 'in')
+      .order('id', { ascending: false });
+    
+    if (searchId) {
+      query = query.eq('materialid', searchId);
+    } else {
+      query = query.limit(10);
+    }
+    
+    const { data, error } = await query;
+    
+    if (error) throw error;
+    
+    const container = document.querySelector('#tab-in .table-wrap');
+    if (!container) return;
+    
+    const filtered = data || [];
+    
+    if (filtered.length === 0) {
+      container.innerHTML = '<div class="empty-state"><i class="fas fa-box-open"></i><p>' + (searchId ? '该料号无入库记录' : '无入库记录') + '</p></div>';
+      return;
+    }
+    
+    let html = filtered.map(r => {
+      const date = r.operated_at ? new Date(r.operated_at).toLocaleString('zh-CN', { hour12: false }).slice(0, 16) : (r.date ? r.date + ' 00:00' : '-');
+      
+      return `
+                <div class="count-item" style="justify-content: space-between; align-items: center;">
+                    <div class="info" style="flex:1;">
+                        <div class="name">${r.materialid || '-'} ${r.mpn ? '(' + r.mpn + ')' : ''}</div>
+                        <div class="spec">
+                            数量: <span style="color:#22c55e; font-weight:600;">${r.quantity}</span> · 日期: ${date}
+                        </div>
+                    </div>
+                    <button class="btn btn-sm btn-outline delete-record-btn" style="color:#ef4444; margin-left: auto;" data-id="${r.id}">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            `;
+    }).join('');
+    
+    if (!searchId) {
+      html += '<div style="text-align:center;padding:12px;color:#94a3b8;font-size:13px;">仅显示最近 10 条，搜索料号查看更多</div>';
+    }
+    
+    container.innerHTML = html;
+    
+  } catch (e) {
+    const container = document.querySelector('#tab-in .table-wrap');
+    if (container) {
+      container.innerHTML = '<div class="empty-state"><p>加载失败: ' + e.message + '</p></div>';
+    }
+  }
+}
     // ==================== 储位查找 ====================
     function clearLocationResult(){document.getElementById('locationResultBody').innerHTML='<div class="text-center text-muted">输入料号关键字搜索</div>';document.getElementById('locationResultCount').textContent='0';document.getElementById('locationSearchInput').value='';}
 async function performLocationSearch() {
@@ -1824,19 +2182,23 @@ document.getElementById('locationResult').addEventListener('click',e=>{
 
     // ==================== 出入库自动完成 ====================
     function setupAutocompletes(){
-        ['out','in','reportIn'].forEach(type=>{
+        ['out','in','reportIn','outSearch'].forEach(type=>{
             const input=document.getElementById(type+'MaterialInput'),hidden=document.getElementById(type+'MaterialId'),dropdown=document.getElementById(type+'MaterialDropdown');
             if(!input||!hidden||!dropdown) return;
             let currentFocus=-1;
             input.addEventListener('input',function(){
-                const val=this.value.trim().toUpperCase();closeAllLists();hidden.value='';
-                if(type==='out'){document.getElementById('outMpn').innerHTML='<option value="">请先选择料号</option>';document.getElementById('outMpn').disabled=true;document.getElementById('outStockHint').textContent='';}
-                else if(type==='in'){document.getElementById('inMpn').innerHTML='<option value="">请先选择料号</option>';document.getElementById('inMpn').disabled=true;}
-                if(!val) return;
-                const matches=materials.filter(m=>m.id.includes(val));if(matches.length===0) return;
-                dropdown.innerHTML='';matches.forEach((m)=>{const div=document.createElement('div');div.innerHTML='<strong>'+m.id+'</strong> - '+(m.mpn||'无MPN')+' (库存: '+m.stock+')';div.addEventListener('click',()=>{input.value=m.id;hidden.value=m.id;closeAllLists();if(type==='out') onMaterialSelected(m,'out');else if(type==='in') onMaterialSelected(m,'in');});dropdown.appendChild(div);});
-                dropdown.style.display='block';
-            });
+    const val=this.value.trim().toUpperCase();closeAllLists();
+    if(type==='out'){document.getElementById('outMpn').innerHTML='<option value="">请先选择料号</option>';document.getElementById('outMpn').disabled=true;document.getElementById('outStockHint').textContent='';}
+    else if(type==='in'){document.getElementById('inMpn').innerHTML='<option value="">请先选择料号</option>';document.getElementById('inMpn').disabled=true;}
+    if(!val) {
+        hidden.value='';
+        if(type==='reportIn') autoRefreshInReport();
+        return;
+    }
+    const matches=materials.filter(m=>m.id.includes(val));if(matches.length===0) return;
+    dropdown.innerHTML='';matches.forEach((m)=>{const div=document.createElement('div');div.innerHTML='<strong>'+m.id+'</strong>';div.addEventListener('click',()=>{input.value=m.id;hidden.value=m.id;closeAllLists();if(type==='out') onMaterialSelected(m,'out');else if(type==='in') onMaterialSelected(m,'in');else if(type==='reportIn') autoRefreshInReport();});dropdown.appendChild(div);});
+    dropdown.style.display='block';
+});
             input.addEventListener('keydown',function(e){let items=dropdown.getElementsByTagName('div');if(e.key==='ArrowDown'){currentFocus++;addActive(items);}else if(e.key==='ArrowUp'){currentFocus--;addActive(items);}else if(e.key==='Enter'){e.preventDefault();if(currentFocus>-1&&items[currentFocus]) items[currentFocus].click();}});
             function addActive(items){if(!items.length) return;removeActive(items);if(currentFocus>=items.length) currentFocus=0;if(currentFocus<0) currentFocus=items.length-1;items[currentFocus].classList.add('autocomplete-active');}
             function removeActive(items){for(let item of items) item.classList.remove('autocomplete-active');}
@@ -1853,6 +2215,15 @@ document.getElementById('locationResult').addEventListener('click',e=>{
     }
     document.getElementById('outCangma').addEventListener('change', function() { document.getElementById('outSubmitBtn').disabled = !this.value; });
     document.getElementById('outMpn').addEventListener('change',function(){const id=document.getElementById('outMaterialId').value;const m=findMaterial(id,this.value);if(m){document.getElementById('outStockHint').textContent='当前库存: '+m.stock;document.getElementById('outQty').max=m.stock;}});
+    // ==================== 出入库清单筛选自动刷新 ====================
+    document.getElementById('reportOutDate').addEventListener('change', renderOutReport);
+    document.getElementById('reportOutCangma').addEventListener('change', renderOutReport);
+    document.getElementById('reportInMaterialInput').addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            autoRefreshInReport();
+        }
+    });
 
     // ==================== 删除记录 ====================
     document.addEventListener('click', function(e) { const btn = e.target.closest('.delete-record-btn'); if (btn) { e.stopPropagation(); const recordId = parseInt(btn.dataset.id); if (!isNaN(recordId)) showDeletePasswordModal(recordId); } });
@@ -1932,6 +2303,17 @@ document.getElementById('locationResult').addEventListener('click',e=>{
         c.querySelectorAll('.alert-check').forEach(cb=>{cb.addEventListener('change',async function(){const key=this.dataset.key;if(this.checked) hiddenAlerts.delete(key);else hiddenAlerts.add(key);await saveAlertConfig();updateMarquee();});});
         c.querySelectorAll('.delete-msg-btn').forEach(btn=>{btn.addEventListener('click',async function(){const index=parseInt(this.dataset.index);const text=this.dataset.text;showConfirm('确定删除消息 "'+text+'" 吗？','fa-trash','#ef4444','btn-modal-danger',async()=>{userMessages.splice(index,1);hiddenAlerts.delete('MSG:'+text);await saveAlertConfig();await syncMessagesToCloud();updateMarquee();renderSubCustomMsgs();toast('消息已删除','success');});});});
     }
+    document.getElementById('subCheckAllBtn').addEventListener('click', async function() {
+    const allChecked = [...document.querySelectorAll('.alert-check')].every(cb => cb.checked);
+    document.querySelectorAll('.alert-check').forEach(cb => { cb.checked = !allChecked; });
+    document.querySelectorAll('.alert-check').forEach(cb => {
+        const key = cb.dataset.key;
+        if (cb.checked) hiddenAlerts.delete(key);
+        else hiddenAlerts.add(key);
+    });
+    await saveAlertConfig();
+    updateMarquee();
+});
     document.getElementById('subAddCustomMsgBtn').addEventListener('click',async()=>{const txt=document.getElementById('subCustomMsgInput').value.trim();if(!txt) return toast('请输入内容','error');const isGlobal=document.getElementById('globalMsgCheck').checked;if(isGlobal&&currentUser){await supabase.from('messages').insert({text:txt,user_id:null});}else if(currentUser){userMessages.push({text:txt});await syncMessagesToCloud();}else{userMessages.push({text:txt});localStorage.setItem('wms_messages',JSON.stringify(userMessages));}updateMarquee();renderSubCustomMsgs();document.getElementById('subCustomMsgInput').value='';document.getElementById('globalMsgCheck').checked=false;});
     document.getElementById('backFromMsgBtn').addEventListener('click',()=>showPage('mine'));
     document.getElementById('goCustomMsgBtn').addEventListener('click',()=>showPage('customMsg'));
@@ -2105,9 +2487,10 @@ loadData().then(() => {
             const toInsert = [];
             for (let i = 1; i < rows.length; i++) { const row = rows[i]; const part = String(row[0] || '').trim().toUpperCase(), location = String(row[1] || '').trim(); if (part && location) toInsert.push({ user_id: Number(currentUser.id), team_id: userTeamId || 1, date: today, "time": nowTime, part, qty: 0, mpn: '', location }); }
             if (toInsert.length === 0) { setLoading(this, false); return toast('无有效数据', 'error'); }
-            const { error } = await supabase.from('scan_records').insert(toInsert);
-            setLoading(this, false);
-            if (error) { toast('上传失败: '+error.message, 'error'); return; }
+await supabase.from('scan_records').delete().eq('team_id', userTeamId || 1).eq('date', today).eq('qty', 0);
+const { error } = await supabase.from('scan_records').insert(toInsert);
+setLoading(this, false);
+if (error) { toast('上传失败: ' + error.message, 'error'); return; }
             toast('成功导入 '+toInsert.length+' 条盘点计划', 'success');
             document.getElementById('countUploadStatus').style.display = 'block';
             document.getElementById('countUploadStatus').textContent = '已导入 '+toInsert.length+' 条';
@@ -2167,6 +2550,15 @@ loadData().then(() => {
             document.getElementById('modelsUploadStatus').textContent = '已导入 '+toUpsert.length+' 个';
         });
     });
+
+    // ==================== 入库清单查询按钮 ====================
+    document.getElementById('queryInBtn').addEventListener('click', autoRefreshInReport);
+    document.getElementById('showAllInBtn').addEventListener('click', function() {
+        document.getElementById('reportInMaterialInput').value = '';
+        document.getElementById('reportInMaterialId').value = '';
+        autoRefreshInReport();
+    });
+
     // ==================== 上传物控 ====================
 document.getElementById('uploadWukongExcelBtn').addEventListener('click', async function() {
     const file = document.getElementById('wukongExcelFile').files[0]; if (!file) { toast('请选择Excel文件', 'error'); return; }
@@ -2268,6 +2660,10 @@ else if (mode === 'wukong') document.getElementById('loc-mode-wukong').classList
     await loadData();
     setupAutocompletes();
     setupBomAutocompletes();
+    document.addEventListener('click', function(e) {
+    if (e.target.closest('#outSearchBtn')) { showPage('out-search'); }
+    if (e.target.closest('#backFromOutSearch')) { showPage('report'); }
+});
     if(currentUser){
     await fetchUserTeamId();
     showPage('home');
