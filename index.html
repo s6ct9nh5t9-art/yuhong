@@ -2015,6 +2015,7 @@ document.getElementById('exportCancelBtn').addEventListener('click', () => {
         input.focus();
     }));
     countSpan.textContent = total > MAX_STOCK_DISPLAY ? MAX_STOCK_DISPLAY + '+' : total;
+    document.getElementById('stockSearch').addEventListener('input',function(){clearTimeout(stockSearchTimer);stockSearchTimer=setTimeout(()=>renderStock(this.value),300);});    
 }
 
     // ==================== 出入库清单 ====================
