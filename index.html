@@ -495,6 +495,14 @@
                     <div class="form-group"><label>仓码 <span class="required">*</span></label><select class="form-control" id="outCangma"><option value="">请选择</option><option value="B8SA">B8SA</option><option value="B909">B909</option><option value="B907">B907</option></select></div>
                     <button type="submit" class="btn btn-danger btn-block" id="outSubmitBtn" disabled><i class="fas fa-arrow-right"></i> 确认出库</button>
                 </form>
+                <!-- 备料显示区 -->
+<div id="outPrepareArea" style="margin-top:16px; border-top:1px solid #f1f5f9; padding-top:12px;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+        <span style="font-size:13px; font-weight:600; color:#475569;">需补料备货</span>
+        <span id="outPrepareCount" style="font-size:12px; color:#94a3b8;"></span>
+    </div>
+    <div id="outPrepareItems" style="max-height:180px; overflow-y:auto;"></div>
+</div>
             </div>
             <div class="scan-half-panel" id="outHalfScanPanel"><div class="scan-half-header"><i class="fas fa-times" id="closeOutHalfScan"></i></div><div class="scan-half-body"><video id="outHalfScanVideo" autoplay playsinline muted></video><canvas id="outHalfScanCanvas"></canvas></div><div class="scan-half-footer"><button class="btn btn-primary btn-sm" id="outHalfScanBtn"><i class="fas fa-video"></i> 开始扫描</button></div></div>
         </div>
@@ -1146,9 +1154,16 @@ currentPage = name;
         document.querySelectorAll('.bottom-nav .nav-item').forEach(n=>n.classList.toggle('active',n.dataset.tab===name));
         if (name==='mine') { document.getElementById('settingsBtn').classList.add('visible'); }
         else { document.getElementById('settingsBtn').classList.remove('visible'); }
-        if (name==='out') { document.getElementById('outCangma').value = 'B8SA'; document.getElementById('outSubmitBtn').disabled = false; }
-        if(name==='stock') { document.getElementById('stockSearch').value = ''; await loadData(); renderStock(); }
-        if (name === 'report') {
+        if (name==='out') { 
+    document.getElementById('outCangma').value = 'B8SA'; 
+    document.getElementById('outSubmitBtn').disabled = false; 
+    // 加载备料清单
+    if (typeof loadTrayStocks === 'function') {
+        loadTrayStocks().then(() => renderOutPrepareList());
+    }
+}
+if(name==='stock') { document.getElementById('stockSearch').value = ''; await loadData(); renderStock(); }
+if (name === 'report') {
     const today = new Date();
     const localDate = new Date(today.getTime() - today.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
     document.getElementById('reportOutDate').value = localDate;
@@ -2031,7 +2046,10 @@ if (cangma === 'B8SA') {
             renderStock(); updateDaily(); updateMarquee();
             if (!outContinuous) stopHalfScan();
         } catch(e) { toast('出库失败: ' + e.message, 'error'); } 
-        finally { outSubmitBtn.disabled = false; }
+        finally {
+    renderOutPrepareList();
+    outSubmitBtn.disabled = false;
+}
     });
 
     // ==================== 入库 ====================
@@ -2437,7 +2455,43 @@ document.getElementById('exportCancelBtn').addEventListener('click', () => {
         `;
     }).join('');
 }
-
+// 渲染出库页备料清单
+function renderOutPrepareList() {
+    const container = document.getElementById('outPrepareItems');
+    const countEl = document.getElementById('outPrepareCount');
+    
+    if (!container) return;
+    
+    // 从 trayStocks 中筛选 b8sa < unpaid 的
+    const needSupply = (trayStocks || [])
+        .filter(s => (s.b8sa || 0) < (s.unpaid || 0))
+        .map(s => ({
+            part: s.part,
+            gap: (s.unpaid || 0) - (s.b8sa || 0)
+        }))
+        .sort((a, b) => b.gap - a.gap);
+    
+    if (needSupply.length === 0) {
+        container.innerHTML = '<div style="color:#94a3b8;font-size:13px;padding:4px 0;">✅ 暂无需要补料的料号</div>';
+        countEl.textContent = '';
+        return;
+    }
+    
+    countEl.textContent = `共 ${needSupply.length} 项`;
+    
+    // 只显示前 5 条
+    const display = needSupply.slice(0, 7);
+    container.innerHTML = display.map(d => `
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;font-size:13px;border-bottom:1px solid #f1f5f9;">
+            <span style="font-weight:600;color:#1e293b;">${d.part}</span>
+            <span style="color:#dc2626;font-weight:600;">缺 ${d.gap}</span>
+        </div>
+    `).join('');
+    
+    if (needSupply.length > 5) {
+        container.innerHTML += `<div style="text-align:center;padding:4px 0;font-size:12px;color:#94a3b8;">还有 ${needSupply.length - 5} 项...</div>`;
+    }
+}
 document.getElementById('outCangma').addEventListener('change', function() { document.getElementById('outSubmitBtn').disabled = !this.value; });
     document.getElementById('outMpn').addEventListener('change',function(){const id=document.getElementById('outMaterialId').value;const m=findMaterial(id,this.value);if(m){document.getElementById('outStockHint').textContent='当前库存: '+m.stock;document.getElementById('outQty').max=m.stock;}});
     // ==================== 出入库清单筛选自动刷新 ====================
@@ -3253,14 +3307,15 @@ document.getElementById('traySearchBtn').addEventListener('click', async functio
   
   if (!boms || boms.length === 0) {
     document.getElementById('trayResult').innerHTML =
-      `<div class="text-center text-muted" style="padding:20px;">
+        `<div class="text-center text-muted" style="padding:20px;">
                 ❌ 该机种无 BOM 数据<br>
                 <small style="color:#94a3b8;">请检查机种号是否正确，或先上传 BOM</small>
             </div>`;
     document.getElementById('trayConfirmBtn').disabled = true;
     currentTrayGapList = [];
+    toast('该机种无 BOM 数据', 'error');
     return;
-  }
+}
   
   console.log(`✅ 查询到 ${boms.length} 条 BOM 记录`);
   
@@ -3315,14 +3370,15 @@ boms.forEach(item => {
   
   if (total === 0) {
     document.getElementById('trayResult').innerHTML =
-      `<div class="text-center text-muted" style="padding:20px;">
+        `<div class="text-center text-muted" style="padding:20px;">
                 ⚠️ 该机种的 BOM 料号均不在 KT 库存中<br>
                 <small style="color:#94a3b8;">请先上传对应料号的 KT 库存</small>
             </div>`;
     document.getElementById('trayConfirmBtn').disabled = true;
     currentTrayGapList = [];
+    toast('该机种的 BOM 料号均不在 KT 库存中', 'warning');
     return;
-  }
+}
   
   let html = `<div style="font-size:14px; font-weight:600; margin-bottom:12px; color:#0f172a;">
         机种 ${model} × ${qty} 的物料需求（匹配 KT 库存，共 ${total} 项）
